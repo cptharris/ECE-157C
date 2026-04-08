@@ -1,0 +1,790 @@
+dataset_name,question,generated_code,final_answer
+housing,What is the average median house value across the dataset?,"import pandas as pd
+import re
+
+df = pd.read_csv(""housing.csv"")
+
+def column_tokens(col):
+    return re.findall(r""[a-z0-9]+"", col.lower())
+
+# Strategy 1: find a column whose tokens include 'median', 'house', and 'value'
+candidates = []
+for col in df.columns:
+    toks = set(column_tokens(col))
+    if {""median"", ""house"", ""value""}.issubset(toks):
+        candidates.append(col)
+
+# Strategy 2: if none, find column with 'median' and 'value'
+if not candidates:
+    for col in df.columns:
+        toks = set(column_tokens(col))
+        if {""median"", ""value""}.issubset(toks):
+            candidates.append(col)
+
+# Strategy 3: if still none, find a column named exactly common variants
+if not candidates:
+    common_names = [""median_house_value"", ""median-house-value"", ""median house value"", ""medianvalue"", ""median_value""]
+    lowered = {col.lower(): col for col in df.columns}
+    for name in common_names:
+        if name in lowered:
+            candidates.append(lowered[name])
+
+# Strategy 4: fallback to any numeric column containing 'median' token
+if not candidates:
+    for col in df.columns:
+        toks = set(column_tokens(col))
+        if ""median"" in toks:
+            if pd.api.types.is_numeric_dtype(df[col]) or df[col].dropna().apply(lambda x: isinstance(x, (int, float))).all():
+                candidates.append(col)
+
+# Compute result
+if candidates:
+    col = candidates[0]
+    numeric_series = pd.to_numeric(df[col], errors=""coerce"")
+    result = numeric_series.mean()
+else:
+    result = {""error"": ""No suitable median house value column found"", ""columns"": list(df.columns)}","The average median house value across the dataset is 206,943.8568."
+housing,Which ocean proximity category has the highest average median house value?,"import pandas as pd
+
+df = pd.read_csv(""housing.csv"")
+# Ensure the expected columns exist
+if ""ocean_proximity"" not in df.columns or ""median_house_value"" not in df.columns:
+    raise KeyError(""Expected columns 'ocean_proximity' and 'median_house_value' not found in CSV"")
+
+# Convert median_house_value to numeric, ignore non-numeric entries
+df[""median_house_value""] = pd.to_numeric(df[""median_house_value""], errors=""coerce"")
+
+# Compute mean median house value per ocean proximity category
+group_mean = df.groupby(""ocean_proximity"", dropna=True)[""median_house_value""].mean()
+
+# Find the category with the highest average median house value
+best_category = group_mean.idxmax()
+best_value = group_mean.loc[best_category]
+
+result = {""ocean_proximity"": best_category, ""average_median_house_value"": float(best_value)}","The ISLAND ocean proximity category has the highest average median house value: $414,700."
+housing,"What are the minimum, maximum, and median values of median house value?","import pandas as pd
+
+df = pd.read_csv(""housing.csv"")
+
+def _normalize(col):
+    s = col.lower()
+    # replace common separators with spaces and remove other punctuation
+    for ch in ['_', '-', '.', '/']:
+        s = s.replace(ch, ' ')
+    s = ''.join(ch if (ch.isalnum() or ch.isspace()) else ' ' for ch in s)
+    return s
+
+cols = df.columns.tolist()
+target_col = None
+tokens = ['median', 'house', 'value']
+
+# 1) look for columns containing all tokens
+for col in cols:
+    s = _normalize(col)
+    if all(tok in s for tok in tokens):
+        target_col = col
+        break
+
+# 2) fallback: median + value or median + house
+if target_col is None:
+    for col in cols:
+        s = _normalize(col)
+        if 'median' in s and ('value' in s or 'house' in s):
+            target_col = col
+            break
+
+# 3) fallback: any column with 'median'
+if target_col is None:
+    for col in cols:
+        if 'median' in _normalize(col):
+            target_col = col
+            break
+
+if target_col is None:
+    raise KeyError(""Could not find a column corresponding to median house value in the CSV."")
+
+# ensure numeric
+series = pd.to_numeric(df[target_col], errors='coerce').dropna()
+if series.empty:
+    raise ValueError(f""Column '{target_col}' contains no numeric data."")
+
+smin = series.min()
+smax = series.max()
+smed = series.median()
+
+result = {'column': target_col, 'min': float(smin), 'max': float(smax), 'median': float(smed)}","Minimum median house value: $14,999.00
+Maximum median house value: $500,001.00
+Median of median house values: $178,750.00"
+housing,How does median income vary across different ocean proximity categories?,"import pandas as pd
+
+df = pd.read_csv('housing.csv')
+
+result = (
+    df.dropna(subset=['ocean_proximity', 'median_income'])
+      .groupby('ocean_proximity')['median_income']
+      .agg(median='median', mean='mean', count='count', std='std')
+      .sort_values('median', ascending=False)
+)","Median values decline from coastal to inland: <1H OCEAN = 3.82835 (n=4,380), NEAR BAY = 3.77815 (n=1,092), NEAR OCEAN = 3.65430 (n=1,316), INLAND = 2.98120 (n=3,211), ISLAND = 2.83330 (n=1). The highest median (<1H OCEAN) exceeds the lowest (ISLAND) by 0.99505, about 26% higher. Coastal categories also show larger spread (std ≈ 2.01–2.07 for <1H OCEAN, NEAR BAY, NEAR OCEAN) versus INLAND (std = 1.4439); ISLAND has no std because of a single observation."
+housing,Which geographic areas (based on latitude and longitude ranges) have the highest average house prices?,"import pandas as pd
+
+df = pd.read_csv(""housing.csv"")
+
+# Helper: map lowercase to original column names
+cols_map = {c.lower(): c for c in df.columns}
+
+# Detect latitude column
+lat_candidates = ['latitude', 'lat']
+lat_col = None
+for cand in lat_candidates:
+    if cand in cols_map:
+        lat_col = cols_map[cand]
+        break
+
+# Detect longitude column
+lon_candidates = ['longitude', 'long', 'lon', 'lng']
+lon_col = None
+for cand in lon_candidates:
+    if cand in cols_map:
+        lon_col = cols_map[cand]
+        break
+
+# Find numeric columns
+numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+
+# Remove lat/lon if they are numeric and present in numeric_cols
+if lat_col in numeric_cols:
+    numeric_cols.remove(lat_col)
+if lon_col in numeric_cols:
+    numeric_cols.remove(lon_col)
+
+# Detect price column by name keywords among numeric columns
+price_keywords = ['price', 'value', 'sale', 'cost', 'amount', 'amt', 'median', 'house']
+price_col = None
+for c in numeric_cols:
+    lname = c.lower()
+    if any(k in lname for k in price_keywords):
+        price_col = c
+        break
+
+# Fallbacks if price not found
+if price_col is None and numeric_cols:
+    # Prefer numeric column with largest maximum (likely a price)
+    max_vals = {c: df[c].max(skipna=True) for c in numeric_cols}
+    # Choose the column with maximum value highest (and reasonably large)
+    price_col = max(max_vals, key=max_vals.get)
+
+# If essential columns missing, set result to an informative message
+if lat_col is None or lon_col is None or price_col is None:
+    result = {
+        ""error"": ""Could not detect necessary columns"",
+        ""detected_latitude_column"": lat_col,
+        ""detected_longitude_column"": lon_col,
+        ""detected_price_column"": price_col,
+        ""available_columns"": list(df.columns)
+    }
+else:
+    # Remove rows with missing lat/lon/price
+    df_geo = df[[lat_col, lon_col, price_col]].dropna()
+
+    # Decide grid size
+    lat_bins = 10
+    lon_bins = 10
+
+    # Create latitude and longitude bins
+    df_geo = df_geo.copy()
+    df_geo[""lat_bin""] = pd.cut(df_geo[lat_col], bins=lat_bins, include_lowest=True)
+    df_geo[""lon_bin""] = pd.cut(df_geo[lon_col], bins=lon_bins, include_lowest=True)
+
+    # Drop rows that fell outside bins (shouldn't normally happen)
+    df_geo = df_geo.dropna(subset=[""lat_bin"", ""lon_bin""])
+
+    # Group by grid cells and compute average price and counts
+    grouped = (
+        df_geo
+        .groupby([""lat_bin"", ""lon_bin""], observed=True)[price_col]
+        .agg([""mean"", ""count""])
+        .rename(columns={""mean"": ""avg_price"", ""count"": ""n""})
+        .reset_index()
+    )
+
+    # Extract numeric bounds from Interval objects
+    def interval_left(iv):
+        return float(iv.left) if iv is not None else None
+
+    def interval_right(iv):
+        return float(iv.right) if iv is not None else None
+
+    grouped[""lat_min""] = grouped[""lat_bin""].apply(interval_left)
+    grouped[""lat_max""] = grouped[""lat_bin""].apply(interval_right)
+    grouped[""lon_min""] = grouped[""lon_bin""].apply(interval_left)
+    grouped[""lon_max""] = grouped[""lon_bin""].apply(interval_right)
+
+    # Order columns and sort by average price descending
+    result_df = grouped[[""lat_min"", ""lat_max"", ""lon_min"", ""lon_max"", ""avg_price"", ""n""]].sort_values(""avg_price"", ascending=False)
+
+    # Return top 10 highest-average-price geographic areas (grid cells)
+    top_n = 10
+    result = result_df.head(top_n)","The highest average house prices occur in these latitude/longitude bins (avg_price, sample size):
+
+1) lat 37.25–38.19, lon -123.364–-122.378 — avg_price 41.476077 (n=418)  
+2) lat 33.49–34.43, lon -118.434–-117.448 — avg_price 31.832824 (n=3272)  
+3) lat 33.49–34.43, lon -120.406–-119.420 — avg_price 31.803571 (n=56)  
+4) lat 37.25–38.19, lon -122.378–-121.392 — avg_price 31.697575 (n=1402)  
+5) lat 40.07–41.01, lon -124.361–-123.364 — avg_price 31.224138 (n=58)
+
+The top bin (37.25–38.19, -123.364–-122.378) has the highest average at 41.476077 with 418 observations."
+housing,How does population density (defined as population per household) relate to median house value?,"import pandas as pd
+
+# Read CSV
+df = pd.read_csv(""housing.csv"")
+
+# Ensure required columns exist
+required_cols = [""population"", ""households"", ""median_house_value""]
+for col in required_cols:
+    if col not in df.columns:
+        raise KeyError(f""Required column '{col}' not found in CSV"")
+
+# Compute population density (population per household), avoid division by zero
+df[""population_density""] = df[""population""] / df[""households""].replace({0: pd.NA})
+df = df.dropna(subset=[""population_density"", ""median_house_value""])
+
+# Calculate Pearson correlation between population_density and median_house_value
+correlation = df[""population_density""].corr(df[""median_house_value""])
+
+# Create quantile bins of population_density to examine trend
+# Use qcut with up to 10 bins, allow dropping duplicate edges
+try:
+    df[""density_bin""] = pd.qcut(df[""population_density""], q=10, duplicates=""drop"")
+except ValueError:
+    # If qcut fails (e.g., not enough unique values), fall back to cut with 10 equal-width bins
+    df[""density_bin""] = pd.cut(df[""population_density""], bins=10)
+
+# Aggregate statistics by bin
+binned_stats = (
+    df.groupby(""density_bin"")
+    .agg(
+        count=(""median_house_value"", ""size""),
+        mean_population_density=(""population_density"", ""mean""),
+        mean_median_house_value=(""median_house_value"", ""mean""),
+        median_median_house_value=(""median_house_value"", ""median""),
+        std_median_house_value=(""median_house_value"", ""std""),
+    )
+    .reset_index()
+)
+
+# Prepare result: include overall correlation and the binned summary
+result = {""correlation_population_density_median_house_value"": correlation, ""binned_stats"": binned_stats}","The Pearson correlation is -0.04395, indicating a very weak negative relationship between population density (population per household) and median house value. Binned medians show a clear downward pattern: the lowest-density bin (0.691–2.065) has the highest median house value $241,700, while the highest-density bin (3.875–599.714) has the lowest median $142,050 — a drop of $99,650 (≈41.2%). Each bin contains ~999–1,003 records. Price variability also falls with density: std dev of median house value declines from $135,302 in the lowest-density bin to $67,426 in the highest-density bin. Small non‑monotonic fluctuations occur in the middle bins."
+housing,Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.,"import pandas as pd
+
+df = pd.read_csv(""housing.csv"")
+
+# Helper: choose price column
+def find_price_col(df):
+    candidates = [c for c in df.columns if ""price"" in c.lower() or c.lower() in (""saleprice"", ""sale_price"", ""list_price"", ""sold_price"", ""amount"", ""value"")]
+    # prefer exact 'price' if present
+    for prefer in [""price"", ""saleprice"", ""sale_price"", ""list_price"", ""sold_price""]:
+        for c in df.columns:
+            if c.lower() == prefer:
+                candidates = [c] + [x for x in candidates if x != c]
+                break
+    # ensure numeric
+    for c in candidates:
+        # coerce to numeric to test
+        ser = pd.to_numeric(df[c], errors=""coerce"")
+        if ser.notna().any():
+            return c
+    # fallback: largest-variance numeric column
+    numcols = df.select_dtypes(include=[""number""]).columns.tolist()
+    if numcols:
+        variances = df[numcols].var().sort_values(ascending=False)
+        return variances.index[0]
+    # last resort: any column that converts to numeric with >50% non-null
+    for c in df.columns:
+        ser = pd.to_numeric(df[c], errors=""coerce"")
+        if ser.notna().sum() >= 0.5 * len(df):
+            return c
+    raise ValueError(""No suitable price column found"")
+
+price_col = find_price_col(df)
+# ensure numeric price series
+df[price_col] = pd.to_numeric(df[price_col], errors=""coerce"")
+
+# Helper: choose geographic column
+geo_keys = [""neighborhood"", ""neighbourhood"", ""neigh"", ""area"", ""region"", ""city"", ""zip"", ""zipcode"", ""postal"", ""borough"", ""district"", ""suburb"", ""zone"", ""location"", ""county"", ""state""]
+geo_candidates = [c for c in df.columns if any(k in c.lower() for k in geo_keys)]
+geo_col = None
+if geo_candidates:
+    # prefer candidate with a reasonable number of unique values (not id-like)
+    best = None
+    best_uniques = None
+    for c in geo_candidates:
+        uniques = df[c].nunique(dropna=True)
+        if uniques <= 1:
+            continue
+        # prefer smaller unique counts (areas grouped)
+        if best is None or uniques < best_uniques:
+            best = c
+            best_uniques = uniques
+    geo_col = best
+# fallback: pick an object column with between 5 and 0.9*len(df) uniques
+if geo_col is None:
+    objcols = [c for c in df.columns if df[c].dtype == object and c != price_col]
+    best = None
+    best_diff = None
+    for c in objcols:
+        uniques = df[c].nunique(dropna=True)
+        if 5 <= uniques <= 0.9 * len(df):
+            diff = abs(uniques - 50)  # arbitrary preference toward moderate grouping
+            if best is None or diff < best_diff:
+                best = c
+                best_diff = diff
+    geo_col = best
+
+# If still none, pick the first object column or index name
+if geo_col is None:
+    objcols = [c for c in df.columns if df[c].dtype == object]
+    geo_col = objcols[0] if objcols else df.columns[0]
+
+# Prepare numeric features for factor analysis
+num_cols = df.select_dtypes(include=[""number""]).columns.tolist()
+# Ensure price_col included in num_cols
+if price_col not in num_cols:
+    num_cols.append(price_col)
+# Remove price_col from features list
+feature_cols = [c for c in num_cols if c != price_col]
+
+# Compute correlations of numeric features with price (drop NA)
+corr = pd.Series(dtype=float)
+if feature_cols:
+    corr = df[feature_cols].corrwith(df[price_col]).dropna()
+
+# Group by geographic area and compute stats
+group = df.groupby(geo_col, dropna=False)
+area_stats = group[price_col].agg([""median"", ""mean"", ""count"", ""std""]).rename(columns={""median"":""median_price"",""mean"":""mean_price"",""count"":""listing_count"",""std"":""price_std""})
+area_stats = area_stats.sort_values(""median_price"", ascending=False)
+
+top5 = area_stats.head(5).copy()
+# Overall means for numeric features
+overall_means = df[feature_cols].mean()
+
+# Categorical columns excluding geo_col
+cat_cols = [c for c in df.select_dtypes(include=[""object"", ""category""]).columns if c != geo_col]
+
+explanations = []
+for area in top5.index.tolist():
+    subset = df[df[geo_col] == area]
+    factors = []
+    # Numeric features: compare area mean to overall mean and check positive correlation
+    for feat in feature_cols:
+        if subset[feat].dropna().shape[0] < 5:
+            continue
+        area_mean = subset[feat].mean()
+        overall_mean = overall_means.get(feat, float(""nan""))
+        corr_val = corr.get(feat, 0.0)
+        # consider feature as key factor if area's mean is notably above overall and feature correlates with price
+        if pd.notna(area_mean) and pd.notna(overall_mean) and area_mean > overall_mean:
+            if abs(corr_val) >= 0.10 and corr_val > 0:
+                factors.append({
+                    ""feature"": feat,
+                    ""area_mean"": area_mean,
+                    ""overall_mean"": overall_mean,
+                    ""correlation_with_price"": corr_val,
+                    ""reason"": ""above-average and positively correlated with price""
+                })
+            else:
+                # still mention as above-average even if correlation small
+                factors.append({
+                    ""feature"": feat,
+                    ""area_mean"": area_mean,
+                    ""overall_mean"": overall_mean,
+                    ""correlation_with_price"": corr_val,
+                    ""reason"": ""above-average""
+                })
+    # Categorical features: find dominant category in area and whether that category commands higher prices overall
+    for c in cat_cols:
+        mode = subset[c].mode()
+        if mode.empty:
+            continue
+        top_val = mode.iloc[0]
+        area_frac = (subset[c] == top_val).mean()
+        overall_mean_price_for_val = df[df[c] == top_val][price_col].mean() if top_val is not None else None
+        if pd.notna(overall_mean_price_for_val) and overall_mean_price_for_val > df[price_col].mean():
+            if area_frac >= 0.4:
+                factors.append({
+                    ""feature"": c,
+                    ""dominant_value"": top_val,
+                    ""area_fraction"": area_frac,
+                    ""value_mean_price"": overall_mean_price_for_val,
+                    ""reason"": ""dominant category with above-average price""
+                })
+    # Assemble explanation text summarizing factors
+    if not factors:
+        explanation = ""No clear above-average numeric/categorical factors detected from available columns.""
+    else:
+        parts = []
+        num_factors = [f for f in factors if ""area_mean"" in f]
+        cat_factors = [f for f in factors if ""dominant_value"" in f]
+        if num_factors:
+            nf_text = ""; "".join([f""{f['feature']} (area mean {f['area_mean']:.2f} vs overall {f['overall_mean']:.2f}, corr={f['correlation_with_price']:.2f}) - {f['reason']}"" for f in num_factors])
+            parts.append(""Numeric drivers: "" + nf_text)
+        if cat_factors:
+            cf_text = ""; "".join([f""{f['feature']}='{f['dominant_value']}' present in {f['area_fraction']*100:.0f}% of listings (avg price {f['value_mean_price']:.2f})"" for f in cat_factors])
+            parts.append(""Categorical drivers: "" + cf_text)
+        explanation = "" | "".join(parts)
+    explanations.append({
+        geo_col: area,
+        ""median_price"": float(top5.loc[area, ""median_price""]) if pd.notna(top5.loc[area, ""median_price""]) else None,
+        ""mean_price"": float(top5.loc[area, ""mean_price""]) if pd.notna(top5.loc[area, ""mean_price""]) else None,
+        ""listing_count"": int(top5.loc[area, ""listing_count""]),
+        ""price_std"": float(top5.loc[area, ""price_std""]) if pd.notna(top5.loc[area, ""price_std""]) else None,
+        ""key_factors_explanation"": explanation,
+        ""detailed_factors"": factors
+    })
+
+# Create final result DataFrame
+result = pd.DataFrame(explanations)","Top 5 most expensive geographic areas (ranked) and why:
+
+1. Longitude -118.69 — primary factor: ocean_proximity (listed as the dominant value).  
+2. Longitude -118.79 — primary factor: ocean_proximity (also dominant).  
+3. Longitude -118.49 — primary factor: local longitude cluster (area_mean = -118.48), indicating a high-priced location band.  
+4. Longitude -118.40 — primary factor: local longitude cluster (area_mean = -118.39), another high-priced location band.  
+5. Longitude -122.46 — primary factor: local latitude cluster (area_mean = 37.8348), indicating a latitude band associated with higher prices.
+
+In short: proximity to the ocean drives the top two, while spatial clustering by longitude/latitude (specific location bands) drives the remaining three."
+housing,Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?,"import pandas as pd
+
+df = pd.read_csv(""housing.csv"")
+
+# Helper to find a column by keywords (returns first match or None)
+def find_col(cols, keywords):
+    cols_lc = {c: c.lower() for c in cols}
+    for kw in keywords:
+        for orig, lc in cols_lc.items():
+            if kw in lc:
+                return orig
+    return None
+
+cols = df.columns.tolist()
+
+# Detect price column
+price_keywords = ['median_house_value', 'median_house_price', 'median_value', 'medianvalue', 'house_value', 'housevalue', 'saleprice', 'sale_price', 'price', 'home_value', 'homevalue']
+price_col = find_col(cols, price_keywords)
+if price_col is None:
+    # fallback: choose a numeric column with 'value' or 'price' in name or the numeric column with highest variance
+    numeric_cols = df.select_dtypes(include='number').columns.tolist()
+    price_by_name = find_col(numeric_cols, ['value', 'price', 'amount'])
+    price_col = price_by_name if price_by_name is not None else (numeric_cols[0] if numeric_cols else None)
+
+# Detect ocean proximity or distance to ocean
+ocean_col = find_col(cols, ['ocean_proximity', 'ocean', 'near_ocean', 'coast', 'coastal', 'proximity'])
+# Detect numeric distance column specifically
+dist_col = find_col(cols, ['distance_to_ocean', 'dist_to_ocean', 'distance_ocean', 'distance', 'dist', 'dist_ocean', 'dist_coast'])
+# Verify dist_col is numeric; if not, discard
+if dist_col is not None and not pd.api.types.is_numeric_dtype(df[dist_col]):
+    # try to find any numeric col with 'dist' in name
+    dist_col = None
+    for c in df.select_dtypes(include='number').columns:
+        if 'dist' in c.lower() or 'distance' in c.lower():
+            dist_col = c
+            break
+
+# Detect latitude/longitude
+lat_col = find_col(cols, ['latitude', 'lat'])
+lon_col = find_col(cols, ['longitude', 'lon', 'long'])
+
+# Detect other likely explanatory columns
+income_col = find_col(cols, ['median_income', 'income'])
+age_col = find_col(cols, ['housing_median_age', 'median_age', 'age'])
+population_col = find_col(cols, ['population'])
+rooms_col = find_col(cols, ['total_rooms', 'rooms'])
+bedrooms_col = find_col(cols, ['total_bedrooms', 'bedrooms'])
+households_col = find_col(cols, ['households'])
+
+# If ocean proximity categorical exists, define coastal by values mentioning 'OCEAN' or 'NEAR' or 'ISLAND'
+is_coastal = pd.Series(False, index=df.index)
+if ocean_col is not None:
+    oc_vals = df[ocean_col].astype(str).str.upper()
+    coastal_mask = oc_vals.str.contains('OCEAN') | oc_vals.str.contains('NEAR') | oc_vals.str.contains('ISLAND') | oc_vals.str.contains('COAST')
+    is_coastal = coastal_mask.fillna(False)
+# If distance column exists, also treat small distances as coastal (use 25th percentile as threshold)
+if dist_col is not None:
+    dist = pd.to_numeric(df[dist_col], errors='coerce')
+    thresh = dist.quantile(0.25)
+    is_coastal = is_coastal | (dist <= thresh)
+# If neither ocean_col nor dist_col found but lat/lon exist, approximate coastal by extreme longitude/latitude clusters:
+if (ocean_col is None and dist_col is None) and (lat_col is not None and lon_col is not None):
+    # approximate: find points near the dataset's min/max longitude (coastal edges)
+    lon = pd.to_numeric(df[lon_col], errors='coerce')
+    lat = pd.to_numeric(df[lat_col], errors='coerce')
+    # take 10% extremes on either side
+    lon_q_low, lon_q_high = lon.quantile(0.1), lon.quantile(0.9)
+    lat_q_low, lat_q_high = lat.quantile(0.1), lat.quantile(0.9)
+    coastal_mask = (lon <= lon_q_low) | (lon >= lon_q_high) | (lat <= lat_q_low) | (lat >= lat_q_high)
+    is_coastal = is_coastal | coastal_mask.fillna(False)
+
+# Ensure price_col exists
+if price_col is None:
+    # If no price column found, pick the first numeric column as a proxy
+    numeric_cols_all = df.select_dtypes(include='number').columns.tolist()
+    price_col = numeric_cols_all[0] if numeric_cols_all else None
+
+# Subset coastal records
+df['__is_coastal'] = is_coastal
+df_coastal = df[df['__is_coastal']].copy()
+
+# If no coastal records found, relax criteria: treat top 25% by proximity (if dist exists) else use entire dataset
+if df_coastal.empty:
+    if dist_col is not None:
+        dist = pd.to_numeric(df[dist_col], errors='coerce')
+        thresh = dist.quantile(0.25)
+        df_coastal = df[dist <= thresh].copy()
+    else:
+        df_coastal = df.copy()
+
+# Determine low-price threshold within coastal subset (25th percentile)
+if price_col is not None:
+    coastal_price_q25 = pd.to_numeric(df_coastal[price_col], errors='coerce').quantile(0.25)
+    df_coastal['__is_low_price'] = pd.to_numeric(df_coastal[price_col], errors='coerce') <= coastal_price_q25
+else:
+    df_coastal['__is_low_price'] = False
+
+# If lat/lon exist, group low-price coastal houses by rounded grid to find areas
+if lat_col and lon_col:
+    df_coastal['_lat_r'] = pd.to_numeric(df_coastal[lat_col], errors='coerce').round(2)
+    df_coastal['_lon_r'] = pd.to_numeric(df_coastal[lon_col], errors='coerce').round(2)
+    group_cols = ['_lat_r', '_lon_r']
+    grouped = df_coastal.groupby(group_cols).agg(
+        count = (price_col, 'count') if price_col is not None else ('index', 'count'),
+        median_price = (price_col, lambda s: pd.to_numeric(s, errors='coerce').median()),
+        mean_income = (income_col, lambda s: pd.to_numeric(s, errors='coerce').median() if income_col else None),
+        median_age = (age_col, lambda s: pd.to_numeric(s, errors='coerce').median() if age_col else None),
+        population = (population_col, lambda s: pd.to_numeric(s, errors='coerce').sum() if population_col else None),
+        pct_low_price = (price_col, lambda s: (pd.to_numeric(s, errors='coerce') <= coastal_price_q25).mean() if price_col else None)
+    ).reset_index()
+    # Filter areas with at least a few records and significant proportion of low-price homes
+    candidate_areas = grouped[(grouped['count'] >= 5) & (grouped['pct_low_price'] >= 0.4)].copy()
+    candidate_areas = candidate_areas.sort_values('median_price').reset_index(drop=True)
+else:
+    # No lat/lon: aggregate by any available regional identifier (zip code or ocean proximity)
+    zip_col = find_col(cols, ['zip', 'zipcode', 'postal'])
+    if zip_col:
+        group_cols = [zip_col]
+        grouped = df_coastal.groupby(group_cols).agg(
+            count = (price_col, 'count') if price_col is not None else ('index', 'count'),
+            median_price = (price_col, lambda s: pd.to_numeric(s, errors='coerce').median()),
+            mean_income = (income_col, lambda s: pd.to_numeric(s, errors='coerce').median() if income_col else None),
+            median_age = (age_col, lambda s: pd.to_numeric(s, errors='coerce').median() if age_col else None),
+            population = (population_col, lambda s: pd.to_numeric(s, errors='coerce').sum() if population_col else None),
+            pct_low_price = (price_col, lambda s: (pd.to_numeric(s, errors='coerce') <= coastal_price_q25).mean() if price_col else None)
+        ).reset_index()
+        candidate_areas = grouped[(grouped['count'] >= 5) & (grouped['pct_low_price'] >= 0.4)].sort_values('median_price').reset_index(drop=True)
+    else:
+        # fallback: report the coastal low-price records themselves
+        candidate_areas = df_coastal[df_coastal['__is_low_price']].copy()
+
+# Compute correlations between price and other numeric features within coastal subset
+numeric_cols = df_coastal.select_dtypes(include='number').columns.tolist()
+# Remove helper columns
+for helper in ['__is_coastal','__is_low_price','_lat_r','_lon_r']:
+    if helper in numeric_cols:
+        numeric_cols.remove(helper)
+# Ensure price_col not in features
+corrs = pd.Series(dtype='float64')
+if price_col is not None and price_col in df_coastal.columns:
+    features = [c for c in numeric_cols if c != price_col]
+    if features:
+        corrs = df_coastal[features].apply(lambda col: pd.to_numeric(col, errors='coerce').corr(pd.to_numeric(df_coastal[price_col], errors='coerce')))
+        corrs = corrs.dropna().sort_values(key=lambda s: s.abs(), ascending=False)
+    else:
+        corrs = pd.Series(dtype='float64')
+
+# Generate human-readable explanations based on top correlations and available metadata
+explanations = []
+if not corrs.empty:
+    top = corrs.head(5)
+    for feat, val in top.items():
+        if pd.isna(val):
+            continue
+        sign = '+' if val > 0 else '-'
+        magnitude = abs(val)
+        if magnitude >= 0.6:
+            strength = 'strong'
+        elif magnitude >= 0.3:
+            strength = 'moderate'
+        else:
+            strength = 'weak'
+        # Interpret direction: positive correlation means higher feature -> higher price, so lower feature -> lower price
+        if val > 0:
+            interp = f""Lower {feat} is associated with lower prices (correlation {val:.2f}).""
+        else:
+            interp = f""Higher {feat} is associated with lower prices (correlation {val:.2f}).""
+        explanations.append(f""{feat}: {strength} ({sign}{magnitude:.2f}) — {interp}"")
+else:
+    explanations.append(""No numeric correlations could be computed for coastal subset (insufficient numeric features)."")
+
+# Add contextual potential factors when available
+if income_col:
+    explanations.append(f""Median income column detected ({income_col}); lower incomes in coastal pockets can explain depressed prices compared with other coastal areas."")
+if age_col:
+    explanations.append(f""Housing age column detected ({age_col}); older housing stock or higher vacancy/repair needs can depress prices."")
+if population_col:
+    explanations.append(f""Population/density ({population_col}) may indicate areas with different demand pressures; low demand can keep coastal prices lower."")
+if dist_col:
+    explanations.append(f""Distance metric detected ({dist_col}); even within 'coastal' designation, relative distance variations can explain price differences."")
+if ocean_col:
+    explanations.append(f""Ocean proximity categories ({ocean_col}) may mix very close beachfront with 'near ocean' — check granular distance to separate true beachfront premium."")
+
+# Prepare final result
+result = {
+    'price_column_used': price_col,
+    'ocean_or_proximity_column_used': ocean_col,
+    'distance_column_used': dist_col,
+    'coastal_sample_count': int(len(df_coastal)),
+    'low_price_threshold_in_coastal_subset': float(coastal_price_q25) if price_col is not None else None,
+    'candidate_low_price_coastal_areas': candidate_areas.reset_index(drop=True),
+    'coastal_price_correlations': corrs,
+    'explanations': explanations
+}","Among 6,789 coastal samples (low-price threshold $162,500), clear low-price pockets include:
+- (32.70, -117.14) median_price $87,000; mean_income 1.60230
+- (32.75, -117.10) $92,400; mean_income 1.48860
+- (33.97, -118.26) $96,000; mean_income 1.57310
+- (33.95, -118.27) $97,900; mean_income 2.29460
+- (32.71, -117.14) $103,100; mean_income 1.84560
+
+Main explanatory factors from the data:
+- Median_income is the strongest predictor (correlation 0.6706): lower incomes in these coastal pockets align with lower house prices.
+- Weaker influences: total_rooms (0.178), longitude (−0.109, certain longitudes cheaper), and population (−0.072)."
+housing,Identify areas with similar median income levels but significantly different median house values. What factors might explain these differences?,"import pandas as pd
+
+# Read CSV
+df = pd.read_csv(""housing.csv"")
+
+# Ensure required columns exist; if not, return an informative small DataFrame
+required_cols = {""median_income"", ""median_house_value""}
+if not required_cols.issubset(df.columns):
+    result = pd.DataFrame([{""error"": ""required columns missing"", ""required_columns"": list(required_cols), ""found_columns"": list(df.columns)}])
+else:
+    # Prepare useful derived columns
+    # Create an income bin by rounding median_income to one decimal to represent ""similar income levels""
+    df = df.copy()
+    df[""income_bin""] = df[""median_income""].round(1)
+
+    # Add a couple of derived density/room metrics for factor inference if columns exist
+    if {""total_rooms"", ""households""}.issubset(df.columns):
+        df[""rooms_per_household""] = df[""total_rooms""] / df[""households""].replace({0: pd.NA})
+    else:
+        df[""rooms_per_household""] = pd.NA
+
+    if {""population"", ""households""}.issubset(df.columns):
+        df[""people_per_household""] = df[""population""] / df[""households""].replace({0: pd.NA})
+    else:
+        df[""people_per_household""] = pd.NA
+
+    # Group by income_bin and compute statistics on median_house_value
+    group = df.groupby(""income_bin"", dropna=True)
+    stats = group[""median_house_value""].agg([""count"", ""min"", ""median"", ""max"", ""std""]).reset_index()
+    stats[""range""] = stats[""max""] - stats[""min""]
+    # Avoid division by zero for range_ratio
+    stats[""range_ratio""] = stats[""range""] / stats[""median""].replace({0: pd.NA})
+
+    # Keep bins with at least 10 samples for reliability
+    stats = stats[stats[""count""] >= 10].copy()
+
+    # If no bins meet the threshold, relax threshold to include bins with >=5
+    if stats.empty:
+        stats = group[""median_house_value""].agg([""count"", ""min"", ""median"", ""max"", ""std""]).reset_index()
+        stats[""range""] = stats[""max""] - stats[""min""]
+        stats[""range_ratio""] = stats[""range""] / stats[""median""].replace({0: pd.NA})
+        stats = stats[stats[""count""] >= 5].copy()
+
+    # Select top bins by absolute range (largest house value spread within same income bin)
+    top_bins = stats.sort_values(""range"", ascending=False).head(5)
+
+    summary_rows = []
+    # Columns to include in example snippets
+    example_cols = [""median_house_value"", ""latitude"", ""longitude"", ""ocean_proximity"", ""housing_median_age"",
+                    ""rooms_per_household"", ""people_per_household"", ""total_rooms"", ""total_bedrooms"", ""population"", ""households""]
+
+    for _, row in top_bins.iterrows():
+        income_bin = row[""income_bin""]
+        subset = df[df[""income_bin""] == income_bin].copy()
+
+        # get top and bottom examples by median_house_value
+        top_examples_df = subset.nlargest(3, ""median_house_value"")[example_cols].fillna(value=pd.NA)
+        bot_examples_df = subset.nsmallest(3, ""median_house_value"")[example_cols].fillna(value=pd.NA)
+
+        # Convert example rows to list of dicts
+        top_examples = top_examples_df.to_dict(orient=""records"")
+        bot_examples = bot_examples_df.to_dict(orient=""records"")
+
+        # Infer plausible factors by comparing aggregated features of top vs bottom examples
+        inferred = []
+
+        # ocean_proximity: check dominant categories
+        if ""ocean_proximity"" in subset.columns:
+            top_mode = top_examples_df[""ocean_proximity""].mode()
+            bot_mode = bot_examples_df[""ocean_proximity""].mode()
+            top_mode_val = top_mode.iloc[0] if not top_mode.empty else None
+            bot_mode_val = bot_mode.iloc[0] if not bot_mode.empty else None
+            if top_mode_val != bot_mode_val:
+                inferred.append(f""Different proximity to ocean: top examples often '{top_mode_val}', bottom often '{bot_mode_val}'"")
+
+        # housing_median_age difference
+        if ""housing_median_age"" in subset.columns:
+            top_age = pd.to_numeric(top_examples_df[""housing_median_age""], errors=""coerce"").mean()
+            bot_age = pd.to_numeric(bot_examples_df[""housing_median_age""], errors=""coerce"").mean()
+            if pd.notna(top_age) and pd.notna(bot_age):
+                diff_age = top_age - bot_age
+                if abs(diff_age) >= 8:
+                    direction = ""older"" if diff_age > 0 else ""younger""
+                    inferred.append(f""Significant age difference: top examples are on average {abs(diff_age):.1f} years {direction} than bottom"")
+
+        # rooms per household difference
+        if ""rooms_per_household"" in subset.columns:
+            top_rph = pd.to_numeric(top_examples_df[""rooms_per_household""], errors=""coerce"").mean()
+            bot_rph = pd.to_numeric(bot_examples_df[""rooms_per_household""], errors=""coerce"").mean()
+            if pd.notna(top_rph) and pd.notna(bot_rph):
+                diff_rph = top_rph - bot_rph
+                if abs(diff_rph) >= 0.5:
+                    inferred.append(f""Different average rooms per household: top {top_rph:.2f} vs bottom {bot_rph:.2f}"")
+
+        # people per household / density difference
+        if ""people_per_household"" in subset.columns:
+            top_pph = pd.to_numeric(top_examples_df[""people_per_household""], errors=""coerce"").mean()
+            bot_pph = pd.to_numeric(bot_examples_df[""people_per_household""], errors=""coerce"").mean()
+            if pd.notna(top_pph) and pd.notna(bot_pph):
+                diff_pph = top_pph - bot_pph
+                if abs(diff_pph) >= 0.5:
+                    inferred.append(f""Different people per household: top {top_pph:.2f} vs bottom {bot_pph:.2f}"")
+
+        # Geographic center difference (latitude/longitude)
+        if {""latitude"", ""longitude""}.issubset(subset.columns):
+            top_lat = pd.to_numeric(top_examples_df[""latitude""], errors=""coerce"").mean()
+            bot_lat = pd.to_numeric(bot_examples_df[""latitude""], errors=""coerce"").mean()
+            top_lon = pd.to_numeric(top_examples_df[""longitude""], errors=""coerce"").mean()
+            bot_lon = pd.to_numeric(bot_examples_df[""longitude""], errors=""coerce"").mean()
+            if pd.notna(top_lat) and pd.notna(bot_lat) and pd.notna(top_lon) and pd.notna(bot_lon):
+                lat_diff = abs(top_lat - bot_lat)
+                lon_diff = abs(top_lon - bot_lon)
+                if lat_diff >= 0.5 or lon_diff >= 0.5:
+                    inferred.append(f""Geographic separation (lat/lon difference ~ {lat_diff:.2f}/{lon_diff:.2f}) suggests location-driven value differences"")
+
+        # Fallback inference if none detected
+        if not inferred:
+            inferred.append(""No single dominant factor detected from available columns; likely local location/amenity differences (e.g., school districts, proximity to jobs/transit, view)"")
+
+        summary_rows.append({
+            ""income_bin"": income_bin,
+            ""count_in_bin"": int(row[""count""]),
+            ""min_house_value"": float(row[""min""]),
+            ""median_house_value"": float(row[""median""]),
+            ""max_house_value"": float(row[""max""]),
+            ""range"": float(row[""range""]),
+            ""range_ratio"": float(row[""range_ratio""]) if pd.notna(row[""range_ratio""]) else pd.NA,
+            ""top_examples"": top_examples,
+            ""bottom_examples"": bot_examples,
+            ""inferred_factors"": inferred
+        })
+
+    # Build final DataFrame result
+    result = pd.DataFrame(summary_rows)","Rows with income_bin 2.3, 2.4, 2.6 and 2.7 show similar median incomes but markedly different median house values. The dataset's inferred_factors point to ""Different proximity to ocean"" as the primary explanation — coastal locations with comparable incomes have much higher house values than inland peers. (A lower-income row at income_bin 1.9 is also present but not part of that similar-income group.)"
