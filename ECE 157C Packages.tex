@@ -1,0 +1,30 @@
+\usepackage[letterpaper, scale=0.92, centering]{geometry}
+\usepackage{amssymb,amsmath,pifont,amsfonts,comment,enumerate}
+\usepackage{currfile,xstring,hyperref,tabularx,graphicx,wasysym}
+\usepackage{caption}
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{multicol,multirow,array,listings,tabularx,lastpage,textcomp,booktabs}
+
+\usepackage{enumitem}
+\usepackage{subcaption}
+\usepackage{minted}
+
+\setlength{\parindent}{0em}
+\setlength{\parskip}{1em}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,%blue,
+    filecolor=black,%magenta,      
+    urlcolor=black,%cyan,
+    pdftitle={Sharelatex Example},
+    pdfpagemode=FullScreen
+}
+
+\captionsetup{hypcap=false}
+
+\newcommand{\review}[0]{\textcolor{red}{REVIEW THIS}}
+\newcommand{\chap}[1]{\chapter*{#1}\addcontentsline{toc}{chapter}{#1}}
+\newcommand{\sect}[1]{\section*{#1}\addcontentsline{toc}{section}{#1}}
+\newcommand{\subsect}[1]{\subsection*{#1}\addcontentsline{toc}{subsection}{#1}}
+\newcommand{\subsubsect}[1]{\subsubsection*{#1}\addcontentsline{toc}{subsubsection}{#1}}
