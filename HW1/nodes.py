@@ -9,18 +9,71 @@ LangGraph merges the returned dict back into state automatically.
 import os
 import re
 import traceback
+import pandas as pd
 from openai import OpenAI
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 MODEL = "gpt-5-mini"  # gpt-4o?
 
 
-def call_llm(messages):
+def call_llm(messages: list) -> str:
     return (
         client.chat.completions.create(model=MODEL, messages=messages)
         .choices[0]
         .message.content.strip()
     )
+
+
+# ---------------------------------------------------------------------------
+# Summarize node  (runs once before codegen)
+# ---------------------------------------------------------------------------
+
+
+def _build_csv_summary(csv_path: str) -> str:
+    """
+    Read the CSV and return a compact summary string:
+      - shape
+      - column names + dtypes
+      - first 3 rows
+      - numeric describe() (count/mean/std/min/max only)
+      - null counts for columns that have any nulls
+    """
+    df = pd.read_csv(csv_path)
+    rows, cols = df.shape
+
+    lines = [
+        f"Shape: {rows} rows x {cols} columns",
+        "",
+        "Columns and dtypes:",
+    ]
+    for col, dtype in df.dtypes.items():
+        lines.append(f"  {col!r}: {dtype}")
+
+    lines += ["", "First 3 rows:", df.head(3).to_string(index=False)]
+
+    numeric_df = df.select_dtypes(include="number")
+    if not numeric_df.empty:
+        stats = numeric_df.describe().loc[["count", "mean", "std", "min", "max"]]
+        lines += ["", "Numeric statistics:", stats.to_string()]
+
+    null_counts = df.isnull().sum()
+    null_counts = null_counts[null_counts > 0]
+    if not null_counts.empty:
+        lines += ["", "Columns with null values:", null_counts.to_string()]
+
+    return "\n".join(lines)
+
+
+# Cache so we don't re-read the CSV on retries within the same process.
+_summary_cache: dict[str, str] = {}
+
+
+def summarize_node(state: dict) -> dict:
+    """Load the CSV and build a summary stored in state['csv_summary']."""
+    csv_path = state["csv_path"]
+    if csv_path not in _summary_cache:
+        _summary_cache[csv_path] = _build_csv_summary(csv_path)
+    return {"csv_summary": _summary_cache[csv_path]}
 
 
 # ---------------------------------------------------------------------------
@@ -32,7 +85,7 @@ Your job is to write a self-contained Python script that answers a question
 about a CSV file.
 
 Rules (follow exactly):
-1. Use pandas to read the CSV from the path provided.
+1. Use pandas to read the CSV from the exact path provided.
 2. Store the final answer in a variable called `result`.
    `result` must be a pandas DataFrame, a pandas Series, a scalar, or a
    plain Python list/dict — something that can be printed or described.
@@ -40,9 +93,14 @@ Rules (follow exactly):
 4. Do NOT include any import statements other than `import pandas as pd`
    and standard library modules.
 5. Return ONLY raw Python code — no markdown fences, no explanation.
+6. Use the dataset summary below to write correct column names and handle
+   known null values or dtype quirks.
 """
 
 CODEGEN_USER = """CSV path: {csv_path}
+
+Dataset summary:
+{csv_summary}
 
 Question: {question}
 
@@ -53,6 +111,7 @@ def codegen_node(state: dict) -> dict:
     """Call the LLM to generate pandas code that answers the question."""
     prompt = CODEGEN_USER.format(
         csv_path=state["csv_path"],
+        csv_summary=state.get("csv_summary", "(no summary available)"),
         question=state["question"],
     )
     code = call_llm(
@@ -118,7 +177,7 @@ Verdict (PASS or FAIL):"""
 
 def evaluate_node(state: dict) -> dict:
     """Ask the LLM to judge whether the execution result answers the question."""
-    result_str = str(state.get("execution_result", ""))[:3000]  # trim huge outputs
+    result_str = str(state.get("execution_result", ""))[:3000]
     error_str = str(state.get("execution_error", "None"))
 
     verdict = call_llm(
@@ -143,8 +202,8 @@ def evaluate_node(state: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 RESPOND_SYSTEM = """You are a clear, concise data analyst.
-Given a question and the raw execution result from a pandas analysis,
-write a final human-readable answer.
+Given a question, the raw execution result from a pandas analysis, and a
+summary of the dataset, write a final human-readable answer.
 
 Rules:
 - Answer only from the execution result — do not invent numbers.
@@ -153,7 +212,10 @@ Rules:
 - Do not mention Python, pandas, or code.
 """
 
-RESPOND_USER = """Question: {question}
+RESPOND_USER = """Dataset summary:
+{csv_summary}
+
+Question: {question}
 
 Execution result:
 {execution_result}
@@ -171,6 +233,7 @@ def respond_node(state: dict) -> dict:
             {
                 "role": "user",
                 "content": RESPOND_USER.format(
+                    csv_summary=state.get("csv_summary", "(no summary available)"),
                     question=state["question"],
                     execution_result=result_str,
                 ),
