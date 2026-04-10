@@ -26,20 +26,22 @@ from nodes import codegen_node, execute_node, evaluate_node, respond_node
 # State schema
 # ---------------------------------------------------------------------------
 
+
 class AgentState(TypedDict, total=False):
-    question:         str
-    csv_path:         str
-    generated_code:   str
+    question: str
+    csv_path: str
+    generated_code: str
     execution_result: Any
-    execution_error:  Optional[str]
-    evaluation:       str
-    final_answer:     str
-    retry_count:      int
+    execution_error: Optional[str]
+    evaluation: str
+    final_answer: str
+    retry_count: int
 
 
 # ---------------------------------------------------------------------------
 # Routing logic
 # ---------------------------------------------------------------------------
+
 
 def route_after_evaluate(state: AgentState) -> str:
     """
@@ -52,7 +54,7 @@ def route_after_evaluate(state: AgentState) -> str:
         return "respond"
     if state.get("retry_count", 0) < 1:
         return "retry"
-    return "respond"   # give up gracefully after one retry
+    return "respond"  # give up gracefully after one retry
 
 
 def increment_retry(state: AgentState) -> AgentState:
@@ -64,22 +66,23 @@ def increment_retry(state: AgentState) -> AgentState:
 # Build the graph
 # ---------------------------------------------------------------------------
 
+
 def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
 
     # Register nodes
-    graph.add_node("codegen",  codegen_node)
-    graph.add_node("execute",  execute_node)
+    graph.add_node("codegen", codegen_node)
+    graph.add_node("execute", execute_node)
     graph.add_node("evaluate", evaluate_node)
-    graph.add_node("respond",  respond_node)
-    graph.add_node("retry",    increment_retry)   # bookkeeping only
+    graph.add_node("respond", respond_node)
+    graph.add_node("retry", increment_retry)  # bookkeeping only
 
     # Entry point
     graph.set_entry_point("codegen")
 
     # Linear edges
-    graph.add_edge("codegen",  "execute")
-    graph.add_edge("execute",  "evaluate")
+    graph.add_edge("codegen", "execute")
+    graph.add_edge("execute", "evaluate")
 
     # Conditional edge after evaluate
     graph.add_conditional_edges(
@@ -87,12 +90,12 @@ def build_graph() -> StateGraph:
         route_after_evaluate,
         {
             "respond": "respond",
-            "retry":   "retry",
+            "retry": "retry",
         },
     )
 
     # Retry loops back to codegen (LLM will try again with a fresh call)
-    graph.add_edge("retry",   "codegen")
+    graph.add_edge("retry", "codegen")
 
     # Terminal edge
     graph.add_edge("respond", END)

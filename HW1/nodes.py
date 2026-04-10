@@ -12,7 +12,15 @@ import traceback
 from openai import OpenAI
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-MODEL = "gpt-5-mini" # gpt-4o?
+MODEL = "gpt-5-mini"  # gpt-4o?
+
+
+def call_llm(messages):
+    return (
+        client.chat.completions.create(model=MODEL, messages=messages)
+        .choices[0]
+        .message.content.strip()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -47,18 +55,15 @@ def codegen_node(state: dict) -> dict:
         csv_path=state["csv_path"],
         question=state["question"],
     )
-    response = client.chat.completions.create(
-        model=MODEL,
+    code = call_llm(
         messages=[
             {"role": "system", "content": CODEGEN_SYSTEM},
-            {"role": "user",   "content": prompt},
-        ],
+            {"role": "user", "content": prompt},
+        ]
     )
-    code = response.choices[0].message.content.strip()
     # Strip accidental markdown fences if the model disobeys
     code = re.sub(r"^```(?:python)?\n?", "", code)
     code = re.sub(r"\n?```$", "", code)
-    print({"generated_code": code})
     return {"generated_code": code}
 
 
@@ -66,23 +71,20 @@ def codegen_node(state: dict) -> dict:
 # Execute node
 # ---------------------------------------------------------------------------
 
+
 def execute_node(state: dict) -> dict:
     """Run the generated code with exec() and capture `result`."""
     env: dict = {}
     try:
-        exec(state["generated_code"], env)          # noqa: S102
+        exec(state["generated_code"], env)  # noqa: S102
         execution_result = env.get("result", None)
-        execution_error  = None
+        execution_error = None
     except Exception:
         execution_result = None
-        execution_error  = traceback.format_exc()
-    print({
-        "execution_result": execution_result,
-        "execution_error":  execution_error,
-    })
+        execution_error = traceback.format_exc()
     return {
         "execution_result": execution_result,
-        "execution_error":  execution_error,
+        "execution_error": execution_error,
     }
 
 
@@ -116,23 +118,23 @@ Verdict (PASS or FAIL):"""
 
 def evaluate_node(state: dict) -> dict:
     """Ask the LLM to judge whether the execution result answers the question."""
-    result_str = str(state.get("execution_result", ""))[:3000]   # trim huge outputs
-    error_str  = str(state.get("execution_error",  "None"))
+    result_str = str(state.get("execution_result", ""))[:3000]  # trim huge outputs
+    error_str = str(state.get("execution_error", "None"))
 
-    response = client.chat.completions.create(
-        model=MODEL,
+    verdict = call_llm(
         messages=[
             {"role": "system", "content": EVALUATE_SYSTEM},
-            {"role": "user",   "content": EVALUATE_USER.format(
-                question=state["question"],
-                execution_result=result_str,
-                execution_error=error_str,
-            )},
-        ],
-    )
-    verdict = response.choices[0].message.content.strip().upper()
+            {
+                "role": "user",
+                "content": EVALUATE_USER.format(
+                    question=state["question"],
+                    execution_result=result_str,
+                    execution_error=error_str,
+                ),
+            },
+        ]
+    ).upper()
     verdict = "PASS" if "PASS" in verdict else "FAIL"
-    print({"evaluation": verdict})
     return {"evaluation": verdict}
 
 
@@ -163,15 +165,16 @@ def respond_node(state: dict) -> dict:
     """Generate a human-readable final answer from the execution result."""
     result_str = str(state.get("execution_result", "No result available."))[:3000]
 
-    response = client.chat.completions.create(
-        model=MODEL,
+    final_answer = call_llm(
         messages=[
             {"role": "system", "content": RESPOND_SYSTEM},
-            {"role": "user",   "content": RESPOND_USER.format(
-                question=state["question"],
-                execution_result=result_str,
-            )},
-        ],
+            {
+                "role": "user",
+                "content": RESPOND_USER.format(
+                    question=state["question"],
+                    execution_result=result_str,
+                ),
+            },
+        ]
     )
-    print({"final_answer": response.choices[0].message.content.strip()})
-    return {"final_answer": response.choices[0].message.content.strip()}
+    return {"final_answer": final_answer}

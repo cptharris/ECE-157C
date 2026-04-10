@@ -17,6 +17,7 @@ from agent import app
 # Required function (signature fixed by assignment)
 # ---------------------------------------------------------------------------
 
+
 def run_agent(question: str, csv_path: str) -> dict:
     """
     Run the CSV question-answering agent.
@@ -37,17 +38,18 @@ def run_agent(question: str, csv_path: str) -> dict:
         final_answer     : str
     """
     initial_state = {
-        "question":    question,
-        "csv_path":    csv_path,
+        "question": question,
+        "csv_path": csv_path,
         "retry_count": 0,
     }
     final_state = app.invoke(initial_state)
 
     return {
-        "generated_code":   final_state.get("generated_code",   ""),
+        "generated_code": final_state.get("generated_code", ""),
         "execution_result": final_state.get("execution_result", None),
-        "evaluation":       final_state.get("evaluation",       "FAIL"),
-        "final_answer":     final_state.get("final_answer",     ""),
+        "execution_error": final_state.get("execution_error", None),
+        "evaluation": final_state.get("evaluation", "FAIL"),
+        "final_answer": final_state.get("final_answer", ""),
     }
 
 
@@ -97,6 +99,7 @@ CUSTOM_QUESTIONS = [
 # Runner
 # ---------------------------------------------------------------------------
 
+
 def run_all(output_csv: str = "results.csv") -> None:
     """Run all questions and write results to results.csv."""
     rows = []
@@ -108,21 +111,33 @@ def run_all(output_csv: str = "results.csv") -> None:
 
     for csv_path, question in all_tasks:
         dataset_name = os.path.splitext(os.path.basename(csv_path))[0]
-        print(f"\n{'='*60}")
+        print(f"\n\n{'='*100}\n\n")
         print(f"Dataset : {dataset_name}")
-        print(f"Question: {question}")
+        print(f"Question: {question}\n\n")
 
         result = run_agent(question, csv_path)
 
-        print(f"Eval    : {result['evaluation']}")
-        print(f"Answer  : {result['final_answer'][:120]}...")
+        print(f"Code    : ")
+        print(f"\n\n{'='*50}\n\n")
+        print(f"{result['generated_code']}")
+        print(f"\n\n{'='*50}\n\n")
 
-        rows.append({
-            "dataset_name":   dataset_name,
-            "question":       question,
-            "generated_code": result["generated_code"],
-            "final_answer":   result["final_answer"],
-        })
+        print(f"Exec    : ")
+        print(f"\n\n{'='*50}\n\n")
+        print(f"{result['execution_result']}")
+        print(f"\n\n{'='*50}\n\n")
+
+        print(f"Eval    : {result['evaluation']}")
+        print(f"Answer  : {result['final_answer']}...")
+
+        rows.append(
+            {
+                "dataset_name": dataset_name,
+                "question": question,
+                "generated_code": result["generated_code"],
+                "final_answer": result["final_answer"],
+            }
+        )
 
     # Write results.csv
     fieldnames = ["dataset_name", "question", "generated_code", "final_answer"]
