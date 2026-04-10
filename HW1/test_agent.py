@@ -34,6 +34,7 @@ def run_agent(question: str, csv_path: str) -> dict:
     dict with keys:
         generated_code   : str
         execution_result : object
+        execution_error  : str | None
         evaluation       : "PASS" or "FAIL"
         final_answer     : str
     """
@@ -106,7 +107,7 @@ def run_all(output_csv: str = "results.csv") -> None:
 
     all_tasks = (
         [(HOUSING_CSV, q) for q in HOUSING_QUESTIONS]
-        # + [(CUSTOM_CSV,  q) for q in CUSTOM_QUESTIONS]
+        # + [(CUSTOM_CSV, q) for q in CUSTOM_QUESTIONS]
     )
 
     for csv_path, question in all_tasks:
@@ -118,10 +119,10 @@ def run_all(output_csv: str = "results.csv") -> None:
         result = run_agent(question, csv_path)
 
         print(f"\n\n{'='*23} Code {'='*23}\n\n")
-        print(f"{result['generated_code']}")
+        print(result["generated_code"])
 
         print(f"\n\n{'='*17} Execution Result {'='*17}\n\n")
-        print(f"{result['execution_result']}")
+        print(result["execution_result"])
 
         print(f"\n\n{'='*20} Evaluation {'='*20}\n\n")
         print(f"Eval    : {result['evaluation']}")
