@@ -89,7 +89,7 @@ CUSTOM_QUESTIONS = [
     # Advanced
     "Identify the top 10 most popular tracks and analyze what audio features (energy, danceability, valence, tempo) they share. Do popular tracks cluster around specific feature ranges?",
     "Find genres where high acousticness (>0.7) coexists with high popularity (>60). What characteristics do these genres share, and what might explain the combination?",
-    "Identify pairs of genres with similar average tempo and energy but significantly different average popularity. What other features might explain the popularity gap?",
+    "Find genre pairs where average tempo differs by less than 5 BPM and average energy differs by less than 0.05, but average popularity differs by more than 15 points. For each pair, identify which audio features (danceability, acousticness, speechiness, instrumentalness, valence) show the largest differences.",
 ]
 
 
@@ -103,7 +103,7 @@ def run_all(output_csv: str = "results.csv") -> None:
     rows = []
 
     all_tasks = (
-        # [(HOUSING_CSV, q) for q in HOUSING_QUESTIONS] +
+        [(HOUSING_CSV, q) for q in HOUSING_QUESTIONS] +
         [(CUSTOM_CSV, q) for q in CUSTOM_QUESTIONS]
     )
 
