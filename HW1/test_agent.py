@@ -77,22 +77,19 @@ HOUSING_QUESTIONS = [
 
 CUSTOM_CSV = "custom_dataset.csv"
 
-# TODO: replace these placeholders with your real custom questions once you
-#       have chosen your dataset.  Keep the same 3/3/3 simple/inter/advanced
-#       split required by the assignment.
 CUSTOM_QUESTIONS = [
     # Simple
-    "TODO: simple question 1",
-    "TODO: simple question 2",
-    "TODO: simple question 3",
+    "What is the average popularity score across all tracks in the dataset?",
+    "Which track genre has the highest average danceability?",
+    "What percentage of tracks in the dataset are marked as explicit?",
     # Intermediate
-    "TODO: intermediate question 1",
-    "TODO: intermediate question 2",
-    "TODO: intermediate question 3",
+    "How does average energy level differ across the top 10 most common genres?",
+    "Is there a relationship between tempo and danceability? Bin tempo into slow (<90 BPM), medium (90–130 BPM), and fast (>130 BPM) and compare average danceability across bins.",
+    "Which genres have the highest average valence (musical positivity), and how does that compare to their average popularity?",
     # Advanced
-    "TODO: advanced question 1",
-    "TODO: advanced question 2",
-    "TODO: advanced question 3",
+    "Identify the top 10 most popular tracks and analyze what audio features (energy, danceability, valence, tempo) they share. Do popular tracks cluster around specific feature ranges?",
+    "Find genres where high acousticness (>0.7) coexists with high popularity (>60). What characteristics do these genres share, and what might explain the combination?",
+    "Identify pairs of genres with similar average tempo and energy but significantly different average popularity. What other features might explain the popularity gap?",
 ]
 
 
@@ -106,8 +103,8 @@ def run_all(output_csv: str = "results.csv") -> None:
     rows = []
 
     all_tasks = (
-        [(HOUSING_CSV, q) for q in HOUSING_QUESTIONS]
-        # + [(CUSTOM_CSV, q) for q in CUSTOM_QUESTIONS]
+        # [(HOUSING_CSV, q) for q in HOUSING_QUESTIONS] +
+        [(CUSTOM_CSV, q) for q in CUSTOM_QUESTIONS]
     )
 
     for csv_path, question in all_tasks:
