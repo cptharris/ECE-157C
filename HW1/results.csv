@@ -366,3 +366,396 @@ result = {
 }","Areas grouped by ocean_proximity show large house-value differences within the same income bins. The biggest spreads are in Q2 (value range 316,500) — e.g., ISLAND 414,700 vs INLAND 98,200 (Q2 medians); Q5_high (range 176,600; INLAND 222,400 vs NEAR OCEAN 399,000) and Q4 (range 125,800; INLAND 146,400 vs NEAR OCEAN 272,200).
 
 Explaining factors (top correlations in those bins): housing_median_age (positive, ~0.32 in Q4 and Q5_high), bedrooms_per_room (positive 0.35 in Q2; 0.23 in Q4), population_per_household (negative −0.36 in Q4, −0.23 in Q2), and location (latitude/longitude show notable correlations). In short: proximity to ocean/island location, housing age, unit layout (bedrooms/rooms), and household crowding drive value differences despite similar incomes."
+dataset_name,question,generated_code,final_answer
+custom_dataset,What is the average popularity score across all tracks in the dataset?,"import pandas as pd
+
+df = pd.read_csv(""custom_dataset.csv"")
+# Ensure popularity is numeric (handle any unexpected non-numeric entries)
+df[""popularity""] = pd.to_numeric(df[""popularity""], errors=""coerce"")
+result = df[""popularity""].mean()",The average popularity score across all tracks is 32.8416.
+custom_dataset,Which track genre has the highest average danceability?,"import pandas as pd
+
+df = pd.read_csv(""custom_dataset.csv"")
+means = df.groupby('track_genre', dropna=True)['danceability'].mean()
+max_genre = means.idxmax()
+max_value = float(means.loc[max_genre])
+result = {'track_genre': max_genre, 'avg_danceability': max_value}","Reggae has the highest average danceability, with an average danceability of 0.768025."
+custom_dataset,What percentage of tracks in the dataset are marked as explicit?,"import pandas as pd
+
+df = pd.read_csv(""custom_dataset.csv"")
+
+s = df[""explicit""]
+
+# Coerce to nullable boolean if not already boolean-like
+if not pd.api.types.is_bool_dtype(s) and str(s.dtype) != ""boolean"":
+    s = s.astype(""string"").str.lower().map({""true"": True, ""false"": False, ""1"": True, ""0"": False, ""yes"": True, ""no"": False})
+
+s = s.astype(""boolean"")
+
+# percentage of tracks marked explicit (0-100)
+result = round(float(s.mean() * 100), 2)",8.02% of the tracks in the dataset are marked as explicit.
+custom_dataset,How does average energy level differ across the top 10 most common genres?,"import pandas as pd
+
+df = pd.read_csv('custom_dataset.csv')
+
+# Ensure we treat missing genres consistently
+genre_counts = df['track_genre'].dropna().value_counts()
+top10 = genre_counts.head(10)
+
+# Compute mean energy for those top 10 genres
+mean_energy = (
+    df[df['track_genre'].isin(top10.index)]
+    .groupby('track_genre', observed=True)['energy']
+    .mean()
+)
+
+# Combine counts and mean energy into a single DataFrame
+result = (
+    pd.DataFrame({'track_genre': top10.index, 'count': top10.values})
+    .merge(mean_energy.rename('mean_energy').reset_index(), on='track_genre')
+)","Among the top 10 genres, average energy ranges from 0.347 to 0.938. Ranked by mean energy (with sample size): 
+1) grindcore 0.938 (n=67), 2) black-metal 0.880 (n=61), 3) industrial 0.845 (n=55), 4) house 0.762 (n=56), 5) j-dance 0.715 (n=57), 6) samba 0.708 (n=57), 7) country 0.635 (n=53), 8) pop-film 0.600 (n=55), 9) idm 0.585 (n=55), 10) tango 0.347 (n=53). High-energy genres (≥0.84) are grindcore, black-metal, industrial; lowest is tango."
+custom_dataset,"Is there a relationship between tempo and danceability? Bin tempo into slow (<90 BPM), medium (90–130 BPM), and fast (>130 BPM) and compare average danceability across bins.","import pandas as pd
+
+df = pd.read_csv(""custom_dataset.csv"")
+
+# Bin tempo: slow (<90), medium (90–130 inclusive), fast (>130)
+df['tempo_bin'] = 'medium'
+df.loc[df['tempo'] < 90, 'tempo_bin'] = 'slow'
+df.loc[df['tempo'] > 130, 'tempo_bin'] = 'fast'
+df['tempo_bin'] = pd.Categorical(df['tempo_bin'], categories=['slow', 'medium', 'fast'], ordered=True)
+
+# Compute average danceability (with count and std) per bin
+result = df.groupby('tempo_bin').agg(
+    mean_danceability=('danceability', 'mean'),
+    count=('danceability', 'count'),
+    std_danceability=('danceability', 'std')
+).reset_index()
+
+# Round numeric summaries for readability
+result['mean_danceability'] = result['mean_danceability'].round(4)
+result['std_danceability'] = result['std_danceability'].round(4)","Yes — medium-tempo tracks show the highest average danceability. Mean danceability by bin: medium 0.6177 (n=2,439, std=0.1608), fast 0.5226 (n=1,853, std=0.1621), slow 0.4774 (n=708, std=0.1902). Medium tracks are substantially more danceable on average than fast or slow tracks."
+custom_dataset,"Which genres have the highest average valence (musical positivity), and how does that compare to their average popularity?","import pandas as pd
+
+df = pd.read_csv('custom_dataset.csv')
+
+# Ensure numeric types for valence and popularity, coerce errors to NaN
+df['valence'] = pd.to_numeric(df['valence'], errors='coerce')
+df['popularity'] = pd.to_numeric(df['popularity'], errors='coerce')
+
+# Aggregate by genre: mean valence, mean popularity, and count of tracks
+genre_stats = (
+    df.dropna(subset=['track_genre', 'valence', 'popularity'])
+      .groupby('track_genre')
+      .agg(
+          avg_valence=('valence', 'mean'),
+          avg_popularity=('popularity', 'mean'),
+          track_count=('track_id', 'count')
+      )
+      .sort_values('avg_valence', ascending=False)
+)
+
+# Round for readability and return the top genres by average valence
+result = genre_stats.round({'avg_valence': 4, 'avg_popularity': 2}).head(10)","Top genres by average valence (with avg popularity and track count):
+1. Salsa — valence 0.8289, popularity 28.36 (36 tracks)
+2. Disco — valence 0.7523, popularity 29.67 (43)
+3. Forro — valence 0.7392, popularity 42.32 (37)
+4. Reggae — valence 0.7131, popularity 20.92 (40)
+5. Afrobeat — valence 0.7035, popularity 22.49 (45)
+6. Children — valence 0.6967, popularity 36.37 (46)
+7. Latin — valence 0.6905, popularity 10.32 (37)
+8. Rockabilly — valence 0.6857, popularity 34.57 (44)
+9. Ska — valence 0.6831, popularity 36.61 (31)
+10. Rock-n-roll — valence 0.6720, popularity 39.14 (44)
+
+Note: higher valence does not always mean higher popularity — salsa has the highest valence but moderate popularity, while forro pairs high valence with the highest popularity among these."
+custom_dataset,"Identify the top 10 most popular tracks and analyze what audio features (energy, danceability, valence, tempo) they share. Do popular tracks cluster around specific feature ranges?","import pandas as pd
+
+# Read the CSV
+df = pd.read_csv(""custom_dataset.csv"")
+
+# Ensure expected columns exist
+features = [""energy"", ""danceability"", ""valence"", ""tempo""]
+id_cols = [""track_id"", ""artists"", ""track_name"", ""album_name"", ""popularity""]
+
+# Select top 10 most popular tracks (ties resolved by original order after sorting)
+top10_df = df.sort_values(""popularity"", ascending=False).head(10)[id_cols + features].reset_index(drop=True)
+
+# Summary statistics for the selected features for top 10
+top10_stats = top10_df[features].agg([""mean"", ""median"", ""std"", ""min"", ""max""]).transpose()
+top10_stats = top10_stats.rename(columns={
+    ""mean"": ""top10_mean"",
+    ""median"": ""top10_median"",
+    ""std"": ""top10_std"",
+    ""min"": ""top10_min"",
+    ""max"": ""top10_max""
+})
+
+# Overall dataset statistics for the same features
+overall_stats = df[features].agg([""mean"", ""median"", ""std"", ""min"", ""max""]).transpose()
+overall_stats = overall_stats.rename(columns={
+    ""mean"": ""overall_mean"",
+    ""median"": ""overall_median"",
+    ""std"": ""overall_std"",
+    ""min"": ""overall_min"",
+    ""max"": ""overall_max""
+})
+
+# Overall quantiles (25th, 50th, 75th)
+overall_quants = df[features].quantile([0.25, 0.5, 0.75]).transpose()
+overall_quants = overall_quants.rename(columns={0.25: ""q25"", 0.5: ""q50"", 0.75: ""q75""})
+
+# Compute percentile rank of the top10 mean within the overall distribution for each feature
+mean_percentile = {}
+for f in features:
+    mean_val = top10_stats.loc[f, ""top10_mean""]
+    # fraction of values <= mean_val
+    pct = (df[f] <= mean_val).mean()
+    mean_percentile[f] = pct
+
+mean_percentile_series = pd.Series(mean_percentile).rename(""top10_mean_percentile"")
+
+# Compute top10 range and overall IQR, and decide if top10 values are tightly clustered relative to IQR
+cluster_info = {}
+for f in features:
+    top_range = top10_stats.loc[f, ""top10_max""] - top10_stats.loc[f, ""top10_min""]
+    iqr = overall_quants.loc[f, ""q75""] - overall_quants.loc[f, ""q25""]
+    # Decide clustering: top10 range less than half of overall IQR -> ""tight cluster""
+    tight = bool(top_range < 0.5 * iqr) if pd.notnull(iqr) else False
+    cluster_info[f] = {""top10_range"": top_range, ""overall_IQR"": iqr, ""tight_cluster"": tight}
+
+cluster_info_df = pd.DataFrame(cluster_info).T
+
+# Aggregate comparison table
+comparison = pd.concat([top10_stats[""top10_mean""], overall_stats[""overall_mean""]], axis=1)
+comparison[""top10_mean_percentile""] = mean_percentile_series
+comparison = pd.concat([comparison, cluster_info_df], axis=1)
+comparison = comparison.reset_index().rename(columns={""index"": ""feature""})
+
+# Prepare final result as a dict containing useful artifacts for interpretation
+result = {
+    ""top10_tracks"": top10_df,                     # DataFrame of the top 10 tracks with key audio features
+    ""top10_feature_stats"": top10_stats,           # Stats for features among top10
+    ""overall_feature_stats"": overall_stats,       # Stats for features in whole dataset
+    ""overall_feature_quartiles"": overall_quants,  # 25/50/75 percentiles for overall dataset
+    ""comparison"": comparison,                     # Combined comparison and clustering indicators
+    ""notes"": {
+        ""clustering_rule"": ""top10 range < 0.5 * overall IQR indicates a tight cluster"",
+        ""percentile_explanation"": ""top10_mean_percentile is fraction of dataset <= top10 mean (0..1)""
+    }
+}","Top 10 tracks (examples): Tom Odell; two Arctic Monkeys entries; Bad Bunny (with Rauw Alejandro and with J Balvin); Harry Styles; Calvin Harris & Dua Lipa; Olivia Rodrigo; Chris Jedi et al.; Paloma Faith.
+
+Key feature summary (top‑10 vs overall):
+- Energy mean 0.7104 (median 0.8075), overall mean 0.6460; top10 at the ~53rd percentile. Top10 range 0.417–0.885.
+- Danceability mean 0.6279 (median 0.5635), overall mean 0.5626; top10 at the ~61st percentile. Range 0.445–0.829.
+- Valence mean 0.4117 (median 0.4500), overall mean 0.4696; top10 at the ~45th percentile. Range 0.131–0.769.
+- Tempo mean 122.79 (median 123.38), nearly identical to overall mean 122.73; range 67.53–176.09.
+
+Conclusion: Popular tracks trend toward slightly higher energy and danceability but similar tempo and slightly lower valence. They do not form a tight cluster—feature ranges are wide."
+custom_dataset,"Find genres where high acousticness (>0.7) coexists with high popularity (>60). What characteristics do these genres share, and what might explain the combination?","import pandas as pd
+
+# Read CSV
+df = pd.read_csv(""custom_dataset.csv"")
+
+# Filter tracks that are both highly acoustic and highly popular
+mask = (df[""acousticness""] > 0.7) & (df[""popularity""] > 60)
+df_masked = df[mask].copy()
+
+# If no rows meet criteria, prepare an informative empty result
+if df_masked.empty:
+    result = {
+        ""genre_stats"": pd.DataFrame(),
+        ""top_tracks_by_genre"": {},
+        ""explanation"": ""No tracks found with acousticness > 0.7 and popularity > 60.""
+    }
+else:
+    # Aggregate statistics per genre for the selected subset
+    agg_df = (
+        df_masked.groupby(""track_genre"")
+        .agg(
+            count=(""track_id"", ""size""),
+            mean_popularity=(""popularity"", ""mean""),
+            mean_acousticness=(""acousticness"", ""mean""),
+            mean_energy=(""energy"", ""mean""),
+            mean_danceability=(""danceability"", ""mean""),
+            mean_instrumentalness=(""instrumentalness"", ""mean""),
+            mean_liveness=(""liveness"", ""mean""),
+            mean_valence=(""valence"", ""mean""),
+            mean_tempo=(""tempo"", ""mean""),
+            mean_duration_ms=(""duration_ms"", ""mean""),
+            mean_loudness=(""loudness"", ""mean""),
+            explicit_fraction=(""explicit"", lambda x: x.mean())
+        )
+        .sort_values(""count"", ascending=False)
+    )
+
+    # Collect top 3 tracks (by popularity) for each genre to give concrete examples
+    top_tracks = {}
+    for genre, gdf in df_masked.groupby(""track_genre""):
+        top = (
+            gdf.sort_values(""popularity"", ascending=False)
+            .loc[:, [""track_name"", ""artists"", ""popularity"", ""acousticness""]]
+            .head(3)
+        )
+        # Convert to list of dicts for readability
+        top_tracks[genre] = top.to_dict(orient=""records"")
+
+    # Compute overall means (for comparison)
+    compare_cols = [
+        ""acousticness"",
+        ""energy"",
+        ""danceability"",
+        ""instrumentalness"",
+        ""liveness"",
+        ""valence"",
+        ""tempo"",
+        ""duration_ms"",
+        ""loudness"",
+    ]
+    overall_means = df[compare_cols].mean()
+
+    # Determine which features are consistently higher or lower across all found genres
+    consistent = {}
+    for col in [
+        ""mean_acousticness"",
+        ""mean_energy"",
+        ""mean_danceability"",
+        ""mean_instrumentalness"",
+        ""mean_liveness"",
+        ""mean_valence"",
+        ""mean_tempo"",
+        ""mean_duration_ms"",
+        ""mean_loudness"",
+    ]:
+        base_col = col.replace(""mean_"", """")
+        # Compare each genre mean to overall mean
+        genre_vals = agg_df[col]
+        if (genre_vals > overall_means[base_col]).all():
+            consistent[base_col] = ""consistently higher than dataset average""
+        elif (genre_vals < overall_means[base_col]).all():
+            consistent[base_col] = ""consistently lower than dataset average""
+        else:
+            consistent[base_col] = ""mixed (some above, some below dataset average)""
+
+    # Form a concise explanation using the computed patterns
+    genres_list = list(agg_df.index)
+    explanation_lines = [
+        f""Genres found with acousticness > 0.7 and popularity > 60: {', '.join(genres_list)}."",
+        f""Number of qualifying tracks per genre (see genre_stats for counts and means)."",
+        ""Common characteristic summary compared to dataset-wide averages:"",
+    ]
+    for feat, text in consistent.items():
+        explanation_lines.append(f"" - {feat}: {text}"")
+    explanation_lines.append(
+        ""Possible explanations: high acousticness with high popularity can occur for acoustic hits,""
+        "" worship or folk songs with broad audience appeal, widely promoted or playlisted acoustic versions,""
+        "" or crossover tracks (acoustic renditions by major artists). Lower energy/danceability and higher""
+        "" acoustic/instrumental content are typical; strong artist/playlist exposure explains the high popularity.""
+    )
+    explanation = ""\n"".join(explanation_lines)
+
+    result = {
+        ""genre_stats"": agg_df,
+        ""top_tracks_by_genre"": top_tracks,
+        ""overall_means_used_for_comparison"": overall_means,
+        ""explanation"": explanation,
+    }","27 genres meet the criteria. Examples with their mean popularity: indie 72.0, songwriter 73.0, pop 70.4, pop-film 70.5, rock-n-roll 70.5, electro 71.5, chill 67.6, singer-songwriter 68.0, ambient 65.0, blues 64.0, children 69.0. Mean loudness is generally low (quieter) — e.g., pop -9.9978 dB, chill -14.5428 dB, sleep -34.5773 dB — and most genres have no explicit content (explicit_fraction = 0.0); exceptions include chill and pop (0.2) and electro (0.5). Top high-acoustic, high-pop tracks include Tom Odell "Heal" (pop 74, acousticness 0.952) and Pink Sweat$ "Honesty" (70, 0.964). Likely explanations: acoustic/quiet arrangements (ballads, piano/ambient pieces) appeal broadly on playlists and to family-friendly audiences, boosting popularity."
+custom_dataset,Identify pairs of genres with similar average tempo and energy but significantly different average popularity. What other features might explain the popularity gap?,"import pandas as pd
+import itertools
+
+# Read CSV
+df = pd.read_csv(""custom_dataset.csv"")
+
+# Ensure expected dtypes (handle any quirks)
+# 'explicit' is boolean; if read differently, coerce
+if df['explicit'].dtype != bool:
+    df['explicit'] = df['explicit'].astype(bool)
+
+# Aggregate statistics by genre
+agg_funcs = {
+    'tempo': 'mean',
+    'energy': 'mean',
+    'popularity': 'mean',
+    'danceability': 'mean',
+    'acousticness': 'mean',
+    'instrumentalness': 'mean',
+    'loudness': 'mean',
+    'valence': 'mean',
+    'duration_ms': 'mean',
+    'speechiness': 'mean',
+    'liveness': 'mean',
+    'track_id': 'count',
+    'explicit': 'mean',  # proportion explicit
+    'mode': 'mean',
+    'key': 'mean',
+}
+genre_stats = df.groupby('track_genre').agg(agg_funcs).rename(columns={'track_id': 'count', 'explicit': 'explicit_prop'})
+genre_stats = genre_stats.reset_index()
+
+# Filter to genres with a reasonable sample size to avoid noise
+min_count = 20
+genre_stats = genre_stats[genre_stats['count'] >= min_count].copy()
+
+# Define tolerances for ""similar"" tempo and energy, and threshold for popularity gap
+tempo_tol = 5.0      # BPM
+energy_tol = 0.05    # energy units
+pop_gap = 20.0       # popularity points
+
+pairs = []
+features_for_explain = ['danceability','acousticness','instrumentalness','loudness','valence',
+                        'duration_ms','speechiness','liveness','explicit_prop','mode','key']
+
+# Build lookup dict for quick access
+gs = genre_stats.set_index('track_genre')
+
+genres = list(gs.index)
+
+for a, b in itertools.combinations(genres, 2):
+    tempo_a = gs.at[a, 'tempo']
+    tempo_b = gs.at[b, 'tempo']
+    energy_a = gs.at[a, 'energy']
+    energy_b = gs.at[b, 'energy']
+    pop_a = gs.at[a, 'popularity']
+    pop_b = gs.at[b, 'popularity']
+    if abs(tempo_a - tempo_b) <= tempo_tol and abs(energy_a - energy_b) <= energy_tol and abs(pop_a - pop_b) >= pop_gap:
+        # compute differences for explanatory features
+        diffs = {}
+        for f in features_for_explain:
+            diffs[f] = gs.at[a, f] - gs.at[b, f]
+        # rank features by absolute difference
+        top_features = sorted(diffs.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
+        pairs.append({
+            'genre_a': a,
+            'genre_b': b,
+            'count_a': int(gs.at[a, 'count']),
+            'count_b': int(gs.at[b, 'count']),
+            'tempo_a': tempo_a,
+            'tempo_b': tempo_b,
+            'energy_a': energy_a,
+            'energy_b': energy_b,
+            'popularity_a': pop_a,
+            'popularity_b': pop_b,
+            'popularity_diff': pop_a - pop_b,
+            'top_explanatory_diffs': top_features,
+            **{f'{f}_diff': diffs[f] for f in features_for_explain}
+        })
+
+# Convert to DataFrame and sort by absolute popularity difference descending
+pairs_df = pd.DataFrame(pairs)
+if not pairs_df.empty:
+    pairs_df = pairs_df.sort_values(by='popularity_diff', key=lambda s: s.abs(), ascending=False).reset_index(drop=True)
+
+# Store final result
+result = pairs_df","Pairs flagged by the analysis (similar tempo & energy but different popularity): 
+- iranian vs pop-film (counts 38 vs 55) 
+- iranian vs k-pop (38 vs 40) 
+- anime vs iranian (39 vs 38) 
+- iranian vs pop (38 vs 46)
+
+Other features that differ and could explain the popularity gap (values are genre_a minus genre_b): 
+- explicit_prop_diff: 0.105263 (iranian vs pop-film), 0.105263 (iranian vs k-pop), -0.105263 (anime vs iranian), 0.040046 (iranian vs pop)  
+- liveness_diff: 0.031933, -0.002271, -0.006820, 0.060093  
+- mode_diff: 0.015311, 0.103947, -0.066127, 0.057208  
+- key_diff: 0.233971, 1.615789, -0.302969, 0.011442
+
+Differences in explicit content prevalence, live/produced feel, musical mode, and average key are plausible contributors to the popularity differences."
