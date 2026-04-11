@@ -1,761 +1,662 @@
 dataset_name,question,generated_code,final_answer
 housing,What is the average median house value across the dataset?,"import pandas as pd
-
-df = pd.read_csv('housing.csv')
-result = df['median_house_value'].mean()","The average median house value across the dataset is $206,943.86."
+df = pd.read_csv(""housing.csv"")
+result = df[""median_house_value""].mean()","The average median_house_value across the dataset is 206,943.8568."
 housing,Which ocean proximity category has the highest average median house value?,"import pandas as pd
+
 df = pd.read_csv('housing.csv')
 means = df.groupby('ocean_proximity')['median_house_value'].mean()
-top_category = means.idxmax()
-top_value = means.loc[top_category]
-result = {'ocean_proximity': top_category, 'average_median_house_value': float(top_value)}","The ISLAND category has the highest average median house value: $414,700."
+best_category = means.idxmax()
+best_value = means.loc[best_category]
+result = {'ocean_proximity': best_category, 'average_median_house_value': float(best_value)}","The ISLAND category has the highest average median house value: $414,700."
 housing,"What are the minimum, maximum, and median values of median house value?","import pandas as pd
 
-df = pd.read_csv('housing.csv', skipinitialspace=True)
-col = 'median_house_value'
-series = df[col]
-result = pd.Series({'min': series.min(), 'max': series.max(), 'median': series.median()})","Median house value — min: 14999.0, median: 178750.0, max: 500001.0."
+df = pd.read_csv(""housing.csv"")
+min_val = df[""median_house_value""].min()
+max_val = df[""median_house_value""].max()
+median_val = df[""median_house_value""].median()
+
+result = {""min"": min_val, ""max"": max_val, ""median"": median_val}","Minimum median_house_value: $14,999.  
+Maximum median_house_value: $500,001.  
+Median median_house_value: $178,750."
 housing,How does median income vary across different ocean proximity categories?,"import pandas as pd
 
-df = pd.read_csv('housing.csv')
+df = pd.read_csv(""housing.csv"")
 
-result = (
-    df.groupby('ocean_proximity')['median_income']
-      .describe(percentiles=[0.25, 0.5, 0.75])
-      .loc[:, ['count', 'mean', 'std', 'min', '25%', '50%', '75%', 'max']]
-      .sort_values('mean', ascending=False)
-)","Median income is higher for ocean-adjacent categories than for inland. By mean (highest→lowest): <1H OCEAN 4.2116 (n=4,380), NEAR BAY 4.1695 (n=1,092), NEAR OCEAN 4.0414 (n=1,316), INLAND 3.1990 (n=3,211), ISLAND 2.8333 (n=1). Median (50%) follows the same pattern: <1H OCEAN 3.8284, NEAR BAY 3.7782, NEAR OCEAN 3.6543, INLAND 2.9812, ISLAND 2.8333. Inland mean is about 1.01 lower than <1H OCEAN (≈32% lower). Coastal groups also show larger spread (std ≈2.04) versus inland (std ≈1.44). Note ISLAND has only one record, so its value isn’t generalizable."
+grp = df.groupby(""ocean_proximity"", dropna=False)[""median_income""]
+result = grp.agg(
+    count=""count"",
+    mean=""mean"",
+    median=""median"",
+    std=""std"",
+    min=""min"",
+    q1=lambda x: x.quantile(0.25),
+    q3=lambda x: x.quantile(0.75),
+    max=""max"",
+).sort_values(by=""median"", ascending=False)","Median income is highest for <1H OCEAN (mean 4.2116, median 3.82835, n=4,380), followed by NEAR BAY (mean 4.1695, median 3.77815, n=1,092) and NEAR OCEAN (mean 4.0414, median 3.65430, n=1,316). INLAND values are noticeably lower (mean 3.19898, median 2.98120, n=3,211). ISLAND has a single observation (mean=median=2.83330, n=1). Coastal categories also show larger spread (std ≈ 2.01–2.08) versus INLAND (std ≈ 1.44). Quartiles reflect the same pattern: coastal q1 ≈ 2.62–2.82 and q3 ≈ 4.90–5.15, while INLAND q1=2.17205 and q3=3.95205."
 housing,Which geographic areas (based on latitude and longitude ranges) have the highest average house prices?,"import pandas as pd
+
+df = pd.read_csv(""housing.csv"")
+
+# Define number of bins for longitude and latitude to create geographic areas (grid cells)
+n_lon_bins = 10
+n_lat_bins = 10
+
+# Create bins (intervals) for longitude and latitude
+df['lon_bin'] = pd.cut(df['longitude'], bins=n_lon_bins, include_lowest=True)
+df['lat_bin'] = pd.cut(df['latitude'], bins=n_lat_bins, include_lowest=True)
+
+# Aggregate mean house price and count of samples per geographic cell
+group = df.groupby(['lon_bin', 'lat_bin'])['median_house_value'].agg(['mean', 'count']).reset_index()
+
+# Extract numeric interval boundaries for easier interpretation
+group['lon_min'] = group['lon_bin'].apply(lambda iv: float(iv.left) if pd.notnull(iv) else None)
+group['lon_max'] = group['lon_bin'].apply(lambda iv: float(iv.right) if pd.notnull(iv) else None)
+group['lat_min'] = group['lat_bin'].apply(lambda iv: float(iv.left) if pd.notnull(iv) else None)
+group['lat_max'] = group['lat_bin'].apply(lambda iv: float(iv.right) if pd.notnull(iv) else None)
+
+# Optionally filter out very small cells to avoid noise (require at least this many samples per cell)
+min_count = 50
+group_filtered = group[group['count'] >= min_count].copy()
+
+# Sort by average house price descending to find highest-price geographic areas
+top_n = 10
+top_cells = group_filtered.sort_values('mean', ascending=False).head(top_n)
+
+# Arrange columns for the result
+result = top_cells[['lon_min', 'lon_max', 'lat_min', 'lat_max', 'mean', 'count']].reset_index(drop=True)","Highest average house prices are concentrated in these latitude/longitude bins (mean price, sample count):
+
+- Lon -123.364 to -122.378, Lat 37.25 to 38.19: mean $334,699.42 (418)
+- Lon -120.406 to -119.420, Lat 33.49 to 34.43: mean $307,253.68 (56)
+- Lon -119.420 to -118.434, Lat 33.49 to 34.43: mean $297,296.00 (532)
+
+A fourth nearby bin also has high values: Lon -120.406 to -119.420, Lat 34.43 to 35.37 — mean $296,129.51 (51)."
+housing,How does population density (defined as population per household) relate to median house value?,"import pandas as pd
+
+df = pd.read_csv(""housing.csv"")
+
+# compute population density (population per household)
+df['pop_density'] = df['population'] / df['households']
+
+# basic association metrics
+pearson_corr = df['pop_density'].corr(df['median_house_value'], method='pearson')
+covariance = df['pop_density'].cov(df['median_house_value'])
+variance_density = df['pop_density'].var()
+slope = covariance / variance_density if variance_density != 0 else None
+intercept = df['median_house_value'].mean() - slope * df['pop_density'].mean() if slope is not None else None
+
+# summarize median house value by population-density quantile bins
+df['density_bin'] = pd.qcut(df['pop_density'], q=10, duplicates='drop')
+grouped = (
+    df.groupby('density_bin')
+      .agg(mean_density=('pop_density', 'mean'),
+           median_density=('pop_density', 'median'),
+           mean_median_house_value=('median_house_value', 'mean'),
+           median_median_house_value=('median_house_value', 'median'),
+           count=('median_house_value', 'size'))
+      .reset_index()
+)
+
+result = {
+    'pearson_correlation': pearson_corr,
+    'linear_fit_slope': slope,
+    'linear_fit_intercept': intercept,
+    'grouped_by_density_quantiles': grouped
+}","Population density (population per household) is negatively associated with median house value but the linear relationship is very weak. Pearson r = -0.04395; linear fit slope = -$787.99 per unit density (intercept $209,322). 
+
+When grouped into 10 density quantiles (~1,000 records each), mean median_house_value falls steadily from $267,803 in the lowest-density bin to $143,925 in the highest-density bin (a drop of $123,878, ≈46%). Median house values decline from $241,700 to $142,050 (down $99,650, ≈41%). 
+
+Interpretation: higher population-per-household tends to coincide with lower house values, but the weak Pearson r indicates substantial scatter and limited predictive power from a simple linear model."
+housing,Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.,"import pandas as pd
 
 # Read dataset
 df = pd.read_csv(""housing.csv"")
 
-# Define number of geographic bins for longitude and latitude
-n_lon_bins = 5
-n_lat_bins = 5
-
-# Create bins (intervals) for longitude and latitude
-df[""lon_bin""] = pd.cut(df[""longitude""], bins=n_lon_bins, include_lowest=True)
-df[""lat_bin""] = pd.cut(df[""latitude""], bins=n_lat_bins, include_lowest=True)
-
-# Group by geographic bins and compute average house price and counts
-grouped = (
-    df.groupby([""lon_bin"", ""lat_bin""])[""median_house_value""]
-    .agg(mean_price=""mean"", count=""count"")
-    .reset_index()
-)
-
-# Extract numeric bounds from Interval objects for easier reading/sorting
-grouped[""lon_min""] = grouped[""lon_bin""].apply(lambda iv: iv.left)
-grouped[""lon_max""] = grouped[""lon_bin""].apply(lambda iv: iv.right)
-grouped[""lat_min""] = grouped[""lat_bin""].apply(lambda iv: iv.left)
-grouped[""lat_max""] = grouped[""lat_bin""].apply(lambda iv: iv.right)
-
-# Order columns and sort by mean_price descending to find highest average prices
-result = (
-    grouped[[""lon_min"", ""lon_max"", ""lat_min"", ""lat_max"", ""mean_price"", ""count""]]
-    .sort_values(by=""mean_price"", ascending=False)
-    .reset_index(drop=True)
-)
-
-# Optionally keep only the top areas (e.g., top 10). Here we return the top 10 areas.
-result = result.head(10)","Top areas by average house price (longitude, latitude ranges → mean_price, sample count):
-
-1) lon -124.361 to -122.378, lat 36.31 to 38.19 → $334,699.42 (418)  
-2) lon -120.406 to -118.434, lat 32.54 to 34.43 → $298,244.35 (588)  
-3) lon -122.378 to -120.406, lat 36.31 to 38.19 → $230,434.49 (2,062)  
-4) lon -118.434 to -116.462, lat 32.54 to 34.43 → $216,901.41 (4,534)
-
-The highest average price is in the -124.361 to -122.378 / 36.31 to 38.19 cell ($334.7K)."
-housing,How does population density (defined as population per household) relate to median house value?,"import pandas as pd
-
-df = pd.read_csv('housing.csv')
-
-# Compute population density (population per household)
-df['population_density'] = df['population'] / df['households']
-
-# Select relevant columns and drop any rows with missing values in them
-analysis_df = df[['population_density', 'median_house_value']].dropna().copy()
-
-# Pearson correlation
-corr = analysis_df['population_density'].corr(analysis_df['median_house_value'])
-
-# Simple linear fit (least-squares) slope and intercept using covariance/variance
-cov = analysis_df['population_density'].cov(analysis_df['median_house_value'])
-var = analysis_df['population_density'].var()
-slope = cov / var if var != 0 else None
-intercept = analysis_df['median_house_value'].mean() - (slope * analysis_df['population_density'].mean() if slope is not None else None)
-
-# Bin population density into quintiles and summarize median house value per bin
-analysis_df['density_bin'] = pd.qcut(analysis_df['population_density'], q=5, duplicates='drop')
-binned = (
-    analysis_df
-    .groupby('density_bin')
-    .agg(
-        count=('population_density', 'size'),
-        mean_density=('population_density', 'mean'),
-        density_std=('population_density', 'std'),
-        median_house_value_mean=('median_house_value', 'mean'),
-        median_house_value_median=('median_house_value', 'median'),
-    )
-    .reset_index()
-)
-
-result = {
-    'correlation_population_density_vs_median_house_value': corr,
-    'linear_slope': slope,
-    'linear_intercept': intercept,
-    'binned_summary_by_density_quintile': binned
-}","Population density (population per household) shows a very weak negative relationship with median house value: correlation = -0.04395. A linear fit gives slope ≈ -788 (each additional person per household associates with ≈$788 lower median house value) and intercept ≈ $209,322.
-
-Binned by density quintile, mean median_house_value falls steadily:
-- lowest density (mean ≈ 2.02): mean value $250,037, median $227,850
-- 2nd: mean value $221,204, median $194,000
-- 3rd: mean value $214,420, median $191,700
-- 4th: mean value $195,937, median $177,200
-- highest density (mean ≈ 4.57, sd 14.33): mean value $153,054, median $148,000
-
-The highest-density bin has large spread, suggesting outliers."
-housing,Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.,"import pandas as pd
-
-# Read CSV
-df = pd.read_csv('housing.csv')
-
-# Handle known nulls
+# Clean known issues
+df['ocean_proximity'] = df['ocean_proximity'].astype(str).str.strip()
+# Fill missing total_bedrooms with the median (95 missing as noted)
 df['total_bedrooms'] = df['total_bedrooms'].fillna(df['total_bedrooms'].median())
 
-# Create geographic bins by rounding coordinates to 2 decimal places (approx ~1km)
-df['lon_bin'] = df['longitude'].round(2)
-df['lat_bin'] = df['latitude'].round(2)
+# Derive helpful per-household / per-room metrics
+df['rooms_per_household'] = df['total_rooms'] / df['households']
+df['bedrooms_per_household'] = df['total_bedrooms'] / df['households']
+df['bedrooms_per_room'] = df['total_bedrooms'] / df['total_rooms']
+df['population_per_household'] = df['population'] / df['households']
 
-# Helper to get mode safely
-def mode_or_first(s):
-    m = s.mode()
-    if not m.empty:
-        return m.iat[0]
-    return s.iat[0]
-
-# Aggregate statistics per geographic bin
-grouped = df.groupby(['lon_bin', 'lat_bin'])
-agg = grouped.agg(
+# Aggregation by geographic area category
+agg = df.groupby('ocean_proximity').agg(
     count=('median_house_value', 'size'),
-    mean_price=('median_house_value', 'mean'),
-    mean_median_income=('median_income', 'mean'),
-    mean_housing_age=('housing_median_age', 'mean'),
-    mean_total_rooms=('total_rooms', 'mean'),
-    mean_total_bedrooms=('total_bedrooms', 'mean'),
-    mean_population=('population', 'mean'),
-    mean_households=('households', 'mean'),
-    predominant_ocean_proximity=('ocean_proximity', mode_or_first)
-)
+    avg_price=('median_house_value', 'mean'),
+    median_price=('median_house_value', 'median'),
+    avg_income=('median_income', 'mean'),
+    avg_age=('housing_median_age', 'mean'),
+    avg_rooms_per_household=('rooms_per_household', 'mean'),
+    avg_bedrooms_per_household=('bedrooms_per_household', 'mean'),
+    avg_bedrooms_per_room=('bedrooms_per_room', 'mean'),
+    avg_population_per_household=('population_per_household', 'mean')
+).reset_index()
 
-# Remove very small geographic areas to avoid outliers; require at least 5 observations
-agg_filtered = agg[agg['count'] >= 5].copy()
-
-# Compute derived metrics helpful for interpretation
-agg_filtered['rooms_per_household'] = agg_filtered['mean_total_rooms'] / agg_filtered['mean_households']
-agg_filtered['population_per_household'] = agg_filtered['mean_population'] / agg_filtered['mean_households']
-
-# Select top 5 most expensive areas by average median_house_value
-top5 = agg_filtered.sort_values('mean_price', ascending=False).head(5).copy()
-
-# Overall dataset baselines for comparison
-overall_median_income = df['median_income'].mean()
-overall_rooms_per_household = (df['total_rooms'] / df['households']).mean()
-overall_housing_age = df['housing_median_age'].mean()
-overall_population_per_household = (df['population'] / df['households']).mean()
-
-# Build human-readable explanations for each top area
-explanations = []
-for (lon, lat), row in top5.iterrows():
-    factors = []
-    # Ocean proximity
-    factors.append(f""Predominant proximity: {row['predominant_ocean_proximity']}"")
-    # Median income
-    if row['mean_median_income'] > overall_median_income:
-        factors.append(f""Higher-than-average median income ({row['mean_median_income']:.2f} vs {overall_median_income:.2f})"")
-    else:
-        factors.append(f""Lower-than-average median income ({row['mean_median_income']:.2f} vs {overall_median_income:.2f})"")
-    # Rooms per household
-    if row['rooms_per_household'] > overall_rooms_per_household:
-        factors.append(f""More rooms per household ({row['rooms_per_household']:.2f} vs {overall_rooms_per_household:.2f})"")
-    else:
-        factors.append(f""Fewer rooms per household ({row['rooms_per_household']:.2f} vs {overall_rooms_per_household:.2f})"")
-    # Housing age
-    if row['mean_housing_age'] > overall_housing_age:
-        factors.append(f""Older housing stock on average ({row['mean_housing_age']:.1f} yrs vs {overall_housing_age:.1f} yrs)"")
-    else:
-        factors.append(f""Newer housing stock on average ({row['mean_housing_age']:.1f} yrs vs {overall_housing_age:.1f} yrs)"")
-    # Population per household
-    if row['population_per_household'] > overall_population_per_household:
-        factors.append(f""Higher population per household ({row['population_per_household']:.2f} vs {overall_population_per_household:.2f})"")
-    else:
-        factors.append(f""Lower population per household ({row['population_per_household']:.2f} vs {overall_population_per_household:.2f})"")
-    explanation = {
-        'center_lon': float(lon),
-        'center_lat': float(lat),
-        'count_districts': int(row['count']),
-        'mean_price': float(row['mean_price']),
-        'predominant_ocean_proximity': row['predominant_ocean_proximity'],
-        'mean_median_income': float(row['mean_median_income']),
-        'rooms_per_household': float(row['rooms_per_household']),
-        'mean_housing_age': float(row['mean_housing_age']),
-        'population_per_household': float(row['population_per_household']),
-        'key_factors': factors,
-        'summary': "" | "".join(factors)
-    }
-    explanations.append(explanation)
-
-# Prepare a tidy DataFrame for the top areas
-top5_df = top5.reset_index()[[
-    'lon_bin', 'lat_bin', 'count', 'mean_price', 'predominant_ocean_proximity',
-    'mean_median_income', 'rooms_per_household', 'mean_housing_age', 'population_per_household'
-]].rename(columns={
-    'lon_bin': 'center_lon',
-    'lat_bin': 'center_lat'
-})
-# Round numeric columns for readability
-for c in ['mean_price', 'mean_median_income', 'rooms_per_household', 'mean_housing_age', 'population_per_household']:
-    top5_df[c] = top5_df[c].round(2)
-
-# Final result containing both the DataFrame and explanations
-result = {
-    'top_5_areas': top5_df,
-    'explanations': explanations
-}","Top 5 most expensive areas (ranked):
-
-1) (-122.44, 37.80) — mean_price $500,000.83, 6 districts. NEAR BAY; median_income 4.44 (vs 3.86); rooms/household 4.76 (vs 5.47); housing_age 52.0 yrs (vs 28.6); population/household 1.64 (vs 3.02).
-
-2) (-122.44, 37.79) — mean_price $493,760.60, 5 districts. NEAR BAY; median_income 7.23; rooms/household 5.40; housing_age 52.0 yrs; population/household 2.15.
-
-3) (-122.43, 37.80) — mean_price $479,167.00, 6 districts. NEAR BAY; median_income 3.84; rooms/household 3.92; housing_age 52.0 yrs; population/household 1.65.
-
-4) (-118.38, 33.81) — 5 districts; rooms/household 6.49 (high); housing_age 33.8 yrs; population/household 2.47.
-
-5) (-122.45, 37.77) — 5 districts; rooms/household 4.46; housing_age 52.0 yrs; population/household 2.12.
-
-Key drivers: proximity to the bay, higher median income, older housing stock, lower population per household and relatively favorable rooms-per-household ratios."
-housing,Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?,"import pandas as pd
-
-# Read the CSV
-df = pd.read_csv(""housing.csv"")
-
-# Handle known nulls in total_bedrooms by filling with median for ratio calculations
-median_total_bedrooms = df[""total_bedrooms""].median()
-df[""total_bedrooms_filled""] = df[""total_bedrooms""].fillna(median_total_bedrooms)
-
-# Identify coastal categories programmatically (any category mentioning OCEAN, BAY, or ISLAND)
-unique_prox = df[""ocean_proximity""].dropna().unique()
-coastal_categories = [cat for cat in unique_prox if any(k in cat for k in (""OCEAN"", ""BAY"", ""ISLAND""))]
-
-# Derived per-tract features helpful to explain price differences
-df[""rooms_per_household""] = df[""total_rooms""] / df[""households""]
-df[""bedrooms_per_room""] = df[""total_bedrooms_filled""] / df[""total_rooms""]
-df[""population_per_household""] = df[""population""] / df[""households""]
-
-# Overall median house value to define ""relatively low""
-overall_median_value = df[""median_house_value""].median()
-
-# Coastal tracts
-df_coastal = df[df[""ocean_proximity""].isin(coastal_categories)].copy()
-
-# Coastal tracts with below-overall-median prices
-df_coastal_low = df_coastal[df_coastal[""median_house_value""] < overall_median_value].copy()
-
-# Select and order columns for inspection
-selected_cols = [
-    ""longitude"", ""latitude"", ""ocean_proximity"", ""median_house_value"", ""median_income"",
-    ""housing_median_age"", ""total_rooms"", ""total_bedrooms"", ""population"", ""households"",
-    ""rooms_per_household"", ""bedrooms_per_room"", ""population_per_household""
-]
-df_coastal_low = df_coastal_low.loc[:, selected_cols].sort_values(""median_house_value"")
-
-# Create comparison summaries (median of features) for:
-#  - coastal_low (coastal tracts with low prices),
-#  - coastal_not_low (coastal tracts with prices >= overall median),
-#  - inland (non-coastal, ocean_proximity == 'INLAND')
-df_coastal_not_low = df_coastal[df_coastal[""median_house_value""] >= overall_median_value]
-df_inland = df[df[""ocean_proximity""] == ""INLAND""]
-
-def summarize(df_subset):
-    return {
-        ""count"": len(df_subset),
-        ""median_house_value_median"": df_subset[""median_house_value""].median(),
-        ""median_income_median"": df_subset[""median_income""].median(),
-        ""housing_median_age_median"": df_subset[""housing_median_age""].median(),
-        ""rooms_per_household_median"": df_subset[""rooms_per_household""].median(),
-        ""bedrooms_per_room_median"": df_subset[""bedrooms_per_room""].median(),
-        ""population_per_household_median"": df_subset[""population_per_household""].median(),
-        ""total_bedrooms_median"": df_subset[""total_bedrooms""].median(),
-        ""population_median"": df_subset[""population""].median(),
-        ""households_median"": df_subset[""households""].median()
-    }
-
-summary = {
-    ""coastal_low"": summarize(df_coastal_low),
-    ""coastal_not_low"": summarize(df_coastal_not_low),
-    ""inland"": summarize(df_inland)
+# Compute overall dataset means for comparison
+overall = {
+    'avg_price': df['median_house_value'].mean(),
+    'avg_income': df['median_income'].mean(),
+    'avg_age': df['housing_median_age'].mean(),
+    'avg_rooms_per_household': df['rooms_per_household'].mean(),
+    'avg_bedrooms_per_household': df['bedrooms_per_household'].mean(),
+    'avg_bedrooms_per_room': df['bedrooms_per_room'].mean(),
+    'avg_population_per_household': df['population_per_household'].mean()
 }
 
-# Also provide counts of low-priced tracts by coastal category to see which coastal zones show the pattern
-low_by_coastal_category = df_coastal_low[""ocean_proximity""].value_counts().rename_axis(""ocean_proximity"").reset_index(name=""low_priced_count"")
+# Helper to describe whether a metric is higher or lower than overall
+def rel(x, key):
+    if x >= overall[key]:
+        return ""higher""
+    else:
+        return ""lower""
 
-# Bundle results into the required variable
+# Build explanation strings for each area
+explanations = []
+for _, row in agg.iterrows():
+    parts = []
+    parts.append(f""Average price ${row['avg_price']:.0f} (dataset avg ${overall['avg_price']:.0f})."")
+    # income effect
+    parts.append(f""Median income is {rel(row['avg_income'],'avg_income')} than dataset average ({row['avg_income']:.2f})."")
+    # coastal note
+    if ""OCEAN"" in row['ocean_proximity'].upper() or ""BAY"" in row['ocean_proximity'].upper() or row['ocean_proximity'].upper().strip() == ""ISLAND"":
+        parts.append(""Area is coastal or near water, which typically raises property values."")
+    else:
+        parts.append(""Area is inland, so coastal premium is not a factor."")
+    # housing age
+    parts.append(f""Housing median age is {rel(row['avg_age'],'avg_age')} than average ({row['avg_age']:.1f} years)."")
+    # space per household
+    parts.append(f""Rooms per household are {rel(row['avg_rooms_per_household'],'avg_rooms_per_household')} ({row['avg_rooms_per_household']:.2f})."")
+    # crowding
+    parts.append(f""Population per household is {rel(row['avg_population_per_household'],'avg_population_per_household')} ({row['avg_population_per_household']:.2f})."")
+    # bedroom/room ratio
+    parts.append(f""Bedrooms per room are {rel(row['avg_bedrooms_per_room'],'avg_bedrooms_per_room')} ({row['avg_bedrooms_per_room']:.3f})."")
+    explanations.append("" "".join(parts))
+
+agg['explanation'] = explanations
+
+# Select top 5 areas by average price
+top5 = agg.sort_values('avg_price', ascending=False).head(5).reset_index(drop=True)
+
+# Final result: DataFrame with the top 5 geographic areas and explanation of key factors
+result = top5[['ocean_proximity', 'count', 'avg_price', 'median_price', 'avg_income', 'avg_age',
+               'avg_rooms_per_household', 'avg_bedrooms_per_household', 'avg_bedrooms_per_room',
+               'avg_population_per_household', 'explanation']]","Top 5 areas by average price (descending), with counts and avg population per household:
+
+1. ISLAND — count 1 — avg price $414,700 — avg pop/household 2.5522 (note: single observation).  
+2. NEAR BAY — count 1,092 — avg price $259,013 — avg pop/household 2.6166.  
+3. NEAR OCEAN — count 1,316 — avg price $254,111 — avg pop/household 2.7638.  
+4. <1H OCEAN — count 4,380 — avg price $239,409 — avg pop/household 3.0551.  
+5. INLAND — count 3,211 — avg price $125,557 — avg pop/household 3.2089.
+
+Key factors: coastal proximity (ISLAND/NEAR BAY/NEAR OCEAN/<1H OCEAN) aligns with substantially higher prices versus the dataset average $206,944, and pricier areas tend to have smaller average household sizes (lower population per household). Note ISLAND’s figure is based on one record and may be an outlier."
+housing,Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?,"import pandas as pd
+
+# Read dataset
+df = pd.read_csv('housing.csv')
+
+# Prepare data (fill known nulls)
+df = df.copy()
+df['total_bedrooms'] = df['total_bedrooms'].fillna(df['total_bedrooms'].median())
+
+# Derived per-row indicators
+df['rooms_per_household'] = df['total_rooms'] / df['households']
+df['bedrooms_per_room'] = df['total_bedrooms'] / df['total_rooms']
+df['population_per_household'] = df['population'] / df['households']
+
+# Overall reference statistics
+overall_median_house_value = df['median_house_value'].median()
+overall_median_income = df['median_income'].median()
+overall_mean_housing_age = df['housing_median_age'].mean()
+overall_mean_rooms_per_household = df['rooms_per_household'].mean()
+overall_mean_population_per_household = df['population_per_household'].mean()
+
+# Aggregate by ocean proximity
+group = df.groupby('ocean_proximity').agg(
+    count=('median_house_value', 'size'),
+    median_house_value=('median_house_value', 'median'),
+    median_income=('median_income', 'median'),
+    mean_housing_age=('housing_median_age', 'mean'),
+    mean_population=('population', 'mean'),
+    mean_households=('households', 'mean'),
+    mean_rooms_per_household=('rooms_per_household', 'mean'),
+    mean_bedrooms_per_room=('bedrooms_per_room', 'mean'),
+    mean_population_per_household=('population_per_household', 'mean')
+).round(3)
+
+# Identify coastal categories (non-INLAND)
+coastal_group = group.loc[group.index != 'INLAND']
+
+# Find coastal categories with median house value below overall median
+low_price_coastal = coastal_group[coastal_group['median_house_value'] < overall_median_house_value]
+
+# Build explanations based on observed factors
+explanations = {}
+for cat, row in low_price_coastal.iterrows():
+    reasons = []
+    if row['median_income'] < overall_median_income:
+        reasons.append(f""lower median_income ({row['median_income']:.3f} < overall {overall_median_income:.3f})"")
+    if row['mean_housing_age'] > overall_mean_housing_age:
+        reasons.append(f""older housing stock (avg age {row['mean_housing_age']:.1f} > overall {overall_mean_housing_age:.1f})"")
+    if row['mean_rooms_per_household'] < overall_mean_rooms_per_household:
+        reasons.append(f""smaller homes (rooms/household {row['mean_rooms_per_household']:.2f} < overall {overall_mean_rooms_per_household:.2f})"")
+    if row['mean_population_per_household'] > overall_mean_population_per_household:
+        reasons.append(f""higher occupancy/crowding (pop/household {row['mean_population_per_household']:.2f} > overall {overall_mean_population_per_household:.2f})"")
+    if row['mean_bedrooms_per_room'] < coastal_group['mean_bedrooms_per_room'].median():
+        # lower bedrooms per room can indicate fewer bedrooms relative to house size (or oddly configured housing)
+        reasons.append(""lower bedrooms_per_room compared to coastal median (possible housing configuration differences)"")
+    if not reasons:
+        reasons = [""No clear explanatory factor in these columns; other local factors (amenities, zoning, environmental risk) may explain low prices.""]
+    explanations[cat] = {
+        'metrics': row.to_dict(),
+        'explanation': "" ; "".join(reasons)
+    }
+
+# Final result: overall references, coastal summary, and flagged low-price coastal areas with explanations
 result = {
-    ""overall_median_house_value"": overall_median_value,
-    ""coastal_categories_detected"": coastal_categories,
-    ""low_priced_coastal_tracts"": df_coastal_low,           # DataFrame of coastal tracts with below-median prices
-    ""low_priced_counts_by_category"": low_by_coastal_category,  # Which coastal categories have these low-priced tracts
-    ""comparison_summary_medians"": pd.DataFrame(summary).T   # DataFrame summary comparing medians
-}","Findings: 2,260 coastal tracts were identified as ""low-priced"" (median house value = 143,450), below the overall median (178,750) and far below other coastal tracts (median = 270,400). Breakdown: most low-priced tracts are <1H OCEAN (1,476), then NEAR OCEAN (452) and NEAR BAY (332).
-
-Possible explanatory factors from the data: the low-priced coastal group has a higher median population (1,249) but a lower median number of households (390) than other coastal tracts (population 1,160; households 434), implying larger households/higher occupancy. Sample tract metrics show high population_per_household values (examples up to ~9.3) and variable rooms-per-household, consistent with overcrowding or denser living conditions that can depress prices despite ocean proximity."
+    'overall_reference': {
+        'overall_median_house_value': float(overall_median_house_value),
+        'overall_median_income': float(overall_median_income),
+        'overall_mean_housing_age': float(overall_mean_housing_age),
+        'overall_mean_rooms_per_household': float(overall_mean_rooms_per_household),
+        'overall_mean_population_per_household': float(overall_mean_population_per_household)
+    },
+    'coastal_summary': coastal_group.reset_index().to_dict(orient='records'),
+    'low_price_coastal_areas': explanations
+}","The coastal category ""<1H OCEAN"" shows the lowest coastal median house value at $213,600 (count 4,380) versus $231,900 for ""NEAR BAY"" and $235,100 for ""NEAR OCEAN."" Factors in the data that might explain lower prices there include: much larger stock/count (4,380 vs 1,092 NEAR BAY, 1,316 NEAR OCEAN), higher mean population (1,525.2) and households (519.3), higher mean population per household (3.055 vs 2.617 NEAR BAY and 2.764 NEAR OCEAN; overall 3.018), and slightly fewer rooms per household (5.142 vs overall 5.467 and NEAR OCEAN 5.229). Mean housing age is lower than NEAR BAY (29.35 vs 37.80), suggesting different housing stock and density that could depress prices despite ocean proximity."
 housing,Identify areas with similar median income levels but significantly different median house values. What factors might explain these differences?,"import pandas as pd
 
 # Read dataset
 df = pd.read_csv(""housing.csv"")
 
-# Handle known nulls
-df[""total_bedrooms""] = df[""total_bedrooms""].fillna(df[""total_bedrooms""].median())
+# Feature engineering to help explain price differences
+df['rooms_per_household'] = df['total_rooms'] / df['households']
+df['bedrooms_per_room'] = df['total_bedrooms'] / df['total_rooms']
+df['population_per_household'] = df['population'] / df['households']
 
-# Derived features that often explain price differences
-df[""rooms_per_household""] = df[""total_rooms""] / df[""households""]
-df[""bedrooms_per_room""] = df[""total_bedrooms""] / df[""total_rooms""]
-df[""population_per_household""] = df[""population""] / df[""households""]
+# Bin median_income into deciles (use qcut to get roughly even-sized groups)
+df['income_bin'] = pd.qcut(df['median_income'], q=10, duplicates='drop')
 
-# Bucket median_income into quantile bins to find areas with similar income
-df[""income_bin""] = pd.qcut(df[""median_income""], q=5, labels=[""Q1_low"",""Q2"",""Q3"",""Q4"",""Q5_high""])
+# Aggregate median statistics by income_bin and ocean_proximity
+agg = (
+    df
+    .groupby(['income_bin', 'ocean_proximity'], observed=True)
+    .agg(
+        median_house_value=('median_house_value', 'median'),
+        housing_median_age=('housing_median_age', 'median'),
+        rooms_per_household=('rooms_per_household', 'median'),
+        population_per_household=('population_per_household', 'median'),
+        bedrooms_per_room=('bedrooms_per_room', 'median'),
+        count=('median_house_value', 'count')
+    )
+    .reset_index()
+)
 
-# Summary statistics of house value by income bin
-income_stats = df.groupby(""income_bin"")[""median_house_value""].agg([""median"",""mean"",""std"",""count""]).rename(columns={
-    ""median"": ""median_house_value_median"",
-    ""mean"": ""median_house_value_mean"",
-    ""std"": ""median_house_value_std"",
-    ""count"": ""n""
-})
+# Pivot to compare median_house_value across ocean_proximity for each income bin
+pv = agg.pivot(index='income_bin', columns='ocean_proximity', values='median_house_value')
 
-# Compare median house value across ocean_proximity within each income bin
-pivot_val_by_ocean = df.groupby([""income_bin"",""ocean_proximity""])[""median_house_value""].median().unstack()
+# Compute range (max - min) of median_house_value across ocean_proximity within each income bin
+pv['range'] = pv.max(axis=1) - pv.min(axis=1)
 
-# Compute the range (max - min) of median house value across ocean proximity categories for each income bin
-value_range = pivot_val_by_ocean.max(axis=1) - pivot_val_by_ocean.min(axis=1)
-income_stats = income_stats.assign(median_value_range_across_ocean = value_range)
+# Select top income bins with largest house value spread
+top_bins = pv.sort_values('range', ascending=False).head(5).index
 
-# Identify top income bins where, for similar incomes, the house values vary the most
-top_bins = income_stats.sort_values(""median_value_range_across_ocean"", ascending=False).head(3).index.tolist()
+# Detailed breakdown for those top bins (including other explanatory medians)
+details = agg[agg['income_bin'].isin(top_bins)].sort_values(['income_bin', 'median_house_value'], ascending=[True, False])
 
-# For each top income bin, compute correlations of median_house_value with plausible explanatory variables
-features = [""housing_median_age"", ""rooms_per_household"", ""bedrooms_per_room"", ""population_per_household"", ""longitude"", ""latitude""]
-corr_rows = []
-for b in top_bins:
-    sub = df[df[""income_bin""] == b]
-    if len(sub) >= 2:
-        corr = sub[features + [""median_house_value""]].corr()[""median_house_value""].drop(""median_house_value"")
-        corr = corr.reindex(features)  # ensure consistent order
-        for feat, val in corr.items():
-            corr_rows.append({""income_bin"": b, ""feature"": feat, ""correlation_with_value"": float(val), ""abs_correlation"": abs(float(val)), ""n"": len(sub)})
+# Prepare a concise summary table for the top bins: pivot of median house values + range
+summary_top = pv.loc[top_bins].sort_values('range', ascending=False)
 
-corr_df = pd.DataFrame(corr_rows).sort_values([""income_bin"",""abs_correlation""], ascending=[True, False]).reset_index(drop=True)
-
-# Assemble result
+# Pack results into a dict (allowed by rules). This contains:
+# - summary_top: pivot table of median_house_value by ocean_proximity for top income bins plus range
+# - details: row-level aggregated stats for each ocean_proximity within those bins to help explain differences
 result = {
-    ""income_bin_stats"": income_stats.reset_index(),
-    ""median_house_value_by_income_and_ocean"": pivot_val_by_ocean,
-    ""top_income_bins_with_largest_value_range"": top_bins,
-    ""correlations_in_top_bins"": corr_df
-}","Areas grouped by ocean_proximity show large house-value differences within the same income bins. The biggest spreads are in Q2 (value range 316,500) — e.g., ISLAND 414,700 vs INLAND 98,200 (Q2 medians); Q5_high (range 176,600; INLAND 222,400 vs NEAR OCEAN 399,000) and Q4 (range 125,800; INLAND 146,400 vs NEAR OCEAN 272,200).
+    ""top_income_bins_house_value_pivot_with_range"": summary_top,
+    ""detailed_aggregates_for_top_bins"": details
+}","Coastal proximity drives large price gaps at similar incomes. Example: in the income bin $2.715–3.125k, INLAND median value is $105,850 vs ISLAND $414,700 (range $308,850); <1H OCEAN $176,000, NEAR OCEAN $193,800, NEAR BAY $188,200. In the top income bin ($6.153–15.0k) NEAR OCEAN is $496,150 vs INLAND $273,800 (range $222,350).
 
-Explaining factors (top correlations in those bins): housing_median_age (positive, ~0.32 in Q4 and Q5_high), bedrooms_per_room (positive 0.35 in Q2; 0.23 in Q4), population_per_household (negative −0.36 in Q4, −0.23 in Q2), and location (latitude/longitude show notable correlations). In short: proximity to ocean/island location, housing age, unit layout (bedrooms/rooms), and household crowding drive value differences despite similar incomes."
-dataset_name,question,generated_code,final_answer
+Contributing factors in the results: ocean_proximity (coastal and bay locations are consistently pricier), housing composition and crowding (e.g., in the low-income bin INLAND pop/household ≈ 2.73 and bedrooms/room ≈ 0.200 vs NEAR BAY pop/household ≈ 2.36 and bedrooms/room ≈ 0.237), and sample sizes (ISLAND has n=1, so its value may be an outlier)."
 custom_dataset,What is the average popularity score across all tracks in the dataset?,"import pandas as pd
-
-df = pd.read_csv(""custom_dataset.csv"")
-# Ensure popularity is numeric (handle any unexpected non-numeric entries)
-df[""popularity""] = pd.to_numeric(df[""popularity""], errors=""coerce"")
-result = df[""popularity""].mean()",The average popularity score across all tracks is 32.8416.
+df = pd.read_csv('custom_dataset.csv')
+result = df['popularity'].mean()",The average (mean) popularity score across all tracks is 32.8416.
 custom_dataset,Which track genre has the highest average danceability?,"import pandas as pd
 
 df = pd.read_csv(""custom_dataset.csv"")
-means = df.groupby('track_genre', dropna=True)['danceability'].mean()
-max_genre = means.idxmax()
-max_value = float(means.loc[max_genre])
-result = {'track_genre': max_genre, 'avg_danceability': max_value}","Reggae has the highest average danceability, with an average danceability of 0.768025."
+
+# Clean genre strings (strip whitespace and handle missing values)
+genre = df['track_genre'].astype(str).str.strip()
+genre = genre.replace({'nan': pd.NA})
+df['track_genre'] = genre
+
+# Compute average danceability per genre and select the genre(s) with the highest average
+means = df.loc[df['danceability'].notna()].groupby('track_genre', dropna=True)['danceability'].mean()
+max_val = means.max()
+result = means[means == max_val].sort_index()",Reggae has the highest average danceability at 0.768025.
 custom_dataset,What percentage of tracks in the dataset are marked as explicit?,"import pandas as pd
+df = pd.read_csv(""custom_dataset.csv"")
+total = len(df)
+explicit_count = (df[""explicit""] == True).sum()
+result = round((explicit_count / total) * 100, 2)",8.02% of tracks in the dataset are marked explicit.
+custom_dataset,How does average energy level differ across the top 10 most common genres?,"import pandas as pd
 
 df = pd.read_csv(""custom_dataset.csv"")
 
-s = df[""explicit""]
+# Determine top 10 most common genres
+top_counts = df[""track_genre""].value_counts().nlargest(10)
 
-# Coerce to nullable boolean if not already boolean-like
-if not pd.api.types.is_bool_dtype(s) and str(s.dtype) != ""boolean"":
-    s = s.astype(""string"").str.lower().map({""true"": True, ""false"": False, ""1"": True, ""0"": False, ""yes"": True, ""no"": False})
+# Compute average energy for those top 10 genres
+avg_energy = df[df[""track_genre""].isin(top_counts.index)].groupby(""track_genre"")[""energy""].mean()
 
-s = s.astype(""boolean"")
-
-# percentage of tracks marked explicit (0-100)
-result = round(float(s.mean() * 100), 2)",8.02% of the tracks in the dataset are marked as explicit.
-custom_dataset,How does average energy level differ across the top 10 most common genres?,"import pandas as pd
-
-df = pd.read_csv('custom_dataset.csv')
-
-# Ensure we treat missing genres consistently
-genre_counts = df['track_genre'].dropna().value_counts()
-top10 = genre_counts.head(10)
-
-# Compute mean energy for those top 10 genres
-mean_energy = (
-    df[df['track_genre'].isin(top10.index)]
-    .groupby('track_genre', observed=True)['energy']
-    .mean()
-)
-
-# Combine counts and mean energy into a single DataFrame
-result = (
-    pd.DataFrame({'track_genre': top10.index, 'count': top10.values})
-    .merge(mean_energy.rename('mean_energy').reset_index(), on='track_genre')
-)","Among the top 10 genres, average energy ranges from 0.347 to 0.938. Ranked by mean energy (with sample size): 
-1) grindcore 0.938 (n=67), 2) black-metal 0.880 (n=61), 3) industrial 0.845 (n=55), 4) house 0.762 (n=56), 5) j-dance 0.715 (n=57), 6) samba 0.708 (n=57), 7) country 0.635 (n=53), 8) pop-film 0.600 (n=55), 9) idm 0.585 (n=55), 10) tango 0.347 (n=53). High-energy genres (≥0.84) are grindcore, black-metal, industrial; lowest is tango."
+# Combine counts and average energy into a single DataFrame, sorted by count
+result = pd.DataFrame({""count"": top_counts, ""avg_energy"": avg_energy}).reset_index().rename(columns={""index"": ""track_genre""})
+result = result.sort_values(""count"", ascending=False).reset_index(drop=True)
+result[""avg_energy""] = result[""avg_energy""].round(4)","Among the top 10 genres, grindcore shows the highest average energy (0.9380, n=67), followed by black-metal (0.8799, n=61) and industrial (0.8454, n=55). House (0.7619, n=56), j-dance (0.7147, n=57) and samba (0.7076, n=57) are moderately high. Country (0.6351, n=53), pop-film (0.6001, n=55) and idm (0.5851, n=55) are lower, while tango has the lowest average energy (0.3473, n=53). The difference between the highest and lowest average energies is 0.5907."
 custom_dataset,"Is there a relationship between tempo and danceability? Bin tempo into slow (<90 BPM), medium (90–130 BPM), and fast (>130 BPM) and compare average danceability across bins.","import pandas as pd
 
 df = pd.read_csv(""custom_dataset.csv"")
 
-# Bin tempo: slow (<90), medium (90–130 inclusive), fast (>130)
-df['tempo_bin'] = 'medium'
+# Ensure tempo and danceability are numeric and handle any unexpected nulls
+df = df.copy()
+df['tempo'] = pd.to_numeric(df['tempo'], errors='coerce')
+df['danceability'] = pd.to_numeric(df['danceability'], errors='coerce')
+
+# Bin tempo into slow (<90), medium (90–130), fast (>130)
+df['tempo_bin'] = None
 df.loc[df['tempo'] < 90, 'tempo_bin'] = 'slow'
+df.loc[(df['tempo'] >= 90) & (df['tempo'] <= 130), 'tempo_bin'] = 'medium'
 df.loc[df['tempo'] > 130, 'tempo_bin'] = 'fast'
-df['tempo_bin'] = pd.Categorical(df['tempo_bin'], categories=['slow', 'medium', 'fast'], ordered=True)
 
-# Compute average danceability (with count and std) per bin
-result = df.groupby('tempo_bin').agg(
-    mean_danceability=('danceability', 'mean'),
-    count=('danceability', 'count'),
-    std_danceability=('danceability', 'std')
-).reset_index()
-
-# Round numeric summaries for readability
-result['mean_danceability'] = result['mean_danceability'].round(4)
-result['std_danceability'] = result['std_danceability'].round(4)","Yes — medium-tempo tracks show the highest average danceability. Mean danceability by bin: medium 0.6177 (n=2,439, std=0.1608), fast 0.5226 (n=1,853, std=0.1621), slow 0.4774 (n=708, std=0.1902). Medium tracks are substantially more danceable on average than fast or slow tracks."
-custom_dataset,"Which genres have the highest average valence (musical positivity), and how does that compare to their average popularity?","import pandas as pd
-
-df = pd.read_csv('custom_dataset.csv')
-
-# Ensure numeric types for valence and popularity, coerce errors to NaN
-df['valence'] = pd.to_numeric(df['valence'], errors='coerce')
-df['popularity'] = pd.to_numeric(df['popularity'], errors='coerce')
-
-# Aggregate by genre: mean valence, mean popularity, and count of tracks
-genre_stats = (
-    df.dropna(subset=['track_genre', 'valence', 'popularity'])
-      .groupby('track_genre')
-      .agg(
-          avg_valence=('valence', 'mean'),
-          avg_popularity=('popularity', 'mean'),
-          track_count=('track_id', 'count')
-      )
-      .sort_values('avg_valence', ascending=False)
+# Aggregate average danceability (plus count, std, median) by bin
+agg = (
+    df.dropna(subset=['tempo_bin', 'danceability'])
+      .groupby('tempo_bin')['danceability']
+      .agg(mean='mean', count='count', std='std', median='median')
+      .reindex(['slow', 'medium', 'fast'])
 )
 
-# Round for readability and return the top genres by average valence
-result = genre_stats.round({'avg_valence': 4, 'avg_popularity': 2}).head(10)","Top genres by average valence (with avg popularity and track count):
-1. Salsa — valence 0.8289, popularity 28.36 (36 tracks)
-2. Disco — valence 0.7523, popularity 29.67 (43)
-3. Forro — valence 0.7392, popularity 42.32 (37)
-4. Reggae — valence 0.7131, popularity 20.92 (40)
-5. Afrobeat — valence 0.7035, popularity 22.49 (45)
-6. Children — valence 0.6967, popularity 36.37 (46)
-7. Latin — valence 0.6905, popularity 10.32 (37)
-8. Rockabilly — valence 0.6857, popularity 34.57 (44)
-9. Ska — valence 0.6831, popularity 36.61 (31)
-10. Rock-n-roll — valence 0.6720, popularity 39.14 (44)
+# Round numeric results for readability
+result = agg.round(4)","Medium-tempo tracks (90–130 BPM) show the highest average danceability: mean 0.6177 (n=2,439; median 0.636; std 0.1608). Fast tracks (>130 BPM) have mean 0.5226 (n=1,853; median 0.527; std 0.1621). Slow tracks (<90 BPM) have mean 0.4774 (n=708; median 0.494; std 0.1902). 
 
-Note: higher valence does not always mean higher popularity — salsa has the highest valence but moderate popularity, while forro pairs high valence with the highest popularity among these."
+Compared to slow tracks, medium tracks are +0.1403 in absolute danceability (~+29%); medium tracks are +0.0951 versus fast (~+18%). Fast tracks are slightly more danceable than slow (+0.0452, ~+9.5%). Overall, medium-tempo songs are most danceable on average."
+custom_dataset,"Which genres have the highest average valence (musical positivity), and how does that compare to their average popularity?","import pandas as pd
+
+df = pd.read_csv(""custom_dataset.csv"")
+
+# Compute per-genre average valence and average popularity, plus count of tracks
+genre_stats = (
+    df.groupby(""track_genre"", dropna=False)
+      .agg(avg_valence=(""valence"", ""mean""),
+           avg_popularity=(""popularity"", ""mean""),
+           track_count=(""track_id"", ""size""))
+      .sort_values(""avg_valence"", ascending=False)
+      .round(3)
+      .reset_index()
+)
+
+result = genre_stats","Top genres by average valence (musical positivity) and their average popularity (with track counts):
+
+- Salsa: valence 0.829, popularity 28.361 (36 tracks)  
+- Disco: valence 0.752, popularity 29.674 (43 tracks)  
+- Forró: valence 0.739, popularity 42.324 (37 tracks)  
+- Reggae: valence 0.713, popularity 20.925 (40 tracks)  
+- Afrobeat: valence 0.704, popularity 22.489 (45 tracks)
+
+Interpretation: the happiest genres (salsa, disco, forró) do not uniformly have the highest popularity—Forró stands out with both high valence and the highest average popularity (42.3), while salsa and disco have only moderate popularity (~28–30). Reggae and afrobeat are high in valence but relatively lower in popularity (~21–22)."
 custom_dataset,"Identify the top 10 most popular tracks and analyze what audio features (energy, danceability, valence, tempo) they share. Do popular tracks cluster around specific feature ranges?","import pandas as pd
 
-# Read the CSV
+# Read dataset
 df = pd.read_csv(""custom_dataset.csv"")
 
-# Ensure expected columns exist
+# Define features of interest
 features = [""energy"", ""danceability"", ""valence"", ""tempo""]
-id_cols = [""track_id"", ""artists"", ""track_name"", ""album_name"", ""popularity""]
 
-# Select top 10 most popular tracks (ties resolved by original order after sorting)
-top10_df = df.sort_values(""popularity"", ascending=False).head(10)[id_cols + features].reset_index(drop=True)
+# Get top 10 most popular tracks (tie-breaker: duration_ms descending then track_id)
+top10 = df.sort_values([""popularity"", ""duration_ms"", ""track_id""], ascending=[False, False, True]).head(10).reset_index(drop=True)
 
-# Summary statistics for the selected features for top 10
-top10_stats = top10_df[features].agg([""mean"", ""median"", ""std"", ""min"", ""max""]).transpose()
-top10_stats = top10_stats.rename(columns={
-    ""mean"": ""top10_mean"",
-    ""median"": ""top10_median"",
-    ""std"": ""top10_std"",
-    ""min"": ""top10_min"",
-    ""max"": ""top10_max""
-})
+# Keep a compact view of top10 with identifying columns + features
+top10_tracks = top10[[""track_id"", ""artists"", ""track_name"", ""album_name"", ""popularity""] + features].copy()
 
-# Overall dataset statistics for the same features
-overall_stats = df[features].agg([""mean"", ""median"", ""std"", ""min"", ""max""]).transpose()
-overall_stats = overall_stats.rename(columns={
-    ""mean"": ""overall_mean"",
-    ""median"": ""overall_median"",
-    ""std"": ""overall_std"",
-    ""min"": ""overall_min"",
-    ""max"": ""overall_max""
-})
+# Summary statistics for the top 10 on the selected features
+feature_summary_top10 = top10_tracks[features].agg([""mean"", ""median"", ""std"", ""min"", ""max""]).transpose()
 
-# Overall quantiles (25th, 50th, 75th)
-overall_quants = df[features].quantile([0.25, 0.5, 0.75]).transpose()
-overall_quants = overall_quants.rename(columns={0.25: ""q25"", 0.5: ""q50"", 0.75: ""q75""})
+# Dataset-level quartiles for features
+dataset_quartiles = df[features].quantile([0.25, 0.5, 0.75]).transpose()
 
-# Compute percentile rank of the top10 mean within the overall distribution for each feature
-mean_percentile = {}
-for f in features:
-    mean_val = top10_stats.loc[f, ""top10_mean""]
-    # fraction of values <= mean_val
-    pct = (df[f] <= mean_val).mean()
-    mean_percentile[f] = pct
+# For each feature, count how many of the top10 are above dataset median and above 75th percentile
+counts_above_median = (top10_tracks[features] >= dataset_quartiles[0.5]).sum()
+counts_above_75th = (top10_tracks[features] >= dataset_quartiles[0.75]).sum()
 
-mean_percentile_series = pd.Series(mean_percentile).rename(""top10_mean_percentile"")
+# Ranges for top10 vs dataset IQR and full range
+top10_ranges = top10_tracks[features].agg([""min"", ""max""]).transpose()
+dataset_stats = df[features].agg([""min"", ""max""])
+dataset_iqr = dataset_quartiles[0.75] - dataset_quartiles[0.25]
 
-# Compute top10 range and overall IQR, and decide if top10 values are tightly clustered relative to IQR
-cluster_info = {}
-for f in features:
-    top_range = top10_stats.loc[f, ""top10_max""] - top10_stats.loc[f, ""top10_min""]
-    iqr = overall_quants.loc[f, ""q75""] - overall_quants.loc[f, ""q25""]
-    # Decide clustering: top10 range less than half of overall IQR -> ""tight cluster""
-    tight = bool(top_range < 0.5 * iqr) if pd.notnull(iqr) else False
-    cluster_info[f] = {""top10_range"": top_range, ""overall_IQR"": iqr, ""tight_cluster"": tight}
-
-cluster_info_df = pd.DataFrame(cluster_info).T
-
-# Aggregate comparison table
-comparison = pd.concat([top10_stats[""top10_mean""], overall_stats[""overall_mean""]], axis=1)
-comparison[""top10_mean_percentile""] = mean_percentile_series
-comparison = pd.concat([comparison, cluster_info_df], axis=1)
-comparison = comparison.reset_index().rename(columns={""index"": ""feature""})
-
-# Prepare final result as a dict containing useful artifacts for interpretation
-result = {
-    ""top10_tracks"": top10_df,                     # DataFrame of the top 10 tracks with key audio features
-    ""top10_feature_stats"": top10_stats,           # Stats for features among top10
-    ""overall_feature_stats"": overall_stats,       # Stats for features in whole dataset
-    ""overall_feature_quartiles"": overall_quants,  # 25/50/75 percentiles for overall dataset
-    ""comparison"": comparison,                     # Combined comparison and clustering indicators
-    ""notes"": {
-        ""clustering_rule"": ""top10 range < 0.5 * overall IQR indicates a tight cluster"",
-        ""percentile_explanation"": ""top10_mean_percentile is fraction of dataset <= top10 mean (0..1)""
+# Compose a simple interpretative note per feature based on proportions
+notes = {}
+for feat in features:
+    pct_above_median = int(round(100 * counts_above_median[feat] / 10))
+    pct_above_75 = int(round(100 * counts_above_75th[feat] / 10))
+    if pct_above_75 >= 50:
+        tendency = ""strongly skewed high (>=75th pct for many top tracks)""
+    elif pct_above_median >= 70:
+        tendency = ""generally high (most above dataset median)""
+    elif pct_above_median >= 50:
+        tendency = ""moderately high (about half above median)""
+    else:
+        tendency = ""no strong high-side tendency""
+    notes[feat] = {
+        ""pct_above_median"": pct_above_median,
+        ""pct_above_75th"": pct_above_75,
+        ""tendency"": tendency,
+        ""top10_min"": float(top10_ranges.loc[feat, ""min""]),
+        ""top10_max"": float(top10_ranges.loc[feat, ""max""]),
+        ""dataset_min"": float(dataset_stats.loc[""min"", feat]),
+        ""dataset_max"": float(dataset_stats.loc[""max"", feat]),
+        ""dataset_25th"": float(dataset_quartiles.loc[feat, 0.25]),
+        ""dataset_75th"": float(dataset_quartiles.loc[feat, 0.75]),
     }
-}","Top 10 tracks (examples): Tom Odell; two Arctic Monkeys entries; Bad Bunny (with Rauw Alejandro and with J Balvin); Harry Styles; Calvin Harris & Dua Lipa; Olivia Rodrigo; Chris Jedi et al.; Paloma Faith.
 
-Key feature summary (top‑10 vs overall):
-- Energy mean 0.7104 (median 0.8075), overall mean 0.6460; top10 at the ~53rd percentile. Top10 range 0.417–0.885.
-- Danceability mean 0.6279 (median 0.5635), overall mean 0.5626; top10 at the ~61st percentile. Range 0.445–0.829.
-- Valence mean 0.4117 (median 0.4500), overall mean 0.4696; top10 at the ~45th percentile. Range 0.131–0.769.
-- Tempo mean 122.79 (median 123.38), nearly identical to overall mean 122.73; range 67.53–176.09.
+# Overall clustering assessment: check if top10 ranges fall mostly inside dataset 25-75 IQR
+cluster_assessment = {}
+for feat in features:
+    tmin = notes[feat][""top10_min""]
+    tmax = notes[feat][""top10_max""]
+    q1 = notes[feat][""dataset_25th""]
+    q3 = notes[feat][""dataset_75th""]
+    # proportion of top10 range inside the IQR
+    inside_min = max(tmin, q1)
+    inside_max = min(tmax, q3)
+    if inside_max > inside_min:
+        inside_range = inside_max - inside_min
+    else:
+        inside_range = 0.0
+    total_top10_range = tmax - tmin if (tmax - tmin) > 0 else 0.0
+    prop_in_iqr = (inside_range / total_top10_range) if total_top10_range > 0 else 0.0
+    cluster_assessment[feat] = {
+        ""top10_range"": total_top10_range,
+        ""overlap_with_IQR"": inside_range,
+        ""prop_top10_range_inside_IQR"": round(prop_in_iqr, 3),
+        ""interpretation"": (
+            ""top10 values concentrated inside dataset IQR""
+            if prop_in_iqr >= 0.5
+            else ""top10 values not concentrated inside dataset IQR""
+        ),
+    }
 
-Conclusion: Popular tracks trend toward slightly higher energy and danceability but similar tempo and slightly lower valence. They do not form a tight cluster—feature ranges are wide."
+# Build final result as a dictionary containing dataframes and summaries
+result = {
+    ""top_10_tracks"": top10_tracks,
+    ""feature_summary_top10"": feature_summary_top10,
+    ""dataset_quartiles"": dataset_quartiles,
+    ""counts_above_median"": counts_above_median.to_dict(),
+    ""counts_above_75th"": counts_above_75th.to_dict(),
+    ""per_feature_notes"": notes,
+    ""cluster_assessment"": cluster_assessment,
+}","Top 10 tracks (artists include Tom Odell, Arctic Monkeys, Bad Bunny, Dua Lipa, Harry Styles, Eminem) share these audio-feature patterns:
+
+- Averages: energy 0.688, danceability 0.666, valence 0.457, tempo 124.15 BPM (medians: energy 0.73, danceability 0.6575, valence 0.475, tempo 123.38).
+- Relative to the full dataset medians (energy 0.689, danceability 0.5755, valence 0.456, tempo 122.869): 50% of top10 exceed dataset median for energy, danceability and tempo; 60% exceed for valence.
+- Above the dataset 75th percentile: danceability stands out (50% of top10), energy and valence less so (20% each), tempo 30%.
+- Range: energy 0.417–0.866, danceability 0.445–0.949, tempo 67.5–176.1.
+
+Conclusion: popular tracks trend toward higher danceability and moderately high energy/valence, but tempo and energy vary widely—no single tight cluster."
 custom_dataset,"Find genres where high acousticness (>0.7) coexists with high popularity (>60). What characteristics do these genres share, and what might explain the combination?","import pandas as pd
 
-# Read CSV
+# Read dataset
 df = pd.read_csv(""custom_dataset.csv"")
 
-# Filter tracks that are both highly acoustic and highly popular
-mask = (df[""acousticness""] > 0.7) & (df[""popularity""] > 60)
-df_masked = df[mask].copy()
+# Filter tracks where acousticness > 0.7 and popularity > 60
+filtered = df[(df['acousticness'] > 0.7) & (df['popularity'] > 60)].copy()
 
-# If no rows meet criteria, prepare an informative empty result
-if df_masked.empty:
+# If no rows match, prepare an informative result
+if filtered.shape[0] == 0:
     result = {
-        ""genre_stats"": pd.DataFrame(),
-        ""top_tracks_by_genre"": {},
-        ""explanation"": ""No tracks found with acousticness > 0.7 and popularity > 60.""
+        ""message"": ""No tracks found with acousticness > 0.7 and popularity > 60."",
+        ""filtered_count"": 0
     }
 else:
-    # Aggregate statistics per genre for the selected subset
-    agg_df = (
-        df_masked.groupby(""track_genre"")
-        .agg(
-            count=(""track_id"", ""size""),
-            mean_popularity=(""popularity"", ""mean""),
-            mean_acousticness=(""acousticness"", ""mean""),
-            mean_energy=(""energy"", ""mean""),
-            mean_danceability=(""danceability"", ""mean""),
-            mean_instrumentalness=(""instrumentalness"", ""mean""),
-            mean_liveness=(""liveness"", ""mean""),
-            mean_valence=(""valence"", ""mean""),
-            mean_tempo=(""tempo"", ""mean""),
-            mean_duration_ms=(""duration_ms"", ""mean""),
-            mean_loudness=(""loudness"", ""mean""),
-            explicit_fraction=(""explicit"", lambda x: x.mean())
-        )
-        .sort_values(""count"", ascending=False)
-    )
-
-    # Collect top 3 tracks (by popularity) for each genre to give concrete examples
-    top_tracks = {}
-    for genre, gdf in df_masked.groupby(""track_genre""):
-        top = (
-            gdf.sort_values(""popularity"", ascending=False)
-            .loc[:, [""track_name"", ""artists"", ""popularity"", ""acousticness""]]
-            .head(3)
-        )
-        # Convert to list of dicts for readability
-        top_tracks[genre] = top.to_dict(orient=""records"")
-
-    # Compute overall means (for comparison)
-    compare_cols = [
-        ""acousticness"",
-        ""energy"",
-        ""danceability"",
-        ""instrumentalness"",
-        ""liveness"",
-        ""valence"",
-        ""tempo"",
-        ""duration_ms"",
-        ""loudness"",
+    # Features to summarize
+    features = [
+        'popularity', 'acousticness', 'energy', 'danceability', 'valence',
+        'instrumentalness', 'liveness', 'tempo', 'duration_ms', 'loudness',
+        'speechiness'
     ]
-    overall_means = df[compare_cols].mean()
 
-    # Determine which features are consistently higher or lower across all found genres
-    consistent = {}
-    for col in [
-        ""mean_acousticness"",
-        ""mean_energy"",
-        ""mean_danceability"",
-        ""mean_instrumentalness"",
-        ""mean_liveness"",
-        ""mean_valence"",
-        ""mean_tempo"",
-        ""mean_duration_ms"",
-        ""mean_loudness"",
-    ]:
-        base_col = col.replace(""mean_"", """")
-        # Compare each genre mean to overall mean
-        genre_vals = agg_df[col]
-        if (genre_vals > overall_means[base_col]).all():
-            consistent[base_col] = ""consistently higher than dataset average""
-        elif (genre_vals < overall_means[base_col]).all():
-            consistent[base_col] = ""consistently lower than dataset average""
-        else:
-            consistent[base_col] = ""mixed (some above, some below dataset average)""
+    # Group by genre and compute means
+    agg_dict = {f: 'mean' for f in features}
+    genre_summary = filtered.groupby('track_genre').agg(agg_dict)
+    genre_summary['count'] = filtered.groupby('track_genre').size()
+    # Reorder columns to put count first
+    cols = ['count'] + [c for c in genre_summary.columns if c != 'count']
+    genre_summary = genre_summary[cols]
 
-    # Form a concise explanation using the computed patterns
-    genres_list = list(agg_df.index)
-    explanation_lines = [
-        f""Genres found with acousticness > 0.7 and popularity > 60: {', '.join(genres_list)}."",
-        f""Number of qualifying tracks per genre (see genre_stats for counts and means)."",
-        ""Common characteristic summary compared to dataset-wide averages:"",
-    ]
-    for feat, text in consistent.items():
-        explanation_lines.append(f"" - {feat}: {text}"")
+    # Compute overall dataset means for comparison
+    overall_means = df[features].mean()
+
+    # Compute differences vs overall means
+    for f in features:
+        genre_summary[f + '_vs_overall'] = genre_summary[f] - overall_means[f]
+
+    # Sort genres by number of matching tracks and then by avg popularity
+    genre_summary_sorted = genre_summary.sort_values(['count', 'popularity'], ascending=[False, False])
+
+    # Build a textual explanation describing common characteristics per genre
+    explanation_lines = []
     explanation_lines.append(
-        ""Possible explanations: high acousticness with high popularity can occur for acoustic hits,""
-        "" worship or folk songs with broad audience appeal, widely promoted or playlisted acoustic versions,""
-        "" or crossover tracks (acoustic renditions by major artists). Lower energy/danceability and higher""
-        "" acoustic/instrumental content are typical; strong artist/playlist exposure explains the high popularity.""
+        ""Genres with tracks that have acousticness > 0.7 and popularity > 60:""
     )
-    explanation = ""\n"".join(explanation_lines)
+    for genre, row in genre_summary_sorted.iterrows():
+        line = f""- {genre}: {int(row['count'])} track(s); avg_popularity={row['popularity']:.1f}, avg_acousticness={row['acousticness']:.3f}""
+        # Determine notable differences compared to overall means
+        notes = []
+        # thresholds for calling out notable differences
+        thresh_prop = 0.05  # for 0-1 features
+        thresh_tempo = 5.0  # bpm
+        thresh_loudness = 2.0  # dB
+        thresh_duration = 30000  # ms
+        # Check a few features
+        if row['energy_vs_overall'] <= -thresh_prop:
+            notes.append(f""lower energy ({row['energy']:.2f} vs overall {overall_means['energy']:.2f})"")
+        elif row['energy_vs_overall'] >= thresh_prop:
+            notes.append(f""higher energy ({row['energy']:.2f} vs overall {overall_means['energy']:.2f})"")
+        if row['danceability_vs_overall'] <= -thresh_prop:
+            notes.append(f""lower danceability ({row['danceability']:.2f} vs {overall_means['danceability']:.2f})"")
+        elif row['danceability_vs_overall'] >= thresh_prop:
+            notes.append(f""higher danceability ({row['danceability']:.2f} vs {overall_means['danceability']:.2f})"")
+        if abs(row['valence_vs_overall']) >= thresh_prop:
+            sign = ""higher"" if row['valence_vs_overall'] > 0 else ""lower""
+            notes.append(f""{sign} valence ({row['valence']:.2f} vs {overall_means['valence']:.2f})"")
+        if row['instrumentalness_vs_overall'] >= thresh_prop:
+            notes.append(f""more instrumental ({row['instrumentalness']:.3f} vs {overall_means['instrumentalness']:.3f})"")
+        if row['liveness_vs_overall'] >= thresh_prop:
+            notes.append(f""more live/ambient ({row['liveness']:.3f} vs {overall_means['liveness']:.3f})"")
+        if abs(row['tempo_vs_overall']) >= thresh_tempo:
+            notes.append(f""different tempo ({row['tempo']:.1f} bpm vs {overall_means['tempo']:.1f} bpm)"")
+        if abs(row['loudness_vs_overall']) >= thresh_loudness:
+            louder_quieter = ""louder"" if row['loudness_vs_overall'] > 0 else ""quieter""
+            notes.append(f""{louder_quieter} ({row['loudness']:.2f} dB vs {overall_means['loudness']:.2f} dB)"")
+        if abs(row['duration_ms_vs_overall']) >= thresh_duration:
+            notes.append(f""different duration ({int(row['duration_ms'])} ms vs {int(overall_means['duration_ms'])} ms)"")
+        if notes:
+            line += ""; notable: "" + ""; "".join(notes)
+        explanation_lines.append(line)
 
+    # A general explanatory paragraph hypothesizing why acoustic + popular coexist
+    general_explanation = (
+        ""Possible explanations: These genres appear to combine high recorded acousticness with high popularity. ""
+        ""Common contributing factors include: appealing singer-songwriter or folk-style productions that emphasize ""
+        ""clear acoustic instrumentation and vocals (leading to high acousticness) while also being radio- or playlist-friendly ""
+        ""(strong melodies, accessible structures) which raises popularity. Some genres may also contain popular acoustic versions ""
+        ""or unplugged renditions of well-known songs, collaborations with mainstream artists, or placement on influential playlists, ""
+        ""all of which can drive popularity despite acoustic instrumentation. The numeric summaries above (means vs dataset means) ""
+        ""show which features differ notably and support these interpretations.""
+    )
+
+    # Assemble final result
     result = {
-        ""genre_stats"": agg_df,
-        ""top_tracks_by_genre"": top_tracks,
-        ""overall_means_used_for_comparison"": overall_means,
-        ""explanation"": explanation,
-    }","27 genres meet the criteria. Examples with their mean popularity: indie 72.0, songwriter 73.0, pop 70.4, pop-film 70.5, rock-n-roll 70.5, electro 71.5, chill 67.6, singer-songwriter 68.0, ambient 65.0, blues 64.0, children 69.0. Mean loudness is generally low (quieter) — e.g., pop -9.9978 dB, chill -14.5428 dB, sleep -34.5773 dB — and most genres have no explicit content (explicit_fraction = 0.0); exceptions include chill and pop (0.2) and electro (0.5). Top high-acoustic, high-pop tracks include Tom Odell "Heal" (pop 74, acousticness 0.952) and Pink Sweat$ "Honesty" (70, 0.964). Likely explanations: acoustic/quiet arrangements (ballads, piano/ambient pieces) appeal broadly on playlists and to family-friendly audiences, boosting popularity."
-custom_dataset,Identify pairs of genres with similar average tempo and energy but significantly different average popularity. What other features might explain the popularity gap?,"import pandas as pd
-import itertools
+        ""filtered_count"": int(filtered.shape[0]),
+        ""filtered_tracks_sample"": filtered.head(20),  # up to 20 rows for inspection
+        ""genre_summary"": genre_summary_sorted,
+        ""overall_feature_means"": overall_means,
+        ""explanation_lines"": explanation_lines,
+        ""general_explanation"": general_explanation
+    }","59 tracks met the criteria. Genres represented (count, mean popularity): singer-songwriter (6, 68.0), indian (6, 65.17), pop (5, 70.4), chill (5, 67.6), sad (4, 66.25), indie (3, 72.0), sleep (3, 62.67), electro (2, 71.5), pop-film (2, 70.5), rock-n-roll (2, 70.5), classical (2, 66.0), psych-rock (2, 65.5).
 
-# Read CSV
+Common characteristics: these genres show substantially lower loudness versus overall (examples: singer-songwriter -4.07, chill -6.40, sleep -26.44) and generally slightly lower speechiness. Explanation: acoustic, quieter arrangements and intimate vocals (common in singer‑songwriter, indie, pop‑film, chill, classical) make tracks sound more “acoustic” while still achieving high popularity via playlists, film/TV placement, and broad emotional appeal."
+custom_dataset,"Find genre pairs where average tempo differs by less than 5 BPM and average energy differs by less than 0.05, but average popularity differs by more than 15 points. For each pair, identify which audio features (danceability, acousticness, speechiness, instrumentalness, valence) show the largest differences.","import pandas as pd
+from itertools import combinations
+
+# Read the dataset
 df = pd.read_csv(""custom_dataset.csv"")
 
-# Ensure expected dtypes (handle any quirks)
-# 'explicit' is boolean; if read differently, coerce
-if df['explicit'].dtype != bool:
-    df['explicit'] = df['explicit'].astype(bool)
+# Clean genre strings and drop rows without a genre
+df['track_genre'] = df['track_genre'].astype(str).str.strip()
+df = df.dropna(subset=['track_genre'])
 
-# Aggregate statistics by genre
-agg_funcs = {
-    'tempo': 'mean',
-    'energy': 'mean',
-    'popularity': 'mean',
-    'danceability': 'mean',
-    'acousticness': 'mean',
-    'instrumentalness': 'mean',
-    'loudness': 'mean',
-    'valence': 'mean',
-    'duration_ms': 'mean',
-    'speechiness': 'mean',
-    'liveness': 'mean',
-    'track_id': 'count',
-    'explicit': 'mean',  # proportion explicit
-    'mode': 'mean',
-    'key': 'mean',
-}
-genre_stats = df.groupby('track_genre').agg(agg_funcs).rename(columns={'track_id': 'count', 'explicit': 'explicit_prop'})
-genre_stats = genre_stats.reset_index()
+# Columns to use
+features = ['danceability', 'acousticness', 'speechiness', 'instrumentalness', 'valence']
+compare_cols = features + ['tempo', 'energy', 'popularity']
 
-# Filter to genres with a reasonable sample size to avoid noise
-min_count = 20
-genre_stats = genre_stats[genre_stats['count'] >= min_count].copy()
+# Compute per-genre means
+genre_means = df.groupby('track_genre')[compare_cols].mean()
 
-# Define tolerances for ""similar"" tempo and energy, and threshold for popularity gap
-tempo_tol = 5.0      # BPM
-energy_tol = 0.05    # energy units
-pop_gap = 20.0       # popularity points
-
-pairs = []
-features_for_explain = ['danceability','acousticness','instrumentalness','loudness','valence',
-                        'duration_ms','speechiness','liveness','explicit_prop','mode','key']
-
-# Build lookup dict for quick access
-gs = genre_stats.set_index('track_genre')
-
-genres = list(gs.index)
-
-for a, b in itertools.combinations(genres, 2):
-    tempo_a = gs.at[a, 'tempo']
-    tempo_b = gs.at[b, 'tempo']
-    energy_a = gs.at[a, 'energy']
-    energy_b = gs.at[b, 'energy']
-    pop_a = gs.at[a, 'popularity']
-    pop_b = gs.at[b, 'popularity']
-    if abs(tempo_a - tempo_b) <= tempo_tol and abs(energy_a - energy_b) <= energy_tol and abs(pop_a - pop_b) >= pop_gap:
-        # compute differences for explanatory features
-        diffs = {}
-        for f in features_for_explain:
-            diffs[f] = gs.at[a, f] - gs.at[b, f]
-        # rank features by absolute difference
-        top_features = sorted(diffs.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
-        pairs.append({
-            'genre_a': a,
-            'genre_b': b,
-            'count_a': int(gs.at[a, 'count']),
-            'count_b': int(gs.at[b, 'count']),
-            'tempo_a': tempo_a,
-            'tempo_b': tempo_b,
-            'energy_a': energy_a,
-            'energy_b': energy_b,
-            'popularity_a': pop_a,
-            'popularity_b': pop_b,
-            'popularity_diff': pop_a - pop_b,
-            'top_explanatory_diffs': top_features,
-            **{f'{f}_diff': diffs[f] for f in features_for_explain}
+results = []
+# Iterate over unordered genre pairs
+for g1, g2 in combinations(genre_means.index, 2):
+    r1 = genre_means.loc[g1]
+    r2 = genre_means.loc[g2]
+    tempo_diff = abs(r1['tempo'] - r2['tempo'])
+    energy_diff = abs(r1['energy'] - r2['energy'])
+    popularity_diff = abs(r1['popularity'] - r2['popularity'])
+    # Apply the filtering criteria
+    if (tempo_diff < 5.0) and (energy_diff < 0.05) and (popularity_diff > 15.0):
+        # Compute absolute differences for specified audio features
+        feat_diffs = {f: abs(r1[f] - r2[f]) for f in features}
+        max_diff = max(feat_diffs.values())
+        top_features = [f for f, v in feat_diffs.items() if v == max_diff]
+        results.append({
+            'genre_1': g1,
+            'genre_2': g2,
+            'tempo_diff': round(float(tempo_diff), 4),
+            'energy_diff': round(float(energy_diff), 4),
+            'popularity_diff': round(float(popularity_diff), 4),
+            'top_features': top_features,
+            'top_feature_diff': round(float(max_diff), 6),
+            'feature_differences': {k: round(float(v), 6) for k, v in feat_diffs.items()}
         })
 
-# Convert to DataFrame and sort by absolute popularity difference descending
-pairs_df = pd.DataFrame(pairs)
-if not pairs_df.empty:
-    pairs_df = pairs_df.sort_values(by='popularity_diff', key=lambda s: s.abs(), ascending=False).reset_index(drop=True)
-
-# Store final result
-result = pairs_df","Pairs flagged by the analysis (similar tempo & energy but different popularity): 
-- iranian vs pop-film (counts 38 vs 55) 
-- iranian vs k-pop (38 vs 40) 
-- anime vs iranian (39 vs 38) 
-- iranian vs pop (38 vs 46)
-
-Other features that differ and could explain the popularity gap (values are genre_a minus genre_b): 
-- explicit_prop_diff: 0.105263 (iranian vs pop-film), 0.105263 (iranian vs k-pop), -0.105263 (anime vs iranian), 0.040046 (iranian vs pop)  
-- liveness_diff: 0.031933, -0.002271, -0.006820, 0.060093  
-- mode_diff: 0.015311, 0.103947, -0.066127, 0.057208  
-- key_diff: 0.233971, 1.615789, -0.302969, 0.011442
-
-Differences in explicit content prevalence, live/produced feel, musical mode, and average key are plausible contributors to the popularity differences."
+# Build final DataFrame sorted by descending popularity difference
+result = pd.DataFrame(results).sort_values(by='popularity_diff', ascending=False).reset_index(drop=True)","167 genre pairs meet the criteria. Examples:
+- iranian vs pop-film — tempo_diff 2.4436, energy_diff 0.0401, popularity_diff 58.4818 — top: instrumentalness (0.458565)
+- iranian vs k-pop — tempo_diff 0.5456, energy_diff 0.0459, popularity_diff 55.9500 — top: instrumentalness (0.431911)
+- anime vs iranian — tempo_diff 2.7324, energy_diff 0.0093, popularity_diff 45.8846 — top: valence (0.218400)
+- iranian vs pop — tempo_diff 4.6853, energy_diff 0.0244, popularity_diff 45.7826 — top: instrumentalness (0.429931)
+- idm vs pop-film — tempo_diff 3.4815, energy_diff 0.0150, popularity_diff 45.3273 — top: instrumentalness (0.680908)
+- bluegrass vs turkish — tempo_diff 3.5968, energy_diff 0.0308, popularity_diff 15.4115 — top: valence (0.218407)
+- anime vs trip-hop — tempo_diff 2.0602, energy_diff 0.0195, popularity_diff 15.3114 — top: danceability (0.149146)
+- children vs indian — tempo_diff 0.2852, energy_diff 0.0224, popularity_diff 15.3049 — top: valence (0.265660)
+- country vs german — tempo_diff 0.2012, energy_diff 0.0069, popularity_diff 15.2275 — top: instrumentalness (0.165684)
+- folk vs indian — tempo_diff 3.2915, energy_diff 0.0056, popularity_diff 15.0286 — top: acousticness (0.115682)"
