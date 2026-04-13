@@ -67,15 +67,31 @@ print(result["final_answer"])
 
 The following prompts were used when building the agent with Claude (claude.ai). Each entry describes what was being attempted and whether the response was helpful.
 
-\subsect{Prompt 1 --- Initial project scaffold}
+\subsect{Prompt 1 --- Understanding LangGraph state and nodes}
 
-\textbf{Prompt:} \textit{``Read this assignment PDF and help me build a LangGraph-based CSV question-answering agent in Python using OpenAI. I need agent.py, nodes.py, and test\_agent.py with the required run\_agent() signature.''}
+\textbf{Prompt:} \textit{``I need to build a LangGraph agent in Python. I have not used LangGraph before. How do nodes and state work? What does a basic StateGraph with two nodes look like?''}
 
-\textbf{Goal:} Generate the initial three-file project structure with a working LangGraph StateGraph, the four node functions (codegen, execute, evaluate, respond), and the required function signature.
+\textbf{Goal:} Understand the core LangGraph primitives --- \texttt{StateGraph}, \texttt{TypedDict} state, node functions, and edges --- before writing any project-specific code.
 
-\textbf{Response:} Helpful. The assistant produced all three files with correct LangGraph syntax, a clean \texttt{AgentState} TypedDict, and proper conditional edge routing for the retry loop. The \texttt{exec(code, env)} pattern and the required return dict were implemented correctly on the first attempt.
+\textbf{Response:} Helpful. The assistant explained that each node is a plain Python function that receives the full state dict and returns a partial dict of keys to update, and that LangGraph merges the returned dict back into state automatically. A minimal two-node example with \texttt{set\_entry\_point} and \texttt{add\_edge} made the pattern clear.
 
-\subsect{Prompt 2 --- Adding dataset context to improve code generation}
+\subsect{Prompt 2 --- Implementing the codegen node}
+
+\textbf{Prompt:} \textit{``Write a codegen node for my agent. It should call OpenAI GPT-5-mini with a system prompt that instructs the model to write pandas code that reads a CSV and stores the result in a variable called \texttt{result}. The node should strip any markdown fences from the output.''}
+
+\textbf{Goal:} Implement the first node of the pipeline, including the system prompt, the OpenAI API call, and fence-stripping post-processing.
+
+\textbf{Response:} Helpful. The assistant produced a clean node function using \texttt{re.sub} to strip fences and a system prompt with explicit rules covering the \texttt{result} variable requirement, the prohibition on \texttt{print()}, and the instruction to return only raw code.
+
+\subsect{Prompt 3 --- Wiring the full graph with retry logic}
+
+\textbf{Prompt:} \textit{``Now add execute, evaluate, and respond nodes, and wire them into a StateGraph in agent.py. The graph should retry codegen once on a FAIL evaluation before falling through to respond.''}
+
+\textbf{Goal:} Complete the four-node pipeline and implement the conditional retry edge using \texttt{add\_conditional\_edges}.
+
+\textbf{Response:} Helpful. The assistant implemented the routing function, a small \texttt{increment\_retry} node to track retry count, and the correct conditional edge mapping.
+
+\subsect{Prompt 4 --- Adding dataset context to improve code generation}
 
 \textbf{Prompt:} \textit{``Let's pass some summary information about the dataset to the LLM calls so that it can create better code. Add a summarize node that reads the CSV once and injects shape, column names, dtypes, first 3 rows, numeric stats, and null counts into the state.''}
 
