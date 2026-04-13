@@ -1,0 +1,220 @@
+\documentclass[12pt, oneside]{report}
+
+\pdfcompresslevel=0
+\pdfobjcompresslevel=\pdfcompresslevel
+
+\input{../ECE 157C Packages.tex}
+
+\title{ECE 157C HW 01}
+\author{Caleb Harris}
+\date{}
+
+\begin{document}
+\input{../ECE 157C Title.tex}
+
+% ============================================================
+\chap{Setup and Execution}
+% ============================================================
+
+\sect{Dependencies}
+
+The project requires Python 3.10 or later. All dependencies are listed in \texttt{requirements.txt} and can be installed with:
+
+\begin{minted}{bash}
+pip install -r requirements.txt
+\end{minted}
+
+The key packages are:
+
+\begin{itemize}
+    \item \texttt{openai>=1.30.0} --- LLM API client
+    \item \texttt{langgraph>=0.2.0} --- agent graph framework
+    \item \texttt{langchain-core>=0.2.0} --- required by LangGraph
+    \item \texttt{pandas>=2.0.0} --- CSV loading and analysis inside generated code
+\end{itemize}
+
+\sect{Configuration}
+
+The agent authenticates with OpenAI using the environment variable \texttt{OPENAI\_API\_KEY}, which should be exported:
+
+\begin{minted}{bash}
+export OPENAI_API_KEY="sk-..."
+\end{minted}
+
+No other configuration is required. The model is set to \texttt{gpt-5-mini} in \texttt{nodes.py} and can be changed by editing the \texttt{MODEL} constant.
+
+\sect{How to Run}
+
+Place \texttt{housing.csv} and \texttt{custom\_dataset.csv} in the same directory as the source files, then run:
+
+\begin{minted}{bash}
+python test_agent.py
+\end{minted}
+
+This executes all 18 questions (9 fixed, 9 custom), prints intermediate results to stdout, and writes \texttt{results.csv} on completion.
+
+To call the agent programmatically for a single question:
+
+\begin{minted}{python}
+from test_agent import run_agent
+result = run_agent("What is the average median house value?", "housing.csv")
+print(result["final_answer"])
+\end{minted}
+
+% ============================================================
+\chap{Prompt Log}
+% ============================================================
+
+The following prompts were used when building the agent with Claude (claude.ai). Each entry describes what was being attempted and whether the response was helpful.
+
+\subsect{Prompt 1 --- Initial project scaffold}
+
+\textbf{Prompt:} \textit{``Read this assignment PDF and help me build a LangGraph-based CSV question-answering agent in Python using OpenAI. I need agent.py, nodes.py, and test\_agent.py with the required run\_agent() signature.''}
+
+\textbf{Goal:} Generate the initial three-file project structure with a working LangGraph StateGraph, the four node functions (codegen, execute, evaluate, respond), and the required function signature.
+
+\textbf{Response:} Helpful. The assistant produced all three files with correct LangGraph syntax, a clean \texttt{AgentState} TypedDict, and proper conditional edge routing for the retry loop. The \texttt{exec(code, env)} pattern and the required return dict were implemented correctly on the first attempt.
+
+\subsect{Prompt 2 --- Adding dataset context to improve code generation}
+
+\textbf{Prompt:} \textit{``Let's pass some summary information about the dataset to the LLM calls so that it can create better code. Add a summarize node that reads the CSV once and injects shape, column names, dtypes, first 3 rows, numeric stats, and null counts into the state.''}
+
+\textbf{Goal:} Reduce codegen failures caused by the model inventing incorrect column names or ignoring null values. The summary would be cached per CSV path and passed to both the codegen and respond prompts.
+
+\textbf{Response:} Helpful. The assistant added a \texttt{summarize\_node} function with an in-process \texttt{\_summary\_cache} dict, wired it as the new entry point in \texttt{agent.py}, and updated both prompt templates to include the summary. The retry edge was correctly routed to skip the summarize node (since the summary is already in state), going directly back to codegen.
+
+\subsect{Prompt 3 --- Debugging the genre pairs question}
+
+\textbf{Prompt:} \textit{``This advanced question is failing: 'Identify pairs of genres with similar median income levels but significantly different median house value.' The answer is showing row counts instead of popularity scores in the pair output. How do I fix this?''}
+
+\textbf{Goal:} Diagnose why the generated pandas code was reporting counts alongside genre pair metrics instead of average popularity values, and determine whether the fix should be a prompt change or a question rewrite.
+
+\textbf{Response:} Helpful. The assistant identified that the model was likely including a \texttt{count} column from \texttt{groupby().agg()} output in the final result, which the respond node then misread as a popularity metric. It recommended rewriting the question with explicit numerical thresholds rather than vague qualitative language (e.g.\ ``similar'' and ``significantly different''), which removes ambiguity that causes the model to produce poorly structured output.
+
+\subsect{Prompt 4 --- Refining the genre pairs question with explicit thresholds}
+
+\textbf{Prompt:} \textit{``Rewrite this question with precise thresholds: find genre pairs where average tempo differs by less than 5 BPM and average energy differs by less than 0.05, but average popularity differs by more than 15 points.''}
+
+\textbf{Goal:} Produce a version of the advanced question that the codegen node could implement correctly without ambiguity, yielding a well-structured result the respond node could summarize clearly.
+
+\textbf{Response:} Partially helpful. The rewritten question did fix the codegen bug --- the generated code correctly computed genre-level aggregates and applied the three threshold filters. However, 167 pairs were returned and the respond node listed examples rather than synthesizing patterns across them, making the final answer verbose and hard to interpret.
+
+% ============================================================
+\chap{Failure Analysis and Debugging}
+% ============================================================
+
+\sect{Failure Case 1 --- Genre Pairs: Count Confused with Popularity}
+
+\textbf{Question:} \textit{Identify pairs of genres with similar average tempo and energy but significantly different average popularity. What other features might explain the popularity gap?}
+
+\textbf{Did the generated code work on the first attempt?} No.
+
+\textbf{What went wrong:} The generated code used \texttt{groupby().agg()} to compute per-genre statistics and included \texttt{count} as one of the aggregated columns (a common pandas pattern). The respond node then interpreted the count column as popularity scores, producing output like ``iranian vs pop-film (counts 38 vs 55)'' --- where 38 and 55 were the number of tracks per genre in the sample, not their average popularity. The actual popularity difference was never computed or reported.
+
+\textbf{How it was debugged:} By inspecting the printed \texttt{execution\_result} in the terminal output, the count/popularity confusion was visible: the numbers were far too small to be popularity scores (which range 0--100) and did not vary enough across genres to explain the stated differences. Comparing the \texttt{generated\_code} output confirmed that \texttt{count} was being passed through to the result DataFrame alongside the actual aggregates.
+
+\textbf{How the prompt was modified:} The question was rewritten with explicit numerical thresholds to remove all qualitative language:
+
+\begin{quote}
+\textit{Find genre pairs where average tempo differs by less than 5 BPM and average energy differs by less than 0.05, but average popularity differs by more than 15 points. For each pair, identify which audio features (danceability, acousticness, speechiness, instrumentalness, valence) show the largest differences.}
+\end{quote}
+
+\textbf{Did the revised prompt improve the result?} Partially. The codegen bug was resolved --- the revised code correctly computed mean popularity per genre and applied all three threshold conditions. However, 167 pairs met the criteria and the respond node listed individual examples rather than summarizing the dominant pattern across pairs. The answer became more correct but less readable.
+
+\sect{Failure Case 2 --- Housing Coastal Areas: Ambiguous Question Definition}
+
+\textbf{Question:} \textit{Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?}
+
+\textbf{Did the generated code work on the first attempt?} Yes, technically --- but the answer was unsatisfying.
+
+\textbf{What went wrong:} The question contains two undefined terms. First, ``coastal areas'' is ambiguous in this dataset: the \texttt{ocean\_proximity} column has categories like \texttt{<1H OCEAN}, \texttt{NEAR OCEAN}, and \texttt{NEAR BAY}, but ``coastal'' could also be interpreted geographically using latitude and longitude to find tracts near the coastline. The generated code chose the categorical interpretation, which is reasonable but not the only valid approach. Second, ``relatively low'' has no threshold --- lower than the dataset average, lower than other coastal categories, or below some absolute value? The code compared \texttt{ocean\_proximity} categories to each other, finding that \texttt{<1H OCEAN} has the lowest average house value among coastal categories (\$213,600), and attributed this to higher population density, household size, and lower room counts.
+
+\textbf{How it was debugged:} The execution result was inspected and the final answer was read carefully. The answer was factually plausible but reflected only one interpretation of the question. No code error occurred; the failure was semantic rather than technical.
+
+\textbf{How the prompt was modified:} A more precise rewrite was proposed:
+
+\begin{quote}
+\textit{Among tracts categorized as NEAR OCEAN or NEAR BAY, identify those with median house values below \$200,000. How do their median income, population density, and housing age compare to higher-priced coastal tracts?}
+\end{quote}
+
+\textbf{Did the revised prompt improve the result?} This rewrite was not tested in the final run. The original question was retained for the submission and is documented here as a case where question ambiguity, rather than a codegen bug, was the root cause of an unsatisfying answer.
+
+% ============================================================
+\chap{Self-Grading}
+% ============================================================
+
+\sect{Housing Dataset}
+
+\textbf{Simple questions:} All three simple questions produced correct, verifiable answers. Average median house value, the highest ocean proximity category, and the min/max/median statistics can be manually checked against the dataset and were accurate.
+
+\textbf{Intermediate questions:} The three intermediate questions produced plausible and well-structured answers. The geographic binning question (latitude/longitude ranges and house prices) depended on how the model chose to define bins, which introduces some subjectivity but produced a reasonable result. The population density correlation question correctly computed population per household and described the trend accurately.
+
+\textbf{Advanced questions:} Results were inconsistent. The top-5 most expensive geographic areas question produced a defensible answer but the interpretation of ``geographic area'' (binned lat/lon) varied across runs. The coastal areas question (Failure Case 2) produced a technically correct but semantically limited answer due to question ambiguity. The similar-income, different-value question showed similar issues with definition of ``similar'' and ``significantly different.''
+
+\sect{Spotify Custom Dataset}
+
+\textbf{Simple questions:} All three returned correct scalar or categorical answers that are easy to verify.
+
+\textbf{Intermediate questions:} Tempo binning and genre comparisons worked well. The valence-vs-popularity cross-genre comparison produced a clear tabular result.
+
+\textbf{Advanced questions:} The top-10 popular tracks feature analysis worked correctly but the respond node tended to list features rather than synthesize a pattern. The genre pairs question (Failure Case 1) was partially fixed by prompt rewriting but still produced an overly verbose answer. The acousticness-with-popularity question produced a reasonable but shallow analysis.
+
+% ============================================================
+\chap{Advanced Question Reflection}
+% ============================================================
+
+\sect{Housing Dataset --- Advanced Questions}
+
+\subsect{Question 1: Top 5 Most Expensive Geographic Areas}
+
+\textit{Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.}
+
+The generated code produced a valid answer, but the result depends heavily on how ``geographic area'' is defined. The model binned latitude and longitude into discrete ranges, which means the answer changes if bin width changes. A finer grid would produce more specific areas; a coarser grid would produce broader regions. The question could be interpreted as asking for census tracts, cities, counties, or arbitrary coordinate bins --- all are defensible.
+
+Additionally, ``key factors'' invites causal reasoning that a summary statistic cannot support. High income and low population density correlate with high prices, but the dataset cannot establish causation.
+
+\textbf{Rewrite:} \textit{Divide the dataset into a 5$\times$5 grid of latitude/longitude bins. Identify the 5 bins with the highest average median house value. For each bin, report the average median income, housing age, and population density, and describe how these compare to the dataset-wide averages.}
+
+\subsect{Question 2: Low-Priced Coastal Areas}
+
+\textit{Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?}
+
+As discussed in Failure Case 2, this question has two ambiguous terms: ``coastal areas'' (categorical vs.\ geographic) and ``relatively low'' (no threshold defined). The answer produced by the agent was factually grounded but only represents one of several valid interpretations. A different model run could define coastal as lat $<$ 35 and lon $<$ -120, filter to \texttt{ocean\_proximity != 'INLAND'}, and apply a different threshold for low prices --- all of which would produce a different but equally defensible answer.
+
+\textbf{Rewrite:} \textit{Among tracts categorized as NEAR OCEAN or NEAR BAY, identify those with median house values below \$200,000. How do their median income, population density, and housing age compare to higher-priced tracts in the same ocean proximity categories?}
+
+\subsect{Question 3: Similar Income, Different House Values}
+
+\textit{Identify areas with similar median income levels but significantly different median house values. What factors might explain these differences?}
+
+``Similar'' and ``significantly different'' are undefined, making this question highly sensitive to threshold choices. The agent's code chose thresholds implicitly, and a different run may produce entirely different pairs of areas. The question is also open to geographic vs.\ income-bin interpretations of ``areas.'' ``Factors'' again invites causal claims the data does not support.
+
+\textbf{Rewrite:} \textit{Group tracts into median income quintiles. Within each quintile, identify the tract with the highest and lowest median house value. For each pair, report the difference in housing age, population density, ocean proximity, and rooms per household.}
+
+\sect{Spotify Dataset --- Advanced Questions}
+
+\subsect{Question 1: Audio Features of Top 10 Popular Tracks}
+
+\textit{Identify the top 10 most popular tracks and analyze what audio features they share.}
+
+The answer is correct but the question is mildly ambiguous: ``share'' could mean all features are similar, or just that they cluster around certain ranges. The respond node tended to list feature values rather than compare them to genre or dataset averages, so it is unclear whether the identified features are actually distinctive of popular tracks or just typical of all tracks.
+
+\textbf{Rewrite:} \textit{Identify the 10 tracks with the highest popularity score. For each of the following features --- danceability, energy, valence, tempo, acousticness --- report the mean value for the top-10 group and for the full dataset. Which features differ most between the two groups?}
+
+\subsect{Question 2: High Acousticness with High Popularity}
+
+\textit{Find genres where high acousticness ($>$0.7) coexists with high popularity ($>$60). What characteristics do these genres share?}
+
+This question is relatively precise and produced a clean result. The main ambiguity is whether ``characteristics'' refers only to audio features in the dataset or invites broader cultural reasoning. A run that produces no genres meeting both thresholds (possible with a different sample) would fail silently with an empty result.
+
+\textbf{Rewrite:} \textit{Identify genres where the average acousticness exceeds 0.7 and the average popularity exceeds 60. For each such genre, report average danceability, valence, speechiness, and instrumentalness. If no genres meet both criteria, lower the popularity threshold to 50 and note the adjustment.}
+
+\subsect{Question 3: Genre Pairs with Similar Tempo and Energy but Different Popularity}
+
+\textit{Find genre pairs where average tempo differs by less than 5 BPM and average energy differs by less than 0.05, but average popularity differs by more than 15 points.}
+
+This question is precisely defined and the codegen produced correct results. However, 167 pairs met the criteria, making the answer difficult to interpret. The respond node listed examples rather than identifying the dominant explanatory feature across all pairs (instrumentalness, in most cases). A valid alternative answer would sort pairs by popularity difference and present only the top 10, or aggregate the feature differences across all 167 pairs to identify systematic patterns.
+
+\textbf{Rewrite:} \textit{Find all genre pairs where average tempo differs by less than 5 BPM and average energy differs by less than 0.05, but average popularity differs by more than 20 points. Among these pairs, which single audio feature (danceability, acousticness, speechiness, instrumentalness, valence) shows the largest average absolute difference? Report the top 5 pairs ranked by popularity difference and highlight the dominant explanatory feature.}
+
+\end{document}
