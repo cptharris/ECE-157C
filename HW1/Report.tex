@@ -5,7 +5,7 @@
 
 \input{../ECE 157C Packages.tex}
 
-\title{ECE 157C HW 01}
+\title{ECE 157C/272C HW 01}
 \author{Caleb Harris}
 \date{}
 
@@ -60,6 +60,17 @@ from test_agent import run_agent
 result = run_agent("What is the average median house value?", "housing.csv")
 print(result["final_answer"])
 \end{minted}
+
+% ============================================================
+\chap{Visualization}
+% ============================================================
+
+\begin{figure}[ht!]
+    \centering
+    % inkscape graphics/agent_workflow_diagram.svg --export-type=png --export-dpi=200
+    \includegraphics[width=0.8\linewidth]{agent_workflow_diagram.png}
+    \caption{Agent Workflow Diagram}
+\end{figure}
 
 % ============================================================
 \chap{Prompt Log}
