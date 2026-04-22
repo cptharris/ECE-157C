@@ -1,6 +1,6 @@
 \documentclass[12pt, oneside]{report}
 
-\pdfcompresslevel=0
+\pdfcompresslevel=1
 \pdfobjcompresslevel=\pdfcompresslevel
 
 \input{../ECE 157C Packages.tex}
@@ -240,7 +240,7 @@ The generated code correctly identified the top 10 tracks (including artists suc
 
 \textit{Find genres where high acousticness ($>$0.7) coexists with high popularity ($>$60). What characteristics do these genres share, and what might explain the combination?}
 
-The agent filtered at the track level (59 tracks meeting both thresholds) and then summarized per genre, rather than filtering at the genre level (genres whose average acousticness $>$ 0.7 and average popularity $>$ 60). This is a partial misinterpretation of the question, which asked for genres, not tracks. That said, the genre-level summary produced was informative: singer-songwriter, indian, pop, chill, sad, and indie all appeared with multiple qualifying tracks and high mean popularity (62--72). The shared characteristic of substantially lower loudness (singer-songwriter $-4.07$ dB, chill $-6.40$ dB, sleep $-26.44$ dB below overall mean) is a useful and data-supported finding. The explanation --- that acoustic, intimate arrangements achieve popularity through playlist placement and film/TV sync --- is plausible but goes beyond what the data can confirm.
+The agent filtered at the track level (59 tracks meeting both thresholds) and then summarized per genre, rather than filtering at the genre level (genres whose average acousticness $>$ 0.7 and average popularity $>$ 60). This is a partial misinterpretation of the question, which asked for genres, not tracks. That said, the track-level summary produced was informative: singer-songwriter, indian, pop, chill, sad, and indie all appeared with multiple qualifying tracks and high mean popularity (62--72). The shared characteristic of substantially lower loudness (singer-songwriter $-4.07$ dB, chill $-6.40$ dB, sleep $-26.44$ dB below overall mean) is a useful and data-supported finding. The explanation --- that acoustic, intimate arrangements achieve popularity through playlist placement and film/TV sync --- is plausible but goes beyond what the data can confirm.
 
 \textbf{Is the answer the only correct one?} No. Filtering at genre level vs.\ track level produces different results, and the interpretation of ``characteristics'' could be restricted to dataset columns only (stricter) or extended to cultural and industry explanations (as the agent did).
 
