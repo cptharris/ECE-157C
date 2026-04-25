@@ -88,15 +88,6 @@ def increment_retry(state: AgentState) -> AgentState:
     return {"retry_count": state.get("retry_count", 0) + 1}
 
 
-def route_after_summarize(state: AgentState) -> str:
-    """
-    If this is a follow-up and we already have a prior result, skip codegen
-    from CSV and go straight to memory-aware codegen. (Both paths hit the
-    same codegen_node; the node itself checks is_followup internally.)
-    """
-    return "codegen"
-
-
 # ---------------------------------------------------------------------------
 # Memory commit node  (runs after viz, before END)
 # ---------------------------------------------------------------------------

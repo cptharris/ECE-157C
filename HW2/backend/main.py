@@ -90,6 +90,7 @@ class ChatResponse(BaseModel):
     session_id: str
     final_answer: str
     viz_json: Optional[str] = None
+    viz_decision: Optional[dict] = None
     generated_code: str
     evaluation: str
     turn_index: int
@@ -156,6 +157,7 @@ def chat(req: ChatRequest):
         session_id=session_id,
         final_answer=result["final_answer"],
         viz_json=result.get("viz_json"),
+        viz_decision=result.get("viz_decision"),
         generated_code=result.get("generated_code", ""),
         evaluation=result.get("evaluation", ""),
         turn_index=len(memory.turns) - 1,

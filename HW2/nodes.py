@@ -20,16 +20,41 @@ import traceback
 import pandas as pd
 from openai import OpenAI
 
+# ---------------------------------------------------------------------------
+# LLM cache (toggle via env: LLM_CACHE=1)
+# ---------------------------------------------------------------------------
+_LLM_CACHE = {}
+# Set environment variable LLM_CACHE=0 to disable caching
+_LLM_CACHE_ENABLED = os.environ.get("LLM_CACHE", "1") == "1"
+
+def _cache_key(messages: list) -> str:
+    try:
+        return json.dumps(messages, sort_keys=True)
+    except Exception:
+        return str(messages)
+
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 MODEL = "gpt-5-mini"
 
 
 def call_llm(messages: list) -> str:
-    return (
+    key = _cache_key(messages)
+
+    if _LLM_CACHE_ENABLED and key in _LLM_CACHE:
+        return _LLM_CACHE[key]
+
+    response = (
         client.chat.completions.create(model=MODEL, messages=messages)
         .choices[0]
         .message.content.strip()
     )
+
+    if _LLM_CACHE_ENABLED:
+        _LLM_CACHE[key] = response
+
+    print(response)
+
+    return response
 
 
 # ===========================================================================
@@ -86,7 +111,31 @@ class ConversationMemory:
         if isinstance(result, list):
             return {"type": "list", "columns": None, "data": result}
         if isinstance(result, dict):
-            return {"type": "dict", "columns": list(result.keys()), "data": result}
+            # Normalize dicts into a list-of-records structure for consistency
+            try:
+                # Case 1: dict of scalars → convert to key/value rows
+                if all(not isinstance(v, (list, dict)) for v in result.values()):
+                    data = [{"key": k, "value": v} for k, v in result.items()]
+                    return {
+                        "type": "dataframe",
+                        "columns": ["key", "value"],
+                        "data": data,
+                    }
+
+                # Case 2: dict of lists → convert to DataFrame directly
+                df = pd.DataFrame(result)
+                return {
+                    "type": "dataframe",
+                    "columns": list(df.columns),
+                    "data": df.to_dict(orient="records"),
+                }
+            except Exception:
+                # Fallback: wrap as single-row DataFrame
+                return {
+                    "type": "dataframe",
+                    "columns": list(result.keys()),
+                    "data": [result],
+                }
         # scalar
         return {"type": "scalar", "columns": None, "data": result}
 
@@ -98,7 +147,10 @@ class ConversationMemory:
         if t == "dataframe":
             return pd.DataFrame(data)
         if t == "series":
-            return pd.Series(data)
+            try:
+                return pd.Series(data)
+            except Exception:
+                return pd.Series(list(data.values()))
         return data  # scalar, list, dict, other
 
     @staticmethod
@@ -121,7 +173,12 @@ class ConversationMemory:
             return (
                 f"import json, pandas as pd\n" f"prior_result = pd.Series({data_json})"
             )
-        return f"prior_result = {data_json}"
+        # For dict and other types: always prefer DataFrame-first semantics,
+        # never return raw dict reconstruction.
+        return (
+            "import pandas as pd\n"
+            f"prior_result = pd.DataFrame({data_json}) if isinstance({data_json}, list) else {data_json}"
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -194,6 +251,7 @@ def _build_csv_summary(csv_path: str) -> str:
 
     return "\n".join(lines)
 
+
 def summarize_node(state: dict) -> dict:
     """Load CSV summary; use cached value from memory if available."""
     memory: ConversationMemory = state["memory"]
@@ -245,13 +303,10 @@ Rules:
 5. Return ONLY raw Python — no markdown, no explanation.
 """
 
-CODEGEN_USER_FOLLOWUP = """Prior result reconstruction code (already runs before yours):
-{prior_code}
+CODEGEN_USER_FOLLOWUP = """Follow-up question: {question}
 
 Conversation history:
 {history}
-
-Follow-up question: {question}
 
 Write Python code that operates on `prior_result` and stores the answer in `result`."""
 
@@ -264,7 +319,7 @@ def codegen_node(state: dict) -> dict:
         prior_serialized = memory.get_last_result_serialized()
         prior_code = ConversationMemory.result_to_code_snippet(prior_serialized)
         prompt = CODEGEN_USER_FOLLOWUP.format(
-            prior_code=prior_code,
+            # prior_code=prior_code,
             history=memory.get_history_text(),
             question=state["question"],
         )
@@ -305,7 +360,7 @@ def codegen_node(state: dict) -> dict:
 def execute_node(state: dict) -> dict:
     env: dict = {}
     try:
-        exec(state["generated_code"], env)  # noqa: S102
+        exec(state["generated_code"], env)
         execution_result = env.get("result", None)
         execution_error = None
     except Exception:
@@ -443,10 +498,7 @@ Rules:
 6. Use a dark theme: layout bgcolor='#0f0f0f', paper_bgcolor='#0f0f0f', font color='#e0e0e0'.
 """
 
-VIZ_CODE_USER = """Prior result reconstruction code (already runs before yours):
-{prior_code}
-
-Question: {question}
+VIZ_CODE_USER = """Question: {question}
 Chart type: {chart_type}
 
 Write Plotly code that creates a `fig` from `prior_result`."""
@@ -500,7 +552,7 @@ def viz_node(state: dict) -> dict:
             {
                 "role": "user",
                 "content": VIZ_CODE_USER.format(
-                    prior_code=prior_code,
+                    # prior_code=prior_code,
                     question=state["question"],
                     chart_type=chart_type,
                 ),
@@ -521,7 +573,8 @@ def viz_node(state: dict) -> dict:
             viz_json = fig.to_json()
         else:
             viz_json = None
-    except Exception:
+    except Exception as e:
         viz_json = None
+        decision["error"] = str(e)
 
     return {"viz_json": viz_json, "viz_decision": decision}

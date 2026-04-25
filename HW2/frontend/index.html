@@ -264,9 +264,8 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 8px;
-            overflow: hidden;
             width: 100%;
-            max-width: 720px;
+            max-width: 860px;
         }
 
         .viz-label {
@@ -281,6 +280,13 @@
 
         .viz-plot {
             padding: 8px;
+            min-height: 440px;
+            width: 100%;
+        }
+
+        /* Plotly injects its own div — make sure it fills the wrapper */
+        .viz-plot>div {
+            width: 100% !important;
         }
 
         /* ── Code block ── */
@@ -658,28 +664,55 @@
     <div class="msg-label">agent</div>
     <div class="bubble">${escHtml(data.final_answer)}</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <span class="eval-badge ${evalClass}">${data.evaluation}</span>
+      <button class="code-toggle eval-badge ${evalClass}" onclick="toggleCode('${codeId}-eval')">${data.evaluation}</span>
       <button class="code-toggle" onclick="toggleCode('${codeId}')">{ } code</button>
     </div>
     <pre class="code-block" id="${codeId}">${escHtml(data.generated_code)}</pre>
+    <pre class="code-block" id="${codeId}-eval">${escHtml(JSON.stringify({
+        evaluation: data.evaluation,
+        viz_decision: data.viz_decision || null
+    }, null, 2))}</pre>
     ${vizHtml}
   `;
             area.appendChild(div);
 
+            if (data.evaluation === 'FAIL') {
+                appendError('Evaluation failed — open the eval panel for details.');
+            }
+
             if (data.viz_json) {
-                try {
-                    const figData = JSON.parse(data.viz_json);
-                    const config = { responsive: true, displayModeBar: false };
-                    // Force dark theme overrides
-                    figData.layout = figData.layout || {};
-                    figData.layout.paper_bgcolor = '#111111';
-                    figData.layout.plot_bgcolor = '#111111';
-                    figData.layout.font = { color: '#e8e8e8', family: 'IBM Plex Mono, monospace', size: 11 };
-                    figData.layout.margin = { t: 40, r: 20, b: 40, l: 50 };
-                    Plotly.newPlot(vizId, figData.data, figData.layout, config);
-                } catch (e) {
-                    document.getElementById(vizId).textContent = 'Could not render chart.';
-                }
+                // Wait one frame so the container is in the DOM and has dimensions
+                requestAnimationFrame(() => {
+                    try {
+                        const figData = JSON.parse(data.viz_json);
+                        // Dark theme + explicit sizing
+                        figData.layout = figData.layout || {};
+                        figData.layout.paper_bgcolor = '#111111';
+                        figData.layout.plot_bgcolor = '#0f0f0f';
+                        figData.layout.font = { color: '#e8e8e8', family: 'IBM Plex Mono, monospace', size: 12 };
+                        figData.layout.margin = { t: 48, r: 24, b: 56, l: 64 };
+                        figData.layout.height = 420;
+                        figData.layout.autosize = true;
+                        // Style gridlines subtly
+                        const axisStyle = { gridcolor: '#2a2a2a', zerolinecolor: '#333', linecolor: '#2a2a2a' };
+                        figData.layout.xaxis = { ...(figData.layout.xaxis || {}), ...axisStyle };
+                        figData.layout.yaxis = { ...(figData.layout.yaxis || {}), ...axisStyle };
+
+                        const config = {
+                            responsive: true,
+                            displayModeBar: true,
+                            displaylogo: false,
+                            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'autoScale2d'],
+                        };
+                        const plotEl = document.getElementById(vizId);
+                        Plotly.newPlot(plotEl, figData.data, figData.layout, config);
+                        // Relayout once visible to guarantee correct width
+                        setTimeout(() => Plotly.Plots.resize(plotEl), 150);
+                    } catch (e) {
+                        const el = document.getElementById(vizId);
+                        if (el) el.textContent = 'Could not render chart: ' + e.message;
+                    }
+                });
             }
 
             scrollToBottom();
