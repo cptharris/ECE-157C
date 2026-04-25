@@ -2,764 +2,262 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Analysis Agent — ECE 157C</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+    <meta charset="UTF-8" />
+    <title>Dataset Agent</title>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
-
-        :root {
-            --bg: #0a0a0a;
-            --surface: #111111;
-            --surface2: #1a1a1a;
-            --border: #2a2a2a;
-            --accent: #00ff88;
-            --accent2: #0088ff;
-            --danger: #ff4444;
-            --text: #e8e8e8;
-            --text-dim: #666;
-            --mono: 'IBM Plex Mono', monospace;
-            --sans: 'IBM Plex Sans', sans-serif;
-        }
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--sans);
-            font-size: 14px;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
             height: 100vh;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 220px;
+            border-right: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        #datasetSelect {
+            width: 100%;
+            padding: 6px;
+        }
+
+        /* Main chat */
+        #main {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
-        /* ── Header ── */
-        header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 14px 24px;
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-            flex-shrink: 0;
-        }
-
-        header .logo {
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--accent);
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-        }
-
-        header h1 {
-            font-family: var(--mono);
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text);
-            letter-spacing: 0.05em;
-        }
-
-        header .spacer {
+        #chat {
             flex: 1;
-        }
-
-        #session-badge {
-            font-family: var(--mono);
-            font-size: 10px;
-            color: var(--text-dim);
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 3px 8px;
-        }
-
-        #reset-btn {
-            background: none;
-            border: 1px solid var(--border);
-            color: var(--text-dim);
-            font-family: var(--mono);
-            font-size: 10px;
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            letter-spacing: 0.05em;
-            transition: all 0.15s;
-        }
-
-        #reset-btn:hover {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-
-        /* ── Dataset bar ── */
-        #dataset-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 24px;
-            border-bottom: 1px solid var(--border);
-            background: var(--surface2);
-            flex-shrink: 0;
-        }
-
-        #dataset-bar label {
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        #csv-select {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-family: var(--mono);
-            font-size: 12px;
-            padding: 5px 10px;
-            border-radius: 4px;
-            outline: none;
-            cursor: pointer;
-            flex: 1;
-            max-width: 400px;
-        }
-
-        #csv-select:focus {
-            border-color: var(--accent2);
-        }
-
-        #followup-toggle {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-left: auto;
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--text-dim);
-            cursor: pointer;
-            user-select: none;
-        }
-
-        #followup-toggle input[type=checkbox] {
-            accent-color: var(--accent);
-            cursor: pointer;
-        }
-
-        #followup-toggle span {
-            color: var(--text-dim);
-        }
-
-        #followup-toggle input:checked+span {
-            color: var(--accent);
-        }
-
-        /* ── Chat area ── */
-        #chat-area {
-            flex: 1;
+            padding: 10px;
             overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            scroll-behavior: smooth;
         }
 
-        #chat-area::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        #chat-area::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        #chat-area::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 2px;
-        }
-
-        /* ── Messages ── */
         .msg {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-width: 820px;
-        }
-
-        .msg.user {
-            align-self: flex-end;
-            align-items: flex-end;
-        }
-
-        .msg.agent {
-            align-self: flex-start;
-            align-items: flex-start;
-        }
-
-        .msg-label {
-            font-family: var(--mono);
-            font-size: 10px;
-            color: var(--text-dim);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .bubble {
-            padding: 12px 16px;
-            border-radius: 8px;
-            line-height: 1.6;
-            max-width: 100%;
-        }
-
-        .msg.user .bubble {
-            background: var(--accent2);
-            color: #fff;
-            border-bottom-right-radius: 2px;
-        }
-
-        .msg.user.followup .bubble {
-            background: #005599;
-            border-left: 3px solid var(--accent);
-        }
-
-        .msg.agent .bubble {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-bottom-left-radius: 2px;
-        }
-
-        /* ── Eval badge ── */
-        .eval-badge {
-            font-family: var(--mono);
-            font-size: 10px;
-            padding: 2px 7px;
-            border-radius: 3px;
-            letter-spacing: 0.08em;
-            align-self: flex-start;
-        }
-
-        .eval-badge.pass {
-            background: rgba(0, 255, 136, 0.12);
-            color: var(--accent);
-            border: 1px solid rgba(0, 255, 136, 0.25);
-        }
-
-        .eval-badge.fail {
-            background: rgba(255, 68, 68, 0.12);
-            color: var(--danger);
-            border: 1px solid rgba(255, 68, 68, 0.25);
-        }
-
-        /* ── Viz container ── */
-        .viz-container {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            width: 100%;
-            max-width: 860px;
-        }
-
-        .viz-label {
-            font-family: var(--mono);
-            font-size: 10px;
-            color: var(--text-dim);
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .viz-plot {
-            padding: 8px;
-            min-height: 440px;
-            width: 100%;
-        }
-
-        /* Plotly injects its own div — make sure it fills the wrapper */
-        .viz-plot>div {
-            width: 100% !important;
-        }
-
-        /* ── Code block ── */
-        .code-toggle {
-            font-family: var(--mono);
-            font-size: 10px;
-            color: var(--text-dim);
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 3px 8px;
-            cursor: pointer;
-            letter-spacing: 0.05em;
-            transition: all 0.15s;
-            align-self: flex-start;
-        }
-
-        .code-toggle:hover {
-            border-color: var(--accent2);
-            color: var(--accent2);
-        }
-
-        .code-block {
-            display: none;
-            background: var(--surface2);
-            border: 1px solid var(--border);
+            margin-bottom: 15px;
+            padding: 10px;
             border-radius: 6px;
-            padding: 14px;
-            font-family: var(--mono);
-            font-size: 12px;
-            line-height: 1.6;
+            background: #f5f5f5;
+        }
+
+        .user {
+            background: #dff0ff;
+        }
+
+        .assistant {
+            background: #f3f3f3;
+        }
+
+        .answer {
+            margin-top: 5px;
             white-space: pre-wrap;
-            word-break: break-all;
-            color: #aaa;
-            max-height: 300px;
-            overflow-y: auto;
-            width: 100%;
-            max-width: 720px;
         }
 
-        .code-block.open {
-            display: block;
-        }
-
-        /* ── Loading ── */
-        .loading-msg {
+        /* Input bar */
+        #inputBar {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: var(--mono);
-            font-size: 12px;
-            color: var(--text-dim);
-            align-self: flex-start;
+            padding: 10px;
+            border-top: 1px solid #ddd;
         }
 
-        .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            flex-shrink: 0;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ── Error ── */
-        .error-msg {
-            background: rgba(255, 68, 68, 0.08);
-            border: 1px solid rgba(255, 68, 68, 0.2);
-            border-radius: 6px;
-            padding: 10px 14px;
-            font-family: var(--mono);
-            font-size: 12px;
-            color: var(--danger);
-            align-self: flex-start;
-        }
-
-        /* ── Input bar ── */
-        #input-bar {
-            border-top: 1px solid var(--border);
-            background: var(--surface);
-            padding: 14px 24px;
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-            flex-shrink: 0;
-        }
-
-        #question-input {
+        #questionInput {
             flex: 1;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            font-family: var(--sans);
-            font-size: 14px;
-            padding: 10px 14px;
-            resize: none;
-            outline: none;
-            min-height: 42px;
-            max-height: 120px;
-            line-height: 1.5;
-            transition: border-color 0.15s;
+            padding: 10px;
         }
 
-        #question-input:focus {
-            border-color: var(--accent2);
+        button {
+            margin-left: 10px;
+            padding: 10px;
         }
 
-        #question-input::placeholder {
-            color: var(--text-dim);
+        /* Visualization */
+        #viz {
+            margin-top: 10px;
         }
 
-        #send-btn {
-            background: var(--accent);
-            border: none;
-            color: #000;
-            font-family: var(--mono);
+        /* Debug */
+        .debug {
             font-size: 12px;
-            font-weight: 600;
-            padding: 10px 20px;
-            border-radius: 6px;
+            background: #111;
+            color: #0f0;
+            padding: 10px;
+            display: none;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+
+        .toggleDebug {
+            font-size: 12px;
+            margin-top: 5px;
             cursor: pointer;
-            letter-spacing: 0.05em;
-            transition: opacity 0.15s;
-            white-space: nowrap;
-            height: 42px;
+            color: blue;
+            text-decoration: underline;
         }
 
-        #send-btn:hover {
-            opacity: 0.85;
-        }
-
-        #send-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* ── Welcome ── */
-        #welcome {
-            align-self: center;
-            text-align: center;
-            margin: auto;
-            padding: 40px;
-            opacity: 0.5;
-        }
-
-        #welcome h2 {
-            font-family: var(--mono);
-            font-size: 22px;
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
-
-        #welcome p {
-            font-size: 13px;
-            color: var(--text-dim);
-            line-height: 1.7;
+        #loading {
+            display: none;
+            padding: 10px;
+            color: gray;
         }
     </style>
 </head>
 
 <body>
 
-    <header>
-        <div class="logo">ECE 157C</div>
-        <h1>Data Analysis Agent</h1>
-        <div class="spacer"></div>
-        <div id="session-badge">no session</div>
-        <button id="reset-btn" onclick="resetSession()">↺ reset</button>
-    </header>
-
-    <div id="dataset-bar">
-        <label>Dataset</label>
-        <select id="csv-select" onchange="onDatasetChange()">
-            <option value="">— select a CSV —</option>
-        </select>
-        <label class="followup-toggle" id="followup-toggle">
-            <input type="checkbox" id="followup-check">
-            <span>follow-up mode</span>
-        </label>
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <h4>Datasets</h4>
+        <select id="datasetSelect"></select>
     </div>
 
-    <div id="chat-area">
-        <div id="welcome">
-            <h2>// ready</h2>
-            <p>Select a dataset above, then ask a question.<br>
-                Enable <em>follow-up mode</em> to operate on the previous result.</p>
+    <!-- Main -->
+    <div id="main">
+
+        <div id="chat"></div>
+
+        <div id="loading">Processing...</div>
+
+        <div id="inputBar">
+            <input id="questionInput" placeholder="Ask a question..." />
+            <button onclick="sendQuestion()">Send</button>
         </div>
     </div>
 
-    <div id="input-bar">
-        <textarea id="question-input" placeholder="Ask a question about the dataset…" rows="1"
-            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button id="send-btn" onclick="sendQuestion()">Send ↵</button>
-    </div>
-
     <script>
-        const API = '';   // same origin; change to 'http://localhost:8000' if running separately
-        let sessionId = null;
-        let isLoading = false;
+        const API_URL = "http://localhost:8000";
 
-        // ── Startup ──────────────────────────────────────────────────────────────────
+        let sessionId = crypto.randomUUID();
 
+        /* -------------------------
+           Load datasets
+        --------------------------*/
         async function loadDatasets() {
-            try {
-                const res = await fetch(`${API}/datasets`);
-                const { datasets } = await res.json();
-                const sel = document.getElementById('csv-select');
-                datasets.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d;
-                    opt.textContent = d;
-                    sel.appendChild(opt);
-                });
-            } catch (e) {
-                console.warn('Could not load datasets:', e);
-            }
+            const res = await fetch(`${API_URL}/datasets`);
+            const datasets = await res.json();
+
+            const select = document.getElementById("datasetSelect");
+            select.innerHTML = "";
+
+            datasets.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d;
+                opt.textContent = d;
+                select.appendChild(opt);
+            });
         }
 
-        function onDatasetChange() {
-            // Switching datasets resets the session implicitly (backend handles it)
-            sessionId = null;
-            updateSessionBadge();
-            clearChat();
-        }
-
-        // ── Session ──────────────────────────────────────────────────────────────────
-
-        function updateSessionBadge() {
-            const badge = document.getElementById('session-badge');
-            badge.textContent = sessionId ? `session: ${sessionId.slice(0, 8)}…` : 'no session';
-        }
-
-        async function resetSession() {
-            if (sessionId) {
-                await fetch(`${API}/reset`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId }),
-                }).catch(() => { });
-            }
-            sessionId = null;
-            updateSessionBadge();
-            clearChat();
-        }
-
-        function clearChat() {
-            const area = document.getElementById('chat-area');
-            area.innerHTML = `
-    <div id="welcome">
-      <h2>// ready</h2>
-      <p>Select a dataset above, then ask a question.<br>
-         Enable <em>follow-up mode</em> to operate on the previous result.</p>
-    </div>`;
-        }
-
-        // ── Sending ───────────────────────────────────────────────────────────────────
-
-        function handleKey(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendQuestion();
-            }
-        }
-
-        function autoResize(el) {
-            el.style.height = 'auto';
-            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-        }
-
+        /* -------------------------
+           Send question
+        --------------------------*/
         async function sendQuestion() {
-            if (isLoading) return;
-            const input = document.getElementById('question-input');
-            const question = input.value.trim();
+            const input = document.getElementById("questionInput");
+            const question = input.value;
+            const dataset = document.getElementById("datasetSelect").value;
+
             if (!question) return;
 
-            const csvPath = document.getElementById('csv-select').value;
-            if (!csvPath) { alert('Please select a dataset first.'); return; }
+            appendMessage("user", question);
 
-            const isFollowup = document.getElementById('followup-check').checked;
-
-            // Remove welcome screen
-            const welcome = document.getElementById('welcome');
-            if (welcome) welcome.remove();
-
-            input.value = '';
-            input.style.height = 'auto';
-
-            appendUserMsg(question, isFollowup);
-            const loaderId = appendLoader();
+            input.value = "";
             setLoading(true);
 
             try {
-                const res = await fetch(`${API}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const res = await fetch(`${API_URL}/query`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         session_id: sessionId,
-                        question,
-                        csv_path: csvPath,
-                        is_followup: isFollowup,
-                    }),
+                        question: question,
+                        dataset_name: dataset
+                    })
                 });
 
-                removeLoader(loaderId);
+                const data = await res.json();
+                renderResponse(data);
 
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({ detail: res.statusText }));
-                    appendError(err.detail || 'Server error');
-                } else {
-                    const data = await res.json();
-                    sessionId = data.session_id;
-                    updateSessionBadge();
-                    appendAgentMsg(data);
-                }
-            } catch (e) {
-                removeLoader(loaderId);
-                appendError('Network error: ' + e.message);
+            } catch (err) {
+                appendMessage("assistant", "Error: " + err.message);
             }
 
             setLoading(false);
-            scrollToBottom();
         }
 
-        function setLoading(v) {
-            isLoading = v;
-            document.getElementById('send-btn').disabled = v;
-        }
+        /* -------------------------
+           Render response
+        --------------------------*/
+        function renderResponse(data) {
+            const container = document.createElement("div");
+            container.className = "msg assistant";
 
-        // ── DOM helpers ───────────────────────────────────────────────────────────────
+            // Answer
+            const answer = document.createElement("div");
+            answer.className = "answer";
+            answer.textContent = data.final_answer;
+            container.appendChild(answer);
 
-        function scrollToBottom() {
-            const area = document.getElementById('chat-area');
-            setTimeout(() => area.scrollTop = area.scrollHeight, 50);
-        }
+            // Visualization
+            if (data.visualization?.should_visualize) {
+                const vizDiv = document.createElement("div");
+                vizDiv.id = "viz_" + Math.random().toString(36).substring(7);
+                container.appendChild(vizDiv);
 
-        function appendUserMsg(question, isFollowup) {
-            const area = document.getElementById('chat-area');
-            const div = document.createElement('div');
-            div.className = 'msg user' + (isFollowup ? ' followup' : '');
-            div.innerHTML = `
-    <div class="msg-label">${isFollowup ? '↩ follow-up' : 'you'}</div>
-    <div class="bubble">${escHtml(question)}</div>
-  `;
-            area.appendChild(div);
-            scrollToBottom();
-        }
-
-        function appendAgentMsg(data) {
-            const area = document.getElementById('chat-area');
-            const div = document.createElement('div');
-            div.className = 'msg agent';
-
-            const evalClass = data.evaluation === 'PASS' ? 'pass' : 'fail';
-            const codeId = 'code-' + Date.now();
-            const vizId = 'viz-' + Date.now();
-
-            let vizHtml = '';
-            if (data.viz_json) {
-                vizHtml = `
-      <div class="viz-container">
-        <div class="viz-label">📊 visualization</div>
-        <div class="viz-plot" id="${vizId}"></div>
-      </div>`;
-            }
-
-            div.innerHTML = `
-    <div class="msg-label">agent</div>
-    <div class="bubble">${escHtml(data.final_answer)}</div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <button class="code-toggle eval-badge ${evalClass}" onclick="toggleCode('${codeId}-eval')">${data.evaluation}</span>
-      <button class="code-toggle" onclick="toggleCode('${codeId}')">{ } code</button>
-    </div>
-    <pre class="code-block" id="${codeId}">${escHtml(data.generated_code)}</pre>
-    <pre class="code-block" id="${codeId}-eval">${escHtml(JSON.stringify({
-        evaluation: data.evaluation,
-        viz_decision: data.viz_decision || null
-    }, null, 2))}</pre>
-    ${vizHtml}
-  `;
-            area.appendChild(div);
-
-            if (data.evaluation === 'FAIL') {
-                appendError('Evaluation failed — open the eval panel for details.');
-            }
-
-            if (data.viz_json) {
-                // Wait one frame so the container is in the DOM and has dimensions
-                requestAnimationFrame(() => {
+                setTimeout(() => {
                     try {
-                        const figData = JSON.parse(data.viz_json);
-                        // Dark theme + explicit sizing
-                        figData.layout = figData.layout || {};
-                        figData.layout.paper_bgcolor = '#111111';
-                        figData.layout.plot_bgcolor = '#0f0f0f';
-                        figData.layout.font = { color: '#e8e8e8', family: 'IBM Plex Mono, monospace', size: 12 };
-                        figData.layout.margin = { t: 48, r: 24, b: 56, l: 64 };
-                        figData.layout.height = 420;
-                        figData.layout.autosize = true;
-                        // Style gridlines subtly
-                        const axisStyle = { gridcolor: '#2a2a2a', zerolinecolor: '#333', linecolor: '#2a2a2a' };
-                        figData.layout.xaxis = { ...(figData.layout.xaxis || {}), ...axisStyle };
-                        figData.layout.yaxis = { ...(figData.layout.yaxis || {}), ...axisStyle };
-
-                        const config = {
-                            responsive: true,
-                            displayModeBar: true,
-                            displaylogo: false,
-                            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'autoScale2d'],
-                        };
-                        const plotEl = document.getElementById(vizId);
-                        Plotly.newPlot(plotEl, figData.data, figData.layout, config);
-                        // Relayout once visible to guarantee correct width
-                        setTimeout(() => Plotly.Plots.resize(plotEl), 150);
+                        eval(data.visualization.plotly_code);
                     } catch (e) {
-                        const el = document.getElementById(vizId);
-                        if (el) el.textContent = 'Could not render chart: ' + e.message;
+                        console.error("Plotly error:", e);
                     }
-                });
+                }, 100);
             }
 
-            scrollToBottom();
+            // Debug toggle
+            const debugToggle = document.createElement("div");
+            debugToggle.className = "toggleDebug";
+            debugToggle.textContent = "Show debug";
+            container.appendChild(debugToggle);
+
+            const debugBox = document.createElement("pre");
+            debugBox.className = "debug";
+            debugBox.textContent = JSON.stringify(data.artifact, null, 2);
+            container.appendChild(debugBox);
+
+            debugToggle.onclick = () => {
+                debugBox.style.display =
+                    debugBox.style.display === "none" ? "block" : "none";
+            };
+
+            document.getElementById("chat").appendChild(container);
+            document.getElementById("chat").scrollTop = 999999;
         }
 
-        function toggleCode(id) {
-            const el = document.getElementById(id);
-            el.classList.toggle('open');
+        /* -------------------------
+           UI helpers
+        --------------------------*/
+        function appendMessage(role, text) {
+            const div = document.createElement("div");
+            div.className = "msg " + role;
+            div.textContent = text;
+            document.getElementById("chat").appendChild(div);
         }
 
-        let _loaderId = 0;
-        function appendLoader() {
-            const id = 'loader-' + (++_loaderId);
-            const area = document.getElementById('chat-area');
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = 'loading-msg';
-            div.innerHTML = `<div class="spinner"></div><span>thinking…</span>`;
-            area.appendChild(div);
-            scrollToBottom();
-            return id;
-        }
-        function removeLoader(id) {
-            const el = document.getElementById(id);
-            if (el) el.remove();
-        }
-        function appendError(msg) {
-            const area = document.getElementById('chat-area');
-            const div = document.createElement('div');
-            div.className = 'error-msg';
-            div.textContent = '⚠ ' + msg;
-            area.appendChild(div);
-            scrollToBottom();
+        function setLoading(state) {
+            document.getElementById("loading").style.display =
+                state ? "block" : "none";
         }
 
-        function escHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/\n/g, '<br>');
-        }
-
-        // ── Init ─────────────────────────────────────────────────────────────────────
+        /* -------------------------
+           Init
+        --------------------------*/
         loadDatasets();
     </script>
+
 </body>
 
 </html>

@@ -1,199 +1,186 @@
-"""
-backend/main.py
----------------
-FastAPI backend for the HW2 interactive data analysis agent.
-
-Endpoints:
-  POST /chat          - send a question, get answer + optional viz
-  POST /reset         - clear conversation memory for a session
-  GET  /history       - return the turn history for a session
-  GET  /datasets      - list available CSV files in ../datasets/
-
-Sessions are stored in-process (keyed by session_id).
-For a real deployment you'd persist to Redis/DB, but this is enough for demo.
-"""
-
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import uvicorn
 import os
 import uuid
-import glob
-from pathlib import Path
-from typing import Optional
-
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
 
-# Add parent dir to path so we can import agent/nodes
-import sys
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from agent import run_turn, ConversationMemory
+from agent import agent
+from nodes.schemas import Artifact
+from nodes.memory import get_memory, update_memory
 
 
-app = FastAPI(title="ECE 157C HW2 — Data Analysis Agent")
+# -----------------------------
+# Artifact versioning store
+# -----------------------------
+RUN_STORE: dict[str, list[dict]] = {}
+RUN_INDEX: dict[str, dict] = {}
+
+
+# -----------------------------
+# FastAPI setup
+# -----------------------------
+app = FastAPI(title="Dataset Agent API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # tighten in production
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Mount the frontend directory as static files
-frontend_dir = Path(__file__).parent.parent / "frontend"
-if frontend_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
-
-# ---------------------------------------------------------------------------
-# In-process session store
-# ---------------------------------------------------------------------------
-
-# session_id → {"memory": ConversationMemory, "csv_path": str}
-_sessions: dict[str, dict] = {}
-
-DATASETS_DIR = Path(__file__).parent.parent / "datasets"
-
-
-def get_or_create_session(session_id: str, csv_path: str) -> dict:
-    if session_id not in _sessions:
-        _sessions[session_id] = {
-            "memory": ConversationMemory(),
-            "csv_path": csv_path,
-        }
-    else:
-        # Allow switching datasets mid-session by resetting memory
-        if _sessions[session_id]["csv_path"] != csv_path:
-            _sessions[session_id] = {
-                "memory": ConversationMemory(),
-                "csv_path": csv_path,
-            }
-    return _sessions[session_id]
-
-
-# ---------------------------------------------------------------------------
-# Request / response models
-# ---------------------------------------------------------------------------
-
-
-class ChatRequest(BaseModel):
-    session_id: Optional[str] = None  # if None, a new session is created
+# -----------------------------
+# Request schema
+# -----------------------------
+class QueryRequest(BaseModel):
+    session_id: str
     question: str
-    csv_path: str  # relative path under datasets/
-    is_followup: bool = False
+    dataset_name: str
 
 
-class ChatResponse(BaseModel):
-    session_id: str
-    final_answer: str
-    viz_json: Optional[str] = None
-    viz_decision: Optional[dict] = None
-    generated_code: str
-    evaluation: str
-    turn_index: int
-
-
-class ResetRequest(BaseModel):
-    session_id: str
-
-
-class HistoryResponse(BaseModel):
-    session_id: str
-    turns: list[dict]
-
-
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
-
-
-@app.get("/")
-def serve_frontend():
-    index = frontend_dir / "index.html"
-    if index.exists():
-        return FileResponse(str(index))
-    return {"message": "Frontend not found. Place index.html in frontend/"}
-
-
+# -----------------------------
+# Dataset listing endpoint
+# -----------------------------
 @app.get("/datasets")
 def list_datasets():
-    """Return the list of CSV files available under datasets/."""
-    if not DATASETS_DIR.exists():
-        return {"datasets": []}
-    csvs = sorted(DATASETS_DIR.glob("**/*.csv"))
-    return {"datasets": [str(p.relative_to(DATASETS_DIR)) for p in csvs]}
+    """
+    Returns CSV files inside backend/datasets
+    """
+    dataset_dir = "datasets"
 
+    if not os.path.exists(dataset_dir):
+        return []
 
-@app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    # Resolve CSV path
-    csv_path = str(DATASETS_DIR / req.csv_path)
-    if not Path(csv_path).exists():
-        # Allow absolute paths too (for testing)
-        if Path(req.csv_path).exists():
-            csv_path = req.csv_path
-        else:
-            raise HTTPException(
-                status_code=404, detail=f"CSV not found: {req.csv_path}"
-            )
-
-    # Session management
-    session_id = req.session_id or str(uuid.uuid4())
-    session = get_or_create_session(session_id, csv_path)
-    memory: ConversationMemory = session["memory"]
-
-    # Run one agent turn
-    result = run_turn(
-        question=req.question,
-        csv_path=csv_path,
-        memory=memory,
-        is_followup=req.is_followup,
-    )
-
-    return ChatResponse(
-        session_id=session_id,
-        final_answer=result["final_answer"],
-        viz_json=result.get("viz_json"),
-        viz_decision=result.get("viz_decision"),
-        generated_code=result.get("generated_code", ""),
-        evaluation=result.get("evaluation", ""),
-        turn_index=len(memory.turns) - 1,
-    )
-
-
-@app.post("/reset")
-def reset_session(req: ResetRequest):
-    if req.session_id in _sessions:
-        _sessions.pop(req.session_id)
-    return {"status": "ok", "session_id": req.session_id}
-
-
-@app.get("/history/{session_id}", response_model=HistoryResponse)
-def get_history(session_id: str):
-    if session_id not in _sessions:
-        raise HTTPException(status_code=404, detail="Session not found")
-    memory: ConversationMemory = _sessions[session_id]["memory"]
-    turns = [
-        {"question": t["question"], "final_answer": t["final_answer"]}
-        for t in memory.turns
+    files = [
+        f for f in os.listdir(dataset_dir)
+        if f.endswith(".csv")
     ]
-    return HistoryResponse(session_id=session_id, turns=turns)
+
+    return files
 
 
-# ---------------------------------------------------------------------------
-# Dev entrypoint
-# ---------------------------------------------------------------------------
+# -----------------------------
+# Main agent endpoint
+# -----------------------------
+@app.post("/query")
+def query(req: QueryRequest):
+    """
+    Runs full LangGraph pipeline:
+    summarize → codegen → execute → visualize → respond
+    """
 
+    # -----------------------------
+    # Memory
+    # -----------------------------
+    memory = get_memory(req.session_id)
+
+    # -----------------------------
+    # Build initial artifact
+    # -----------------------------
+    artifact = Artifact(
+        run_id=str(uuid.uuid4()),
+        step="start",
+        input_question=req.question,
+        dataset_name=req.dataset_name
+    )
+
+    # Store context in memory
+    memory.last_question = req.question
+    memory.last_dataset = req.dataset_name
+
+    # -----------------------------
+    # Run LangGraph agent
+    # -----------------------------
+    try:
+        result: Artifact = agent.invoke(artifact)
+
+        # -----------------------------
+        # Artifact versioning
+        # -----------------------------
+        result_dict = result if isinstance(result, dict) else result.model_dump()
+
+        RUN_INDEX[result_dict["run_id"]] = result_dict
+
+        if req.session_id not in RUN_STORE:
+            RUN_STORE[req.session_id] = []
+
+        RUN_STORE[req.session_id].append(result_dict)
+
+    except Exception as e:
+        return {
+            "final_answer": f"Agent execution failed: {str(e)}",
+            "artifact": artifact.model_dump(),
+            "visualization": {
+                "should_visualize": False,
+                "error": str(e)
+            }
+        }
+
+    # -----------------------------
+    # Update memory
+    # -----------------------------
+    update_memory(req.session_id, result_dict)
+
+    memory.chat_history.append({
+        "question": req.question,
+        "answer": result.final_answer,
+        "dataset": req.dataset_name
+    })
+
+    # -----------------------------
+    # Response payload
+    # -----------------------------
+    return {
+        "run_id": result.run_id,
+        "final_answer": result.final_answer,
+        "visualization": result.visualization,
+        "run_history": RUN_STORE.get(req.session_id, []),
+        "artifact": result.model_dump(),
+        "session_id": req.session_id
+    }
+
+
+# -----------------------------
+# Artifact retrieval endpoints
+# -----------------------------
+@app.get("/runs/{run_id}")
+def get_run(run_id: str):
+    return RUN_INDEX.get(run_id, {"error": "run_id not found"})
+
+
+@app.get("/sessions/{session_id}/runs")
+def get_session_runs(session_id: str):
+    return RUN_STORE.get(session_id, [])
+
+
+# -----------------------------
+# Frontend entrypoint
+# -----------------------------
+@app.get("/")
+def serve_frontend():
+    frontend_path = os.path.join(os.path.dirname(os.path.abspath('.')), "frontend/index.html")
+    return FileResponse(frontend_path)
+
+
+# -----------------------------
+# Health check
+# -----------------------------
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+# -----------------------------
+# Run server
+# -----------------------------
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(
         "main:app",
         host="127.0.0.1",
         port=8000,
         reload=True,
-        reload_dirs=os.path.dirname(os.path.realpath(__file__)) + "/..",
+        reload_dirs=os.path.dirname(os.path.realpath(os.path.abspath('.')))
     )
