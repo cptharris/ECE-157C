@@ -318,45 +318,21 @@ def summarize_node(state: dict) -> dict:
 # Codegen node  (memory-aware)
 # ===========================================================================
 
-CODEGEN_SYSTEM_FRESH = """
-You are an expert Python / pandas data analyst.
-
+CODEGEN_SYSTEM_FRESH = """You are an expert Python / pandas data analyst.
 Write a self-contained Python script that answers the user's question about a CSV file.
 
-CRITICAL DATA CONTRACT (IMPORTANT FOR DOWNSTREAM STEPS):
-- You MUST preserve enough intermediate data in `result` so that it can be reused for:
-  (a) follow-up questions
-  (b) visualization
-- Therefore, NEVER collapse data too early.
-
-RULES:
+Rules:
 1. Read the CSV using pandas from the exact path provided.
 2. Store the final answer in a variable called `result`.
    `result` must be a DataFrame, Series, scalar, list, or dict.
-3. Prefer `DataFrame` as the default output whenever the question involves:
-   - grouping
-   - aggregation
-   - comparison
-   - ranking
-   - filtering subsets
-   Even if the final answer is a single value, keep supporting context in the DataFrame.
-4. For ANY aggregation (groupby, mean, sum, count, etc.):
-   - ALWAYS return the FULL aggregated table, not just the top row.
-   - Do NOT reduce to a single row unless explicitly asked.
-5. Ensure `result` contains ALL columns needed for potential visualization:
-   - grouping keys
-   - computed metrics
-   - any relevant categorical breakdowns
-6. Do NOT remove or overwrite original columns unless explicitly requested.
-7. Do NOT perform aggressive summarization that loses structure.
-8. Only import pandas as pd and standard library modules.
-9. Do NOT use print(), display(), or any I/O besides reading the CSV.
-10. Return ONLY raw Python — no markdown, no explanation.
-
-GOAL:
-The output should be "analysis-ready", meaning downstream nodes can:
-- visualize it directly
-- or derive follow-up answers without reloading the CSV
+3. Do NOT use print(), display(), or any I/O besides reading the CSV.
+4. Only import pandas as pd and standard library modules.
+5. Return ONLY raw Python — no markdown, no explanation.
+6. Use the dataset summary for correct column names and null handling.
+7. For comparison or ranking questions (e.g. "which X has the highest/lowest Y",
+   "top N by Z", "compare X across Y"), store ALL groups and their aggregated
+   values in `result` as a DataFrame — not just the single top/bottom entry.
+   A downstream component will identify the winner from the full table.
 """
 
 CODEGEN_USER_FRESH = """CSV path: {csv_path}
@@ -364,35 +340,26 @@ CODEGEN_USER_FRESH = """CSV path: {csv_path}
 Dataset summary:
 {csv_summary}
 
-Conversation history:
-{history}
-
 Question: {question}
 
 Write the Python code now."""
 
 
-CODEGEN_SYSTEM_FOLLOWUP = """
-You are an expert Python / pandas data analyst.
+CODEGEN_SYSTEM_FOLLOWUP = """You are an expert Python / pandas data analyst.
+The user is asking a follow-up question. Instead of re-reading the original CSV,
+you must operate on `prior_result`, which is already defined for you.
 
-The user is asking a follow-up question.
-
-You MUST operate on `prior_result`, which already contains structured data from the previous step.
-
-CRITICAL RULES:
+Rules:
 1. Do NOT read any CSV file.
-2. Use ONLY `prior_result` as input.
-3. Assume `prior_result` may already be aggregated or partially transformed.
-4. Do NOT assume missing columns exist.
-5. If the structure is insufficient, work with what is available — do not hallucinate data.
-6. Store final answer in `result`.
-7. Prefer returning a DataFrame or Series whenever possible.
-8. Only import pandas as pd and standard library modules.
-9. Return ONLY raw Python — no markdown, no explanation.
-
-FOLLOW-UP PRINCIPLE:
-- Do not re-aggregate unless necessary.
-- Preserve structure so additional follow-ups remain possible.
+2. Use `prior_result` as your input — it is already defined above your code.
+3. Store the final answer in a variable called `result`.
+4. Only import pandas as pd and standard library modules (no other imports).
+5. Return ONLY raw Python — no markdown, no explanation.
+6. Use the EXACT column names shown in the prior result preview below.
+   Do not guess or rename columns.
+7. `result` should be a DataFrame or Series whenever the answer involves
+   multiple rows or categories — never collapse multi-row data into a single
+   scalar or dict unless the question explicitly asks for one number.
 """
 
 CODEGEN_USER_FOLLOWUP = """Prior result — structure and sample data:
