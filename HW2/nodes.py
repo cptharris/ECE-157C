@@ -23,25 +23,22 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 # LLM cache (toggle via env: LLM_CACHE=1)
 # ---------------------------------------------------------------------------
-_LLM_CACHE = {}
-# Set environment variable LLM_CACHE=0 to disable caching
-_LLM_CACHE_ENABLED = os.environ.get("LLM_CACHE", "1") == "1"
+from llm_cache import get_cached, set_cached
 
-def _cache_key(messages: list) -> str:
-    try:
-        return json.dumps(messages, sort_keys=True)
-    except Exception:
-        return str(messages)
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 MODEL = "gpt-5-mini"
 
 
 def call_llm(messages: list) -> str:
-    key = _cache_key(messages)
+    print("===== MESSAGE =====")
+    print(messages[1]["content"])
 
-    if _LLM_CACHE_ENABLED and key in _LLM_CACHE:
-        return _LLM_CACHE[key]
+    cached = get_cached(messages)
+    if cached is not None:
+        print("===== RESPONSE (cached) =====")
+        print(cached)
+        return cached
 
     response = (
         client.chat.completions.create(model=MODEL, messages=messages)
@@ -49,9 +46,9 @@ def call_llm(messages: list) -> str:
         .message.content.strip()
     )
 
-    if _LLM_CACHE_ENABLED:
-        _LLM_CACHE[key] = response
+    set_cached(messages, response)
 
+    print("===== RESPONSE (rqsted) =====")
     print(response)
 
     return response
@@ -77,7 +74,7 @@ class ConversationMemory:
 
     Execution result serialization format:
         {
-            "type":    "dataframe" | "series" | "scalar" | "list" | "dict" | "other",
+            "type":    "dataframe" | "series" | "scalar" | "list" | "other",
             "columns": [...] | None,
             "data":    <records list> | <value>,
         }
@@ -100,6 +97,7 @@ class ConversationMemory:
             return {
                 "type": "dataframe",
                 "columns": list(result.columns),
+                "dtypes": {c: str(result[c].dtype) for c in result.columns},
                 "data": result.to_dict(orient="records"),
             }
         if isinstance(result, pd.Series):
@@ -121,7 +119,6 @@ class ConversationMemory:
                         "columns": ["key", "value"],
                         "data": data,
                     }
-
                 # Case 2: dict of lists → convert to DataFrame directly
                 df = pd.DataFrame(result)
                 return {
@@ -140,45 +137,101 @@ class ConversationMemory:
         return {"type": "scalar", "columns": None, "data": result}
 
     @staticmethod
-    def deserialize_result(serialized: dict):
-        """Reconstruct an execution result from its serialized form."""
-        t = serialized.get("type")
-        data = serialized.get("data")
-        if t == "dataframe":
-            return pd.DataFrame(data)
-        if t == "series":
-            try:
-                return pd.Series(data)
-            except Exception:
-                return pd.Series(list(data.values()))
-        return data  # scalar, list, dict, other
-
-    @staticmethod
     def result_to_code_snippet(serialized: dict) -> str:
         """
         Return Python code (as a string) that reconstructs the prior result
-        into a variable called `prior_result`. Used by memory-aware codegen.
+        into a variable called `prior_result`. Used by memory-aware codegen
+        and viz_node so the LLM-generated code has a live object to work with.
         """
         t = serialized.get("type")
         data_json = json.dumps(serialized.get("data"), default=str)
-
         if t == "dataframe":
-            cols_json = json.dumps(serialized.get("columns"))
             return (
                 "import json, pandas as pd\n"
                 f"_data = {data_json}\n"
-                f"prior_result = pd.DataFrame(_data)"
+                "prior_result = pd.DataFrame(_data)\n"
+                "for col in prior_result.columns:\n"
+                "\tprior_result[col] = pd.to_numeric(prior_result[col], errors='coerce')\n"
             )
         if t == "series":
             return (
-                f"import json, pandas as pd\n" f"prior_result = pd.Series({data_json})"
+                "import json, pandas as pd\n" f"prior_result = pd.Series({data_json})"
             )
-        # For dict and other types: always prefer DataFrame-first semantics,
-        # never return raw dict reconstruction.
-        return (
-            "import pandas as pd\n"
-            f"prior_result = pd.DataFrame({data_json}) if isinstance({data_json}, list) else {data_json}"
-        )
+        return f"import pandas as pd\nprior_result = {data_json}"
+
+    @staticmethod
+    def get_schema(serialized: dict) -> dict:
+        """Return a strict schema object for downstream LLM use."""
+        if serialized.get("type") != "dataframe":
+            return {
+                "type": serialized.get("type"),
+                "columns": serialized.get("columns"),
+            }
+
+        return {
+            "type": "dataframe",
+            "columns": serialized.get("columns"),
+            "dtypes": serialized.get("dtypes", {}),
+        }
+
+    @staticmethod
+    def result_preview(serialized: dict, max_rows: int = 5) -> str:
+        """
+        Return a compact human-readable description of the serialized result
+        for injection into LLM prompts. Includes type, exact column names,
+        and up to `max_rows` sample rows so the LLM uses correct column names
+        instead of guessing — the key fix for viz_node and follow-up codegen.
+        """
+        t = serialized.get("type")
+        data = serialized.get("data")
+        cols = serialized.get("columns")
+
+        if t == "scalar":
+            return f"Type: scalar\nValue: {data}"
+
+        if t == "series":
+            items = (
+                list(data.items()) if isinstance(data, dict) else list(enumerate(data))
+            )
+            lines = [
+                "Type: Series",
+                f"Name/index column: {cols[0] if cols else 'unknown'}",
+                f"Length: {len(items)}",
+                "Sample entries (index → value):",
+            ]
+            for k, v in items[:max_rows]:
+                lines.append(f"  {k!r}: {v!r}")
+            if len(items) > max_rows:
+                lines.append(f"  … ({len(items) - max_rows} more rows)")
+            return "\n".join(lines)
+
+        if t in ("dataframe", "list", "dict"):
+            records = (
+                data
+                if isinstance(data, list)
+                else ([data] if isinstance(data, dict) else [])
+            )
+            lines = [
+                "Type: DataFrame",
+                f"Shape: {len(records)} rows × {len(cols or [])} columns",
+                f"Exact column names: {cols!r}",
+                f"Column dtypes: {serialized.get('dtypes', {})}",
+            ]
+            if records:
+                sample = records[:max_rows]
+                try:
+                    lines.append("Sample rows:")
+                    lines.append(
+                        pd.DataFrame(sample, columns=cols).to_string(index=False)
+                    )
+                except Exception:
+                    for r in sample:
+                        lines.append(f"  {r}")
+            if len(records) > max_rows:
+                lines.append(f"  … ({len(records) - max_rows} more rows)")
+            return "\n".join(lines)
+
+        return f"Type: {t}\nData: {str(data)[:300]}"
 
     # ------------------------------------------------------------------
     # Public API
@@ -276,6 +329,10 @@ Rules:
 4. Only import pandas as pd and standard library modules.
 5. Return ONLY raw Python — no markdown, no explanation.
 6. Use the dataset summary for correct column names and null handling.
+7. For comparison or ranking questions (e.g. "which X has the highest/lowest Y",
+   "top N by Z", "compare X across Y"), store ALL groups and their aggregated
+   values in `result` as a DataFrame — not just the single top/bottom entry.
+   A downstream component will identify the winner from the full table.
 """
 
 CODEGEN_USER_FRESH = """CSV path: {csv_path}
@@ -301,12 +358,20 @@ Rules:
 3. Store the final answer in a variable called `result`.
 4. Only import pandas as pd and standard library modules (no other imports).
 5. Return ONLY raw Python — no markdown, no explanation.
+6. Use the EXACT column names shown in the prior result preview below.
+   Do not guess or rename columns.
+7. `result` should be a DataFrame or Series whenever the answer involves
+   multiple rows or categories — never collapse multi-row data into a single
+   scalar or dict unless the question explicitly asks for one number.
 """
 
-CODEGEN_USER_FOLLOWUP = """Follow-up question: {question}
+CODEGEN_USER_FOLLOWUP = """Prior result — structure and sample data:
+{result_preview}
 
 Conversation history:
 {history}
+
+Follow-up question: {question}
 
 Write Python code that operates on `prior_result` and stores the answer in `result`."""
 
@@ -318,8 +383,9 @@ def codegen_node(state: dict) -> dict:
     if is_followup and memory.has_prior_result():
         prior_serialized = memory.get_last_result_serialized()
         prior_code = ConversationMemory.result_to_code_snippet(prior_serialized)
+        preview = ConversationMemory.result_preview(prior_serialized)
         prompt = CODEGEN_USER_FOLLOWUP.format(
-            # prior_code=prior_code,
+            result_preview=preview,
             history=memory.get_history_text(),
             question=state["question"],
         )
@@ -328,6 +394,7 @@ def codegen_node(state: dict) -> dict:
             {"role": "user", "content": prompt},
         ]
     else:
+        prior_code = None
         prompt = CODEGEN_USER_FRESH.format(
             csv_path=state["csv_path"],
             csv_summary=state.get("csv_summary", "(no summary available)"),
@@ -343,10 +410,9 @@ def codegen_node(state: dict) -> dict:
     code = re.sub(r"^```(?:python)?\n?", "", code)
     code = re.sub(r"\n?```$", "", code)
 
-    # For follow-ups, prepend the prior_result reconstruction
-    if is_followup and memory.has_prior_result():
-        prior_serialized = memory.get_last_result_serialized()
-        prior_code = ConversationMemory.result_to_code_snippet(prior_serialized)
+    # For follow-ups, prepend the prior_result reconstruction so `prior_result`
+    # is actually defined when exec() runs the LLM-generated code.
+    if prior_code is not None:
         code = prior_code + "\n\n" + code
 
     return {"generated_code": code}
@@ -432,10 +498,7 @@ Rules:
 - Do not mention Python, pandas, or code.
 """
 
-RESPOND_USER = """Dataset summary:
-{csv_summary}
-
-Question: {question}
+RESPOND_USER = """Question: {question}
 
 Execution result:
 {execution_result}
@@ -451,7 +514,6 @@ def respond_node(state: dict) -> dict:
             {
                 "role": "user",
                 "content": RESPOND_USER.format(
-                    csv_summary=state.get("csv_summary", "(no summary available)"),
                     question=state["question"],
                     execution_result=result_str,
                 ),
@@ -482,7 +544,9 @@ Visualization is NOT useful for: single scalar values, raw text answers, yes/no 
 
 VIZ_DECIDE_USER = """Question: {question}
 Final answer: {final_answer}
-Execution result (truncated): {result_preview}
+
+Prior result structure:
+{result_preview}
 
 Should we visualize this?"""
 
@@ -495,28 +559,37 @@ Rules:
 3. Make the figure look clean and professional with a proper title.
 4. Do NOT call fig.show() or write any files.
 5. Return ONLY raw Python code — no markdown, no explanation.
-6. Use a dark theme: layout bgcolor='#0f0f0f', paper_bgcolor='#0f0f0f', font color='#e0e0e0'.
+6. Use ONLY the exact column names listed in the prior result schema below.
+   Do not guess, rename, or invent column names.
+7. Use a dark theme: layout bgcolor='#111111', paper_bgcolor='#111111', font color='#e0e0e0'.
 """
 
-VIZ_CODE_USER = """Question: {question}
+VIZ_CODE_USER = """Prior result — exact structure you must use:
+{result_preview}
+
+Question: {question}
 Chart type: {chart_type}
 
-Write Plotly code that creates a `fig` from `prior_result`."""
+Write Plotly code that creates a `fig` from `prior_result`.
+Use only the column names shown above — do not guess."""
 
 
 def viz_node(state: dict) -> dict:
     """
-    1. Ask LLM whether to visualize and what chart type.
-    2. If yes, ask LLM to generate Plotly code.
-    3. Execute it and capture fig as JSON.
+    1. Serialize the execution result and build a schema preview.
+    2. Pass the preview to the LLM to decide whether/how to visualize.
+    3. Pass the same preview to the LLM to generate Plotly code with
+       correct column names.
+    4. Prepend the result reconstruction snippet, execute, capture fig JSON.
     """
     execution_result = state.get("execution_result")
-    memory: ConversationMemory = state["memory"]
 
-    result_str = str(execution_result)[:2000]
-    final_answer = state.get("final_answer", "")
+    # Serialize once — reused for preview, reconstruction, and both LLM calls
+    serialized = ConversationMemory.serialize_result(execution_result)
+    preview = ConversationMemory.result_preview(serialized)
+    schema = ConversationMemory.get_schema(serialized)
 
-    # Step 1: decide
+    # Step 1: decide whether to visualize
     decide_raw = call_llm(
         [
             {"role": "system", "content": VIZ_DECIDE_SYSTEM},
@@ -524,8 +597,10 @@ def viz_node(state: dict) -> dict:
                 "role": "user",
                 "content": VIZ_DECIDE_USER.format(
                     question=state["question"],
-                    final_answer=final_answer,
-                    result_preview=result_str,
+                    final_answer=state.get("final_answer", ""),
+                    result_preview=preview
+                    + "\n\nSCHEMA:\n"
+                    + json.dumps(schema, indent=2),
                 ),
             },
         ]
@@ -542,17 +617,17 @@ def viz_node(state: dict) -> dict:
 
     chart_type = decision.get("chart_type", "bar")
 
-    # Step 2: generate Plotly code
-    serialized = ConversationMemory.serialize_result(execution_result)
+    # Step 2: generate Plotly code — preview tells LLM exact column names
     prior_code = ConversationMemory.result_to_code_snippet(serialized)
-
     viz_code_raw = call_llm(
         [
             {"role": "system", "content": VIZ_CODE_SYSTEM},
             {
                 "role": "user",
                 "content": VIZ_CODE_USER.format(
-                    # prior_code=prior_code,
+                    result_preview=preview
+                    + "\n\nSCHEMA:\n"
+                    + json.dumps(schema, indent=2),
                     question=state["question"],
                     chart_type=chart_type,
                 ),
@@ -562,19 +637,14 @@ def viz_node(state: dict) -> dict:
     viz_code_raw = re.sub(r"^```(?:python)?\n?", "", viz_code_raw)
     viz_code_raw = re.sub(r"\n?```$", "", viz_code_raw)
 
-    full_viz_code = prior_code + "\n\n" + viz_code_raw
-
-    # Step 3: execute
+    # Step 3: prepend reconstruction so `prior_result` is defined, then exec
     env: dict = {}
     try:
-        exec(full_viz_code, env)  # noqa: S102
+        exec(prior_code + "\n\n" + viz_code_raw, env)  # noqa: S102
         fig = env.get("fig")
-        if fig is not None:
-            viz_json = fig.to_json()
-        else:
-            viz_json = None
-    except Exception as e:
+        viz_json = fig.to_json() if fig is not None else None
+    except Exception:
         viz_json = None
-        decision["error"] = str(e)
+        decision["error"] = traceback.format_exc()
 
     return {"viz_json": viz_json, "viz_decision": decision}
