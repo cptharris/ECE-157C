@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analysis Agent — ECE 157C</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #1a1a1a;
+            --border: #2a2a2a;
+            --accent: #00ff88;
+            --accent2: #0088ff;
+            --danger: #ff4444;
+            --text: #e8e8e8;
+            --text-dim: #666;
+            --mono: 'IBM Plex Mono', monospace;
+            --sans: 'IBM Plex Sans', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 14px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Header ── */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+
+        header .logo {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        header h1 {
+            font-family: var(--mono);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            letter-spacing: 0.05em;
+        }
+
+        header .spacer {
+            flex: 1;
+        }
+
+        #session-badge {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 8px;
+        }
+
+        #reset-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: var(--mono);
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            transition: all 0.15s;
+        }
+
+        #reset-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* ── Dataset bar ── */
+        #dataset-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+            flex-shrink: 0;
+        }
+
+        #dataset-bar label {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        #csv-select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        #csv-select:focus {
+            border-color: var(--accent2);
+        }
+
+        #followup-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: auto;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #followup-toggle input[type=checkbox] {
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        #followup-toggle span {
+            color: var(--text-dim);
+        }
+
+        #followup-toggle input:checked+span {
+            color: var(--accent);
+        }
+
+        /* ── Chat area ── */
+        #chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-behavior: smooth;
+        }
+
+        #chat-area::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #chat-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #chat-area::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* ── Messages ── */
+        .msg {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: 820px;
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .msg.agent {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .msg-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 8px;
+            line-height: 1.6;
+            max-width: 100%;
+        }
+
+        .msg.user .bubble {
+            background: var(--accent2);
+            color: #fff;
+            border-bottom-right-radius: 2px;
+        }
+
+        .msg.user.followup .bubble {
+            background: #005599;
+            border-left: 3px solid var(--accent);
+        }
+
+        .msg.agent .bubble {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 2px;
+        }
+
+        /* ── Eval badge ── */
+        .eval-badge {
+            font-family: var(--mono);
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 3px;
+            letter-spacing: 0.08em;
+            align-self: flex-start;
+        }
+
+        .eval-badge.pass {
+            background: rgba(0, 255, 136, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(0, 255, 136, 0.25);
+        }
+
+        .eval-badge.fail {
+            background: rgba(255, 68, 68, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(255, 68, 68, 0.25);
+        }
+
+        /* ── Viz container ── */
+        .viz-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 720px;
+        }
+
+        .viz-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .viz-plot {
+            padding: 8px;
+        }
+
+        /* ── Code block ── */
+        .code-toggle {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            transition: all 0.15s;
+            align-self: flex-start;
+        }
+
+        .code-toggle:hover {
+            border-color: var(--accent2);
+            color: var(--accent2);
+        }
+
+        .code-block {
+            display: none;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+            font-family: var(--mono);
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #aaa;
+            max-height: 300px;
+            overflow-y: auto;
+            width: 100%;
+            max-width: 720px;
+        }
+
+        .code-block.open {
+            display: block;
+        }
+
+        /* ── Loading ── */
+        .loading-msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--text-dim);
+            align-self: flex-start;
+        }
+
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Error ── */
+        .error-msg {
+            background: rgba(255, 68, 68, 0.08);
+            border: 1px solid rgba(255, 68, 68, 0.2);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--danger);
+            align-self: flex-start;
+        }
+
+        /* ── Input bar ── */
+        #input-bar {
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            padding: 14px 24px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+
+        #question-input {
+            flex: 1;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 14px;
+            padding: 10px 14px;
+            resize: none;
+            outline: none;
+            min-height: 42px;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: border-color 0.15s;
+        }
+
+        #question-input:focus {
+            border-color: var(--accent2);
+        }
+
+        #question-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        #send-btn {
+            background: var(--accent);
+            border: none;
+            color: #000;
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+            height: 42px;
+        }
+
+        #send-btn:hover {
+            opacity: 0.85;
+        }
+
+        #send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ── Welcome ── */
+        #welcome {
+            align-self: center;
+            text-align: center;
+            margin: auto;
+            padding: 40px;
+            opacity: 0.5;
+        }
+
+        #welcome h2 {
+            font-family: var(--mono);
+            font-size: 22px;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        #welcome p {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">ECE 157C</div>
+        <h1>Data Analysis Agent</h1>
+        <div class="spacer"></div>
+        <div id="session-badge">no session</div>
+        <button id="reset-btn" onclick="resetSession()">↺ reset</button>
+    </header>
+
+    <div id="dataset-bar">
+        <label>Dataset</label>
+        <select id="csv-select" onchange="onDatasetChange()">
+            <option value="">— select a CSV —</option>
+        </select>
+        <label class="followup-toggle" id="followup-toggle">
+            <input type="checkbox" id="followup-check">
+            <span>follow-up mode</span>
+        </label>
+    </div>
+
+    <div id="chat-area">
+        <div id="welcome">
+            <h2>// ready</h2>
+            <p>Select a dataset above, then ask a question.<br>
+                Enable <em>follow-up mode</em> to operate on the previous result.</p>
+        </div>
+    </div>
+
+    <div id="input-bar">
+        <textarea id="question-input" placeholder="Ask a question about the dataset…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button id="send-btn" onclick="sendQuestion()">Send ↵</button>
+    </div>
+
+    <script>
+        const API = '';   // same origin; change to 'http://localhost:8000' if running separately
+        let sessionId = null;
+        let isLoading = false;
+
+        // ── Startup ──────────────────────────────────────────────────────────────────
+
+        async function loadDatasets() {
+            try {
+                const res = await fetch(`${API}/datasets`);
+                const { datasets } = await res.json();
+                const sel = document.getElementById('csv-select');
+                datasets.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    sel.appendChild(opt);
+                });
+            } catch (e) {
+                console.warn('Could not load datasets:', e);
+            }
+        }
+
+        function onDatasetChange() {
+            // Switching datasets resets the session implicitly (backend handles it)
+            sessionId = null;
+            updateSessionBadge();
+            clearChat();
+        }
+
+        // ── Session ──────────────────────────────────────────────────────────────────
+
+        function updateSessionBadge() {
+            const badge = document.getElementById('session-badge');
+            badge.textContent = sessionId ? `session: ${sessionId.slice(0, 8)}…` : 'no session';
+        }
+
+        async function resetSession() {
+            if (sessionId) {
+                await fetch(`${API}/reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId }),
+                }).catch(() => { });
+            }
+            sessionId = null;
+            updateSessionBadge();
+            clearChat();
+        }
+
+        function clearChat() {
+            const area = document.getElementById('chat-area');
+            area.innerHTML = `
+    <div id="welcome">
+      <h2>// ready</h2>
+      <p>Select a dataset above, then ask a question.<br>
+         Enable <em>follow-up mode</em> to operate on the previous result.</p>
+    </div>`;
+        }
+
+        // ── Sending ───────────────────────────────────────────────────────────────────
+
+        function handleKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendQuestion();
+            }
+        }
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        }
+
+        async function sendQuestion() {
+            if (isLoading) return;
+            const input = document.getElementById('question-input');
+            const question = input.value.trim();
+            if (!question) return;
+
+            const csvPath = document.getElementById('csv-select').value;
+            if (!csvPath) { alert('Please select a dataset first.'); return; }
+
+            const isFollowup = document.getElementById('followup-check').checked;
+
+            // Remove welcome screen
+            const welcome = document.getElementById('welcome');
+            if (welcome) welcome.remove();
+
+            input.value = '';
+            input.style.height = 'auto';
+
+            appendUserMsg(question, isFollowup);
+            const loaderId = appendLoader();
+            setLoading(true);
+
+            try {
+                const res = await fetch(`${API}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        question,
+                        csv_path: csvPath,
+                        is_followup: isFollowup,
+                    }),
+                });
+
+                removeLoader(loaderId);
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: res.statusText }));
+                    appendError(err.detail || 'Server error');
+                } else {
+                    const data = await res.json();
+                    sessionId = data.session_id;
+                    updateSessionBadge();
+                    appendAgentMsg(data);
+                }
+            } catch (e) {
+                removeLoader(loaderId);
+                appendError('Network error: ' + e.message);
+            }
+
+            setLoading(false);
+            scrollToBottom();
+        }
+
+        function setLoading(v) {
+            isLoading = v;
+            document.getElementById('send-btn').disabled = v;
+        }
+
+        // ── DOM helpers ───────────────────────────────────────────────────────────────
+
+        function scrollToBottom() {
+            const area = document.getElementById('chat-area');
+            setTimeout(() => area.scrollTop = area.scrollHeight, 50);
+        }
+
+        function appendUserMsg(question, isFollowup) {
+            const area = document.getElementById('chat-area');
+            const div = document.createElement('div');
+            div.className = 'msg user' + (isFollowup ? ' followup' : '');
+            div.innerHTML = `
+    <div class="msg-label">${isFollowup ? '↩ follow-up' : 'you'}</div>
+    <div class="bubble">${escHtml(question)}</div>
+  `;
+            area.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendAgentMsg(data) {
+            const area = document.getElementById('chat-area');
+            const div = document.createElement('div');
+            div.className = 'msg agent';
+
+            const evalClass = data.evaluation === 'PASS' ? 'pass' : 'fail';
+            const codeId = 'code-' + Date.now();
+            const vizId = 'viz-' + Date.now();
+
+            let vizHtml = '';
+            if (data.viz_json) {
+                vizHtml = `
+      <div class="viz-container">
+        <div class="viz-label">📊 visualization</div>
+        <div class="viz-plot" id="${vizId}"></div>
+      </div>`;
+            }
+
+            div.innerHTML = `
+    <div class="msg-label">agent</div>
+    <div class="bubble">${escHtml(data.final_answer)}</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="eval-badge ${evalClass}">${data.evaluation}</span>
+      <button class="code-toggle" onclick="toggleCode('${codeId}')">{ } code</button>
+    </div>
+    <pre class="code-block" id="${codeId}">${escHtml(data.generated_code)}</pre>
+    ${vizHtml}
+  `;
+            area.appendChild(div);
+
+            if (data.viz_json) {
+                try {
+                    const figData = JSON.parse(data.viz_json);
+                    const config = { responsive: true, displayModeBar: false };
+                    // Force dark theme overrides
+                    figData.layout = figData.layout || {};
+                    figData.layout.paper_bgcolor = '#111111';
+                    figData.layout.plot_bgcolor = '#111111';
+                    figData.layout.font = { color: '#e8e8e8', family: 'IBM Plex Mono, monospace', size: 11 };
+                    figData.layout.margin = { t: 40, r: 20, b: 40, l: 50 };
+                    Plotly.newPlot(vizId, figData.data, figData.layout, config);
+                } catch (e) {
+                    document.getElementById(vizId).textContent = 'Could not render chart.';
+                }
+            }
+
+            scrollToBottom();
+        }
+
+        function toggleCode(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+        }
+
+        let _loaderId = 0;
+        function appendLoader() {
+            const id = 'loader-' + (++_loaderId);
+            const area = document.getElementById('chat-area');
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = 'loading-msg';
+            div.innerHTML = `<div class="spinner"></div><span>thinking…</span>`;
+            area.appendChild(div);
+            scrollToBottom();
+            return id;
+        }
+        function removeLoader(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+        function appendError(msg) {
+            const area = document.getElementById('chat-area');
+            const div = document.createElement('div');
+            div.className = 'error-msg';
+            div.textContent = '⚠ ' + msg;
+            area.appendChild(div);
+            scrollToBottom();
+        }
+
+        function escHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/\n/g, '<br>');
+        }
+
+        // ── Init ─────────────────────────────────────────────────────────────────────
+        loadDatasets();
+    </script>
+</body>
+
+</html>
