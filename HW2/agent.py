@@ -1,31 +1,26 @@
 """
 agent.py
 --------
-Defines the LangGraph StateGraph and compiles it into a runnable graph.
+HW2: Stateful, interactive LangGraph agent with memory and visualization.
 
 State keys
 ----------
-question         : str      - the natural language question
-csv_path         : str      - path to the CSV file
-csv_summary      : str      - compact dataset summary (shape, dtypes, stats)
-generated_code   : str      - code produced by codegen_node
-execution_result : any      - the `result` variable after exec()
-execution_error  : str|None - traceback string if exec() raised
-evaluation       : str      - "PASS" or "FAIL"
-final_answer     : str      - human-readable answer
-retry_count      : int      - how many times we have retried (max 1)
-
-HW2: Stateful, interactive LangGraph agent with memory and visualization.
-
-New state keys vs. HW1:
-  memory      : ConversationMemory  - stores turns + prior result
-  is_followup : bool                - True when the question operates on a prior result
-  viz_json    : str | None          - Plotly figure JSON for the frontend
-  viz_decision: dict | None         - LLM's visualization decision metadata
+question         : str                - the natural language question
+csv_path         : str                - path to the CSV file
+csv_summary      : str                - compact dataset summary (cached in memory)
+generated_code   : str                - code produced by codegen_node
+execution_result : Any                - the `result` variable after exec()
+execution_error  : str | None         - traceback string if exec() raised
+evaluation       : str                - "PASS" or "FAIL"
+final_answer     : str                - human-readable answer
+retry_count      : int                - how many times we have retried (max 1)
+memory           : ConversationMemory - stores turns + prior execution result
+is_followup      : bool               - True when the question operates on a prior result
+viz_json         : str | None         - Plotly figure JSON for the frontend
+viz_decision     : dict | None        - LLM's visualization decision metadata
 """
 
-from typing import Any, Optional
-from typing_extensions import TypedDict
+from typing import Any, Optional, TypedDict
 
 from langgraph.graph import StateGraph, END
 
@@ -103,6 +98,7 @@ def commit_to_memory(state: AgentState) -> dict:
     )
     return {}  # memory is mutated in-place; no state key to update
 
+
 # ---------------------------------------------------------------------------
 # Build the graph
 # ---------------------------------------------------------------------------
@@ -160,7 +156,7 @@ def run_turn(
 ) -> dict:
     """
     Run one conversational turn and return a result dict with:
-      final_answer, viz_json, generated_code, evaluation
+      final_answer, viz_json, generated_code, evaluation, viz_decision
     """
     initial_state: AgentState = {
         "question": question,
