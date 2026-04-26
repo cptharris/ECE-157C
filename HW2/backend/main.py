@@ -11,6 +11,8 @@ from nodes.memory import get_memory, update_memory
 
 from pprint import pprint
 
+from utils import make_json_safe
+
 
 # -----------------------------
 # Artifact versioning store
@@ -111,6 +113,9 @@ def query(req: QueryRequest):
         pprint(result)
         print("\n\n===== END =====")
 
+        # Convert all numpy / pandas / non-JSON-safe objects
+        result = make_json_safe(result)
+
         # -----------------------------
         # Artifact versioning
         # -----------------------------
@@ -126,7 +131,7 @@ def query(req: QueryRequest):
     except Exception as e:
         return {
             "final_answer": f"Agent execution failed: {str(e)}",
-            "artifact": artifact,
+            "artifact": make_json_safe(artifact),
             "visualization": {
                 "should_visualize": False,
                 "error": str(e)
@@ -151,8 +156,8 @@ def query(req: QueryRequest):
         "run_id": result["run_id"],
         "final_answer": result["final_answer"],
         "visualization": result["visualization"],
-        "run_history": RUN_STORE.get(req.session_id, []),
-        "artifact": result,
+        "run_history": make_json_safe(RUN_STORE.get(req.session_id, [])),
+        "artifact": make_json_safe(result),
         "session_id": req.session_id
     }
 
