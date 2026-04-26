@@ -9,6 +9,8 @@ from fastapi.responses import FileResponse
 from agent import agent
 from nodes.memory import get_memory, update_memory
 
+from pprint import pprint
+
 
 # -----------------------------
 # Artifact versioning store
@@ -105,6 +107,9 @@ def query(req: QueryRequest):
     # -----------------------------
     try:
         result = agent.invoke(artifact)
+        print("\n\n===== RESULT =====")
+        pprint(result)
+        print("\n\n===== END =====")
 
         # -----------------------------
         # Artifact versioning

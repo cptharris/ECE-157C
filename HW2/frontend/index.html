@@ -101,8 +101,26 @@
             text-decoration: underline;
         }
 
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #ccc;
+            border-top-color: #333;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
         #loading {
-            display: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             padding: 10px;
             color: gray;
         }
@@ -121,8 +139,6 @@
     <div id="main">
 
         <div id="chat"></div>
-
-        <div id="loading">Processing...</div>
 
         <div id="inputBar">
             <input id="questionInput" placeholder="Ask a question..." />
@@ -183,6 +199,7 @@
                 renderResponse(data);
 
             } catch (err) {
+                setLoading(false);
                 appendMessage("assistant", "Error: " + err.message);
             }
 
@@ -240,6 +257,11 @@
         /* -------------------------
            UI helpers
         --------------------------*/
+        function scrollToBottom() {
+            const area = document.getElementById('chat');
+            setTimeout(() => area.scrollTop = area.scrollHeight, 50);
+        }
+
         function appendMessage(role, text) {
             const div = document.createElement("div");
             div.className = "msg " + role;
@@ -247,10 +269,30 @@
             document.getElementById("chat").appendChild(div);
         }
 
-        function setLoading(state) {
-            document.getElementById("loading").style.display =
-                state ? "block" : "none";
+        function setLoading(isLoading) {
+            const chat = document.getElementById("chat");
+
+            if (isLoading) {
+                if (document.getElementById("loading")) return;
+
+                const div = document.createElement("div");
+                div.id = "loading";
+                div.innerHTML = `<div class="spinner"></div><span>Thinking...</span>`;
+                chat.appendChild(div);
+            } else {
+                const el = document.getElementById("loading");
+                if (el) el.remove();
+            }
+
+            scrollToBottom();
         }
+
+        document.getElementById("questionInput").addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendQuestion();
+            }
+        });
 
         /* -------------------------
            Init

@@ -20,10 +20,7 @@ def codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
 User question:
 {state["input_question"]}
 
-Columns:
-{state["context"]["columns"]}
-
-Types:
+Columns and data types:
 {state["context"]["column_types"]}
 
 Sample rows:
