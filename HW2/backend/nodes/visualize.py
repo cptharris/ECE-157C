@@ -1,5 +1,5 @@
 from .call_llm import call_llm
-from .schemas import Artifact
+from typing import Dict, Any
 import json
 
 
@@ -38,22 +38,21 @@ Rules:
 """
 
 
-def visualization_node(state: Artifact) -> Artifact:
-
+def visualization_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # ----------------------------
     # 1. Decision step
     # ----------------------------
     decision_prompt = f"""User question:
-{state.input_question}
+{state["input_question"]}
 
 Result:
-{state.execution.get("result")}
+{state["execution"].get("result")}
 """
 
     decision_raw = call_llm(SYSTEM_PROMPT_DECISION, decision_prompt)
     viz_decision = json.loads(decision_raw)
 
-    state.visualization = viz_decision
+    state["visualization"] = viz_decision
 
     # ----------------------------
     # 2. Conditional generation
@@ -62,17 +61,17 @@ Result:
         return state
 
     generation_prompt = f"""User question:
-{state.input_question}
+{state["input_question"]}
 
 Chart type:
 {viz_decision.get("chart_type")}
 
 Result:
-{state.execution.get("result")}
+{state["execution"].get("result")}
 """
 
     plotly_code = call_llm(SYSTEM_PROMPT_VIZ_GEN, generation_prompt)
 
-    state.visualization["plotly_code"] = plotly_code
+    state["visualization"]["plotly_code"] = plotly_code
 
     return state

@@ -1,5 +1,5 @@
 from langgraph.graph import StateGraph, END
-from nodes.schemas import Artifact
+from typing import Dict, Any
 
 from nodes.summarize import summarize_node
 from nodes.codegen import codegen_node
@@ -9,8 +9,7 @@ from nodes.visualize import visualization_node
 
 
 def build_graph():
-
-    graph = StateGraph(Artifact)
+    graph = StateGraph(Dict[str, Any])
 
     graph.add_node("summarize", summarize_node)
     graph.add_node("codegen", codegen_node)

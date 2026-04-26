@@ -1,15 +1,15 @@
 from .call_llm import call_llm
-from .schemas import Artifact
+from typing import Dict, Any
 import json
 
 
-def summarize_node(state: Artifact) -> Artifact:
+def summarize_node(state: dict[str, Any]) -> dict[str, Any]:
     import pandas as pd
 
-    path = f"datasets/{state.dataset_name}"
+    path = f"datasets/{state["dataset_name"]}"
     df = pd.read_csv(path)
 
-    state.context = {
+    state["context"] = {
         "columns": list(df.columns),
         "column_types": df.dtypes.astype(str).to_dict(),
         "row_count": len(df),

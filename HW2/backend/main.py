@@ -7,7 +7,6 @@ import uuid
 from fastapi.responses import FileResponse
 
 from agent import agent
-from nodes.schemas import Artifact
 from nodes.memory import get_memory, update_memory
 
 
@@ -80,12 +79,22 @@ def query(req: QueryRequest):
     # -----------------------------
     # Build initial artifact
     # -----------------------------
-    artifact = Artifact(
-        run_id=str(uuid.uuid4()),
-        step="start",
-        input_question=req.question,
-        dataset_name=req.dataset_name
-    )
+    artifact = {
+        "run_id": str(uuid.uuid4()),
+        "step": "start",
+        "input_question": req.question,
+        "dataset_name": req.dataset_name,
+        "context": {},
+        "code": {},
+        "execution": {},
+        "analysis": {},
+        "visualization": {
+            "should_visualize": False,
+            "reason": "",
+            "plotly_code": ""
+        },
+        "final_answer": None
+    }
 
     # Store context in memory
     memory.last_question = req.question
@@ -95,12 +104,12 @@ def query(req: QueryRequest):
     # Run LangGraph agent
     # -----------------------------
     try:
-        result: Artifact = agent.invoke(artifact)
+        result = agent.invoke(artifact)
 
         # -----------------------------
         # Artifact versioning
         # -----------------------------
-        result_dict = result if isinstance(result, dict) else result.model_dump()
+        result_dict = result
 
         RUN_INDEX[result_dict["run_id"]] = result_dict
 
@@ -112,7 +121,7 @@ def query(req: QueryRequest):
     except Exception as e:
         return {
             "final_answer": f"Agent execution failed: {str(e)}",
-            "artifact": artifact.model_dump(),
+            "artifact": artifact,
             "visualization": {
                 "should_visualize": False,
                 "error": str(e)
@@ -126,7 +135,7 @@ def query(req: QueryRequest):
 
     memory.chat_history.append({
         "question": req.question,
-        "answer": result.final_answer,
+        "answer": result["final_answer"],
         "dataset": req.dataset_name
     })
 
@@ -134,11 +143,11 @@ def query(req: QueryRequest):
     # Response payload
     # -----------------------------
     return {
-        "run_id": result.run_id,
-        "final_answer": result.final_answer,
-        "visualization": result.visualization,
+        "run_id": result["run_id"],
+        "final_answer": result["final_answer"],
+        "visualization": result["visualization"],
         "run_history": RUN_STORE.get(req.session_id, []),
-        "artifact": result.model_dump(),
+        "artifact": result,
         "session_id": req.session_id
     }
 

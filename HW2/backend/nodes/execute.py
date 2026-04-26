@@ -1,25 +1,25 @@
 import pandas as pd
-from .schemas import Artifact
+from typing import Dict, Any
 
 
-def execute_node(state: Artifact) -> Artifact:
-    path = f"datasets/{state.dataset_name}"
+def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    path = f"datasets/{state['dataset_name']}"
     df = pd.read_csv(path)
 
     local_vars = {"df": df, "pd": pd}
 
     try:
-        exec(state.code["snippet"], {}, local_vars)
+        exec(state["code"]["snippet"], {}, local_vars)
         result = local_vars.get("result", None)
 
-        state.execution = {
+        state["execution"] = {
             "stdout": "",
             "result": result,
             "error": None
         }
 
     except Exception as e:
-        state.execution = {
+        state["execution"] = {
             "stdout": "",
             "result": None,
             "error": str(e)

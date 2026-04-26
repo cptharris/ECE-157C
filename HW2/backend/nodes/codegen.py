@@ -1,5 +1,5 @@
 from .call_llm import call_llm
-from .schemas import Artifact
+from typing import Dict, Any
 
 
 SYSTEM_PROMPT = """You are a Python data analysis code generator.
@@ -15,27 +15,26 @@ Rules:
 """
 
 
-def codegen_node(state: Artifact) -> Artifact:
-
+def codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
     user_prompt = f"""
 User question:
-{state.input_question}
+{state["input_question"]}
 
 Columns:
-{state.context["columns"]}
+{state["context"]["columns"]}
 
 Types:
-{state.context["column_types"]}
+{state["context"]["column_types"]}
 
 Sample rows:
-{state.context["sample_rows"]}
+{state["context"]["sample_rows"]}
 
 Write pandas code to answer the question.
 """
 
     code = call_llm(SYSTEM_PROMPT, user_prompt)
 
-    state.code = {
+    state["code"] = {
         "language": "python",
         "snippet": code
     }
