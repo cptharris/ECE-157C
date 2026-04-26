@@ -13,6 +13,8 @@
             margin: 0;
             display: flex;
             height: 100vh;
+            background: #0a0a0a;
+            color: #e8e8e8;
         }
 
         /* Sidebar */
@@ -36,23 +38,31 @@
 
         #chat {
             flex: 1;
-            padding: 10px;
+            padding: 16px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #111111;
         }
 
         .msg {
-            margin-bottom: 15px;
-            padding: 10px;
+            margin-bottom: 0;
+            padding: 10px 14px;
             border-radius: 6px;
-            background: #f5f5f5;
+            background: #1a1a1a;
+            color: #e8e8e8;
+            border: 1px solid #2a2a2a;
         }
 
         .user {
-            background: #dff0ff;
+            background: #0088ff;
+            color: white;
         }
 
         .assistant {
-            background: #f3f3f3;
+            background: #1a1a1a;
+            color: #e8e8e8;
         }
 
         .answer {
@@ -108,21 +118,20 @@
         }
 
         .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid #ccc;
-            border-top-color: #333;
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            min-height: 30px;
+            box-sizing: border-box;
+            border-width: 3px;
+            border-style: solid;
+            border-color: #3a3a3a;
+            border-top-color: #00ff88;
             border-radius: 50%;
-            animation: spin 0.7s linear infinite;
+            animation: spin 0.8s linear infinite;
             flex-shrink: 0;
-        }
-
-        #loading {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px;
-            color: gray;
+            vertical-align: middle;
         }
     </style>
 </head>
@@ -267,20 +276,24 @@
             div.className = "msg " + role;
             div.textContent = text;
             document.getElementById("chat").appendChild(div);
+            scrollToBottom();
         }
 
         function setLoading(isLoading) {
             const chat = document.getElementById("chat");
 
             if (isLoading) {
-                if (document.getElementById("loading")) return;
+                if (document.getElementById("loadingSpinner")) return;
 
                 const div = document.createElement("div");
-                div.id = "loading";
-                div.innerHTML = `<div class="spinner"></div><span>Thinking...</span>`;
+                div.className = "msg assistant";
+                div.id = "loadingSpinner"
+                const span = document.createElement("span")
+                span.className = "spinner";
+                div.appendChild(span);
                 chat.appendChild(div);
             } else {
-                const el = document.getElementById("loading");
+                const el = document.getElementById("loadingSpinner");
                 if (el) el.remove();
             }
 
