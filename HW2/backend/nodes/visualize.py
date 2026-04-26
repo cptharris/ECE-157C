@@ -74,4 +74,23 @@ Result:
 
     state["visualization"]["plotly_code"] = plotly_code
 
+    import plotly.express as px
+    import plotly.graph_objects as go
+
+    local_vars = {"result": state["execution"]["result"], "px": px, "go": go}
+
+    try:
+        exec(plotly_code, {}, local_vars)
+        fig = local_vars.get("fig")
+
+        if fig:
+            state["visualization"]["figure_json"] = fig.to_json()
+        else:
+            state["visualization"]["figure_json"] = None
+            state["visualization"]["error"] = "Visualization code did not create fig"
+
+    except Exception as e:
+        state["visualization"]["figure_json"] = None
+        state["visualization"]["error"] = str(e)
+
     return state

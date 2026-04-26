@@ -236,9 +236,19 @@
 
                 setTimeout(() => {
                     try {
-                        eval(data.visualization.plotly_code);
+                        // Prefer server-rendered figure_json if available
+                        if (data.visualization.figure_json) {
+                            const fig = JSON.parse(data.visualization.figure_json);
+                            Plotly.newPlot(vizDiv, fig.data, fig.layout);
+                        } else if (data.visualization.plotly_code) {
+                            // fallback: execute generated code
+                            eval(data.visualization.plotly_code);
+                            if (typeof fig !== "undefined") {
+                                Plotly.newPlot(vizDiv, fig.data, fig.layout);
+                            }
+                        }
                     } catch (e) {
-                        console.error("Plotly error:", e);
+                        console.error("Plotly render error:", e);
                     }
                 }, 100);
             }
