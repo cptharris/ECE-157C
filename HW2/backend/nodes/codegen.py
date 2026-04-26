@@ -26,7 +26,7 @@ Columns and data types:
 Sample rows:
 {state["context"]["sample_rows"]}
 
-Write pandas code to answer the question.
+Write Python code to answer the question.
 """
 
     code = call_llm(SYSTEM_PROMPT, user_prompt)
