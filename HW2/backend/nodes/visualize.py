@@ -1,6 +1,7 @@
 from .call_llm import call_llm
 from typing import Dict, Any
 import json
+import plotly
 
 
 SYSTEM_PROMPT_DECISION = """You are a data visualization decision engine.
@@ -84,7 +85,12 @@ Result:
         fig = local_vars.get("fig")
 
         if fig:
-            state["visualization"]["figure_json"] = fig.to_json()
+            # Convert exactly like fig.show() serialization:
+            # fully expand numpy/pandas arrays into plain JSON-safe lists
+            figure_dict = fig.to_plotly_json()
+            state["visualization"]["figure_json"] = json.loads(
+                json.dumps(figure_dict, cls=plotly.utils.PlotlyJSONEncoder)
+            )
         else:
             state["visualization"]["figure_json"] = None
             state["visualization"]["error"] = "Visualization code did not create fig"

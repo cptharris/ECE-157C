@@ -160,6 +160,62 @@
 
         let sessionId = crypto.randomUUID();
 
+        // Helper function to decode Plotly binary arrays
+        function decodeTypedArray(obj) {
+            if (!obj || typeof obj !== "object") return obj;
+
+            // Plotly binary array format: {dtype: "f8", bdata: "..."}
+            if (obj.dtype && obj.bdata) {
+                const binary = atob(obj.bdata);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+
+                let view;
+                switch (obj.dtype) {
+                    case "f8":
+                        view = new Float64Array(bytes.buffer);
+                        break;
+                    case "f4":
+                        view = new Float32Array(bytes.buffer);
+                        break;
+                    case "i4":
+                        view = new Int32Array(bytes.buffer);
+                        break;
+                    case "u4":
+                        view = new Uint32Array(bytes.buffer);
+                        break;
+                    case "i2":
+                        view = new Int16Array(bytes.buffer);
+                        break;
+                    case "u2":
+                        view = new Uint16Array(bytes.buffer);
+                        break;
+                    case "i1":
+                        view = new Int8Array(bytes.buffer);
+                        break;
+                    case "u1":
+                        view = new Uint8Array(bytes.buffer);
+                        break;
+                    default:
+                        return obj;
+                }
+
+                return Array.from(view);
+            }
+
+            if (Array.isArray(obj)) {
+                return obj.map(decodeTypedArray);
+            }
+
+            const decoded = {};
+            for (const key in obj) {
+                decoded[key] = decodeTypedArray(obj[key]);
+            }
+            return decoded;
+        }
+
         /* -------------------------
            Load datasets
         --------------------------*/
@@ -238,8 +294,9 @@
                     try {
                         // Prefer server-rendered figure_json if available
                         if (data.visualization.figure_json) {
-                            const fig = JSON.parse(data.visualization.figure_json);
-                            Plotly.newPlot(vizDiv, fig.data, fig.layout);
+                            const fig = decodeTypedArray(data.visualization.figure_json);
+                            console.log(fig.data);
+                            Plotly.newPlot(vizDiv, fig.data, fig.layout, { responsive: true });
                         } else if (data.visualization.plotly_code) {
                             // fallback: execute generated code
                             eval(data.visualization.plotly_code);
