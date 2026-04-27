@@ -4,6 +4,8 @@ import traceback
 
 
 def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    state["step"] = "execute"
+
     path = f"datasets/{state['dataset_name']}"
     df = pd.read_csv(path)
 

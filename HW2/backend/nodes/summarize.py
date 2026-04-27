@@ -1,10 +1,11 @@
 from .call_llm import call_llm
 from typing import Dict, Any
 import json
+import pandas as pd
 
 
 def summarize_node(state: dict[str, Any]) -> dict[str, Any]:
-    import pandas as pd
+    state["step"] = "summarize"
 
     path = f"datasets/{state["dataset_name"]}"
     df = pd.read_csv(path)

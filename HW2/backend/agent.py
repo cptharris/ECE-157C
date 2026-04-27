@@ -21,12 +21,21 @@ def build_graph():
 
     graph.add_edge("summarize", "codegen")
     graph.add_edge("codegen", "execute")
-    graph.add_edge("execute", "respond")
+    # graph.add_edge("execute", "respond")
+
+    graph.add_conditional_edges("execute", execute_error)
 
     graph.add_edge("respond", "visualize")
     graph.add_edge("visualize", END)
 
     return graph.compile()
+
+
+def execute_error(state: dict[str, Any]) -> str:
+    if state["execution"]["result"] == None:
+        return 'END'
+    else:
+        return 'respond'
 
 
 agent = build_graph()

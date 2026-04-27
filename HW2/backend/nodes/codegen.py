@@ -17,6 +17,8 @@ Rules:
 
 
 def codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    state["step"] = "codegen"
+
     user_prompt = f"""
 User question:
 {state["input_question"]}

@@ -85,6 +85,7 @@ def query(req: QueryRequest):
     # -----------------------------
     artifact = {
         "run_id": str(uuid.uuid4()),
+        "step": "start",
         "input_question": req.question,
         "dataset_name": req.dataset_name,
         "dataset_context": {},
@@ -107,9 +108,6 @@ def query(req: QueryRequest):
     # -----------------------------
     try:
         result = agent.invoke(artifact)
-        print("\n\n===== RESULT =====")
-        pprint(result)
-        print("\n\n===== END =====")
 
         # Convert all numpy / pandas / non-JSON-safe objects
         result = make_json_safe(result)

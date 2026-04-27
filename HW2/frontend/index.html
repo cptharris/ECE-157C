@@ -356,6 +356,10 @@
 
             document.getElementById("chat").appendChild(container);
             document.getElementById("chat").scrollTop = 999999;
+
+            if (data.artifact.execution?.error) {
+                appendMessage("assistant", data.artifact.execution.error);
+            }
         }
 
         /* -------------------------

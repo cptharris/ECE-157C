@@ -15,6 +15,8 @@ Rules:
 
 
 def respond_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    state["step"] = "respond"
+
     user_prompt = f"""
 Question:
 {state["input_question"]}

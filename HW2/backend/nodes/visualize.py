@@ -44,6 +44,7 @@ Rules:
 
 
 def visualization_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    state["step"] = "visualization_decision"
     # ----------------------------
     # 1. Decision step
     # ----------------------------
@@ -64,6 +65,8 @@ Result:
     # ----------------------------
     if not viz_decision.get("should_visualize"):
         return state
+
+    state["step"] = "visualization_generation"
 
     generation_prompt = f"""User question:
 {state["input_question"]}
