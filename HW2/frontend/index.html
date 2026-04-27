@@ -161,86 +161,77 @@
         let sessionId = crypto.randomUUID();
 
         // Helper function to decode Plotly binary arrays
-        function decodeTypedArray(obj) {
-            if (!obj || typeof obj !== "object") return obj;
-
-            // Plotly binary array format: {dtype: "f8", bdata: "..."}
-            if (obj.dtype && obj.bdata) {
+        function decodePlotlyArrays(obj) {
+            // Detect Plotly binary ndarray encoding
+            if (
+                obj &&
+                typeof obj === "object" &&
+                obj.dtype &&
+                obj.bdata
+            ) {
                 const binary = atob(obj.bdata);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) {
-                    bytes[i] = binary.charCodeAt(i);
+                let arr;
+
+                // Float64
+                if (obj.dtype === "f8") {
+                    const buf = new ArrayBuffer(binary.length);
+                    const view = new Uint8Array(buf);
+                    for (let i = 0; i < binary.length; i++) {
+                        view[i] = binary.charCodeAt(i);
+                    }
+                    arr = Array.from(new Float64Array(buf));
+                }
+                // Int64 / fallback numeric
+                else {
+                    const buf = new ArrayBuffer(binary.length);
+                    const view = new Uint8Array(buf);
+                    for (let i = 0; i < binary.length; i++) {
+                        view[i] = binary.charCodeAt(i);
+                    }
+                    arr = Array.from(new Float64Array(buf));
                 }
 
-                let view;
-                switch (obj.dtype) {
-                    case "f8":
-                        view = new Float64Array(bytes.buffer);
-                        break;
-                    case "f4":
-                        view = new Float32Array(bytes.buffer);
-                        break;
-                    case "i4":
-                        view = new Int32Array(bytes.buffer);
-                        break;
-                    case "u4":
-                        view = new Uint32Array(bytes.buffer);
-                        break;
-                    case "i2":
-                        view = new Int16Array(bytes.buffer);
-                        break;
-                    case "u2":
-                        view = new Uint16Array(bytes.buffer);
-                        break;
-                    case "i1":
-                        view = new Int8Array(bytes.buffer);
-                        break;
-                    case "u1":
-                        view = new Uint8Array(bytes.buffer);
-                        break;
-                    default:
-                        return obj;
+                // Rebuild multidimensional shape
+                if (obj.shape) {
+                    const shape = obj.shape.split(',').map(n => parseInt(n.trim()));
+                    if (shape.length > 1) {
+                        return reshapeArray(arr, shape);
+                    }
                 }
 
-                return Array.from(view);
+                return arr;
             }
 
+            // Recurse arrays
             if (Array.isArray(obj)) {
-                return obj.map(decodeTypedArray);
+                return obj.map(decodePlotlyArrays);
             }
 
-            const decoded = {};
-            for (const key in obj) {
-                decoded[key] = decodeTypedArray(obj[key]);
+            // Recurse objects
+            if (obj && typeof obj === "object") {
+                const decoded = {};
+                for (const key in obj) {
+                    decoded[key] = decodePlotlyArrays(obj[key]);
+                }
+                return decoded;
             }
-            return decoded;
+
+            return obj;
         }
 
-        function sanitizePlotlyFigure(fig) {
-            if (!fig || !fig.data) return fig;
+        function reshapeArray(flat, shape) {
+            if (shape.length === 1) return flat;
 
-            fig.data = fig.data.map(trace => {
-                if (!trace || typeof trace !== "object") return trace;
+            const size = shape.slice(1).reduce((a, b) => a * b, 1);
+            const result = [];
 
-                // Remove hovertemplate references to missing customdata
-                if (trace.hovertemplate && trace.hovertemplate.includes("customdata") && !trace.customdata) {
-                    delete trace.hovertemplate;
-                }
+            for (let i = 0; i < flat.length; i += size) {
+                result.push(
+                    reshapeArray(flat.slice(i, i + size), shape.slice(1))
+                );
+            }
 
-                // Remove texttemplate if text values are missing
-                if (trace.texttemplate && (trace.text === undefined || trace.text === null)) {
-                    delete trace.texttemplate;
-                }
-
-                // Remove textposition if there is no text
-                if (trace.textposition && (trace.text === undefined || trace.text === null)) {
-                    delete trace.textposition;
-                }
-
-                return trace;
-            });
-
-            return fig;
+            return result;
         }
 
         /* -------------------------
@@ -315,22 +306,30 @@
             if (data.visualization?.should_visualize) {
                 const vizDiv = document.createElement("div");
                 vizDiv.id = "viz_" + Math.random().toString(36).substring(7);
+                container.appendChild(document.createElement("br"));
                 container.appendChild(vizDiv);
 
                 setTimeout(() => {
                     try {
-                        // Prefer server-rendered figure_json if available
-                        if (data.visualization.figure_json) {
-                            let fig = decodeTypedArray(data.visualization.figure_json);
-                            fig = sanitizePlotlyFigure(fig);
-                            console.log(fig.data);
+                        if (data.visualization.figure_svg) {
+                            const img = document.createElement("img");
+                            img.src = "data:image/svg+xml;base64," + data.visualization.figure_svg;
+                            img.style.width = "100%";
+                            img.style.height = "auto";
+                            img.style.display = "block";
+                            img.style.borderRadius = "8px";
+                            vizDiv.appendChild(img);
+                        } else if (data.visualization.figure_png) {
+                            const img = document.createElement("img");
+                            img.src = "data:image/png;base64," + data.visualization.figure_png;
+                            img.style.width = "100%";
+                            img.style.height = "auto";
+                            img.style.display = "block";
+                            img.style.borderRadius = "8px";
+                            vizDiv.appendChild(img);
+                        } else if (data.visualization.figure_json) {
+                            const fig = decodePlotlyArrays(data.visualization.figure_json);
                             Plotly.newPlot(vizDiv, fig.data, fig.layout, { responsive: true });
-                        } else if (data.visualization.plotly_code) {
-                            // fallback: execute generated code
-                            eval(data.visualization.plotly_code);
-                            if (typeof fig !== "undefined") {
-                                Plotly.newPlot(vizDiv, fig.data, fig.layout);
-                            }
                         }
                     } catch (e) {
                         console.error("Plotly render error:", e);
@@ -347,6 +346,7 @@
             const debugBox = document.createElement("pre");
             debugBox.className = "debug";
             debugBox.textContent = JSON.stringify(data.artifact, null, 2);
+            debugBox.style.display = "none";
             container.appendChild(debugBox);
 
             debugToggle.onclick = () => {
