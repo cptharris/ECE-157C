@@ -4,6 +4,7 @@ import json
 import plotly
 import base64
 import numpy as np
+import traceback
 
 
 SYSTEM_PROMPT_DECISION = """You are a data visualization decision engine.
@@ -89,7 +90,10 @@ Result:
 
         if fig:
             state["visualization"]["figure_json"] = json.loads(
-                json.dumps(sanitize_plotly(fig.to_plotly_json()), cls=plotly.utils.PlotlyJSONEncoder)
+                json.dumps(
+                    sanitize_plotly(fig.to_plotly_json()),
+                    cls=plotly.utils.PlotlyJSONEncoder,
+                )
             )
         else:
             state["visualization"]["figure_json"] = None
@@ -98,6 +102,7 @@ Result:
     except Exception as e:
         state["visualization"]["figure_json"] = None
         state["visualization"]["error"] = str(e)
+        traceback.print_exception(e)
 
     return state
 
@@ -112,8 +117,7 @@ def sanitize_plotly(obj):
         # Handle Plotly bdata pattern
         if "bdata" in obj and "dtype" in obj:
             arr = np.frombuffer(
-                base64.b64decode(obj["bdata"]),
-                dtype=np.dtype(obj["dtype"])
+                base64.b64decode(obj["bdata"]), dtype=np.dtype(obj["dtype"])
             )
             return arr.tolist()
 

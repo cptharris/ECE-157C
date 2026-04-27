@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Dict, Any
+import traceback
 
 
 def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -12,15 +13,10 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
         exec(state["code"], {}, local_vars)
         result = local_vars.get("result", None)
 
-        state["execution"] = {
-            "result": result,
-            "error": None
-        }
+        state["execution"] = {"result": result, "error": None}
 
     except Exception as e:
-        state["execution"] = {
-            "result": None,
-            "error": str(e)
-        }
+        state["execution"] = {"result": None, "error": str(e)}
+        traceback.print_exception(e)
 
     return state
