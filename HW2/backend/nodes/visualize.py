@@ -3,6 +3,7 @@ from typing import Dict, Any
 import json
 import plotly
 import base64
+import numpy as np
 
 
 SYSTEM_PROMPT_DECISION = """You are a data visualization decision engine.
@@ -35,6 +36,7 @@ Rules:
 - result is preloaded
 - use plotly.express as px
 - assign figure to `fig`
+- avoid non-JSON serializable objects
 - do not call fig.show()
 - output ONLY Python code
 """
@@ -87,7 +89,7 @@ Result:
 
         if fig:
             state["visualization"]["figure_json"] = json.loads(
-                json.dumps(fig.to_plotly_json(), cls=plotly.utils.PlotlyJSONEncoder)
+                json.dumps(sanitize_plotly(fig.to_plotly_json()), cls=plotly.utils.PlotlyJSONEncoder)
             )
         else:
             state["visualization"]["figure_json"] = None
@@ -98,3 +100,33 @@ Result:
         state["visualization"]["error"] = str(e)
 
     return state
+
+
+def sanitize_plotly(obj):
+    """
+    Recursively convert Plotly figure dict into JSON-safe primitives.
+    Handles numpy arrays, pandas objects, and Plotly bdata structures.
+    """
+
+    if isinstance(obj, dict):
+        # Handle Plotly bdata pattern
+        if "bdata" in obj and "dtype" in obj:
+            arr = np.frombuffer(
+                base64.b64decode(obj["bdata"]),
+                dtype=np.dtype(obj["dtype"])
+            )
+            return arr.tolist()
+
+        return {k: sanitize_plotly(v) for k, v in obj.items()}
+
+    elif isinstance(obj, (list, tuple)):
+        return [sanitize_plotly(v) for v in obj]
+
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+
+    elif hasattr(obj, "item"):  # numpy scalars
+        return obj.item()
+
+    else:
+        return obj
