@@ -85,13 +85,11 @@ def query(req: QueryRequest):
     # -----------------------------
     artifact = {
         "run_id": str(uuid.uuid4()),
-        "step": "start",
         "input_question": req.question,
         "dataset_name": req.dataset_name,
-        "context": {},
-        "code": {},
+        "dataset_context": {},
+        "code": "",
         "execution": {},
-        "analysis": {},
         "visualization": {
             "should_visualize": False,
             "reason": "",

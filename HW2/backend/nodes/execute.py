@@ -9,18 +9,16 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
     local_vars = {"df": df, "pd": pd}
 
     try:
-        exec(state["code"]["snippet"], {}, local_vars)
+        exec(state["code"], {}, local_vars)
         result = local_vars.get("result", None)
 
         state["execution"] = {
-            "stdout": "",
             "result": result,
             "error": None
         }
 
     except Exception as e:
         state["execution"] = {
-            "stdout": "",
             "result": None,
             "error": str(e)
         }

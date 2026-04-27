@@ -9,10 +9,10 @@ def summarize_node(state: dict[str, Any]) -> dict[str, Any]:
     path = f"datasets/{state["dataset_name"]}"
     df = pd.read_csv(path)
 
-    state["context"] = {
+    state["dataset_context"] = {
         "column_types": df.dtypes.astype(str).to_dict(),
         "row_count": len(df),
-        "sample_rows": df.head(3).to_dict(orient="records")
+        # "sample_rows": df.head(3).to_dict(orient="records")
     }
 
     return state
