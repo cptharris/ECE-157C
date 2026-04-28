@@ -311,26 +311,8 @@
 
                 setTimeout(() => {
                     try {
-                        if (data.visualization.figure_svg) {
-                            const img = document.createElement("img");
-                            img.src = "data:image/svg+xml;base64," + data.visualization.figure_svg;
-                            img.style.width = "100%";
-                            img.style.height = "auto";
-                            img.style.display = "block";
-                            img.style.borderRadius = "8px";
-                            vizDiv.appendChild(img);
-                        } else if (data.visualization.figure_png) {
-                            const img = document.createElement("img");
-                            img.src = "data:image/png;base64," + data.visualization.figure_png;
-                            img.style.width = "100%";
-                            img.style.height = "auto";
-                            img.style.display = "block";
-                            img.style.borderRadius = "8px";
-                            vizDiv.appendChild(img);
-                        } else if (data.visualization.figure_json) {
-                            const fig = decodePlotlyArrays(data.visualization.figure_json);
-                            Plotly.newPlot(vizDiv, fig.data, fig.layout, { responsive: true });
-                        }
+                        const fig = decodePlotlyArrays(data.visualization.figure_json);
+                        Plotly.newPlot(vizDiv, fig.data, fig.layout, { responsive: true });
                     } catch (e) {
                         console.error("Plotly render error:", e);
                     }
