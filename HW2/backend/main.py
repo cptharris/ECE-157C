@@ -91,12 +91,13 @@ def query(req: QueryRequest):
     if memory.dataset_name is None:
         memory.dataset_name = req.dataset_name
     elif memory.dataset_name != req.dataset_name:
-        return {
-            "final_answer": "This session is already tied to a different dataset. Please start a new session for a new dataset.",
-            "visualization": {"should_visualize": False},
-            "artifact": make_json_safe(artifact),
-            "session_id": req.session_id,
-        }
+        artifact["step"] = "error"
+        artifact["final_answer"] = (
+            "This session is already tied to a different dataset. "
+            "Please start a new session for a new dataset."
+        )
+        artifact["visualization"] = {"should_visualize": False}
+        return make_json_safe(artifact)
 
     artifact["recent_context"] = build_recent_context(req.session_id)
 
@@ -108,32 +109,24 @@ def query(req: QueryRequest):
 
         # Convert all numpy / pandas / non-JSON-safe objects
         result = make_json_safe(result)
-        result_dict = result
 
     except Exception as e:
-        return {
-            "final_answer": f"Agent execution failed: {str(e)}",
-            "artifact": make_json_safe(artifact),
-            "visualization": {"should_visualize": False, "error": str(e)},
-        }
+        artifact["step"] = "error"
+        artifact["execution"] = {"result": None, "error": str(e)}
+        artifact["final_answer"] = f"Agent execution failed: {str(e)}"
+        artifact["visualization"] = {"should_visualize": False, "error": str(e)}
+        return make_json_safe(artifact)
 
     # -----------------------------
     # Update memory
     # -----------------------------
 
-    update_memory(req.session_id, result_dict)
+    update_memory(req.session_id, result)
 
     # -----------------------------
     # Response payload
     # -----------------------------
-    return {
-        "run_id": result["run_id"],
-        "final_answer": result["final_answer"],
-        "visualization": result["visualization"],
-        "run_history": make_json_safe(get_memory(req.session_id).artifacts),
-        "artifact": make_json_safe(result),
-        "session_id": req.session_id,
-    }
+    return result
 
 
 # -----------------------------

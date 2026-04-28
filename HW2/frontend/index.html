@@ -278,8 +278,9 @@
                     })
                 });
 
-                const data = await res.json();
-                renderResponse(data);
+                const artifact = await res.json();
+                console.log("Artifact:", artifact);
+                renderResponse(artifact);
 
             } catch (err) {
                 setLoading(false);
@@ -292,18 +293,18 @@
         /* -------------------------
            Render response
         --------------------------*/
-        function renderResponse(data) {
+        function renderResponse(artifact) {
             const container = document.createElement("div");
             container.className = "msg assistant";
 
             // Answer
             const answer = document.createElement("div");
             answer.className = "answer";
-            answer.textContent = data.final_answer;
+            answer.textContent = artifact.final_answer;
             container.appendChild(answer);
 
             // Visualization
-            if (data.visualization?.should_visualize) {
+            if (artifact.visualization?.should_visualize) {
                 const vizDiv = document.createElement("div");
                 vizDiv.id = "viz_" + Math.random().toString(36).substring(7);
                 container.appendChild(document.createElement("br"));
@@ -311,7 +312,7 @@
 
                 setTimeout(() => {
                     try {
-                        const fig = decodePlotlyArrays(data.visualization.figure_json);
+                        const fig = decodePlotlyArrays(artifact.visualization.figure_json);
                         Plotly.newPlot(vizDiv, fig.data, fig.layout, { responsive: true });
                     } catch (e) {
                         console.error("Plotly render error:", e);
@@ -327,7 +328,7 @@
 
             const debugBox = document.createElement("pre");
             debugBox.className = "debug";
-            debugBox.textContent = JSON.stringify(data.artifact, null, 2);
+            debugBox.textContent = JSON.stringify(artifact, null, 2);
             debugBox.style.display = "none";
             container.appendChild(debugBox);
 
@@ -339,8 +340,8 @@
             document.getElementById("chat").appendChild(container);
             document.getElementById("chat").scrollTop = 999999;
 
-            if (data.artifact.execution?.error) {
-                appendMessage("assistant", data.artifact.execution.error);
+            if (artifact.execution?.error) {
+                appendMessage("assistant", artifact.execution.error);
             }
         }
 
