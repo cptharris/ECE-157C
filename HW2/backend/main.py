@@ -7,7 +7,7 @@ import uuid
 from fastapi.responses import FileResponse
 
 from agent import agent
-from nodes.memory import get_memory, update_memory
+from nodes.memory import get_memory, update_memory, build_recent_context
 
 from pprint import pprint
 
@@ -84,10 +84,12 @@ def query(req: QueryRequest):
     # Build initial artifact
     # -----------------------------
     artifact = {
+        "session_id": req.session_id,
         "run_id": str(uuid.uuid4()),
         "step": "start",
         "input_question": req.question,
         "dataset_name": req.dataset_name,
+        "recent_context": "",
         "dataset_context": {},
         "code": "",
         "execution": {},
@@ -99,9 +101,18 @@ def query(req: QueryRequest):
         "final_answer": None
     }
 
-    # Store context in memory
-    memory.last_question = req.question
-    memory.last_dataset = req.dataset_name
+    # Enforce one dataset per session and inject recent conversational context
+    if memory.dataset_name is None:
+        memory.dataset_name = req.dataset_name
+    elif memory.dataset_name != req.dataset_name:
+        return {
+            "final_answer": "This session is already tied to a different dataset. Please start a new session for a new dataset.",
+            "visualization": {"should_visualize": False},
+            "artifact": make_json_safe(artifact),
+            "session_id": req.session_id,
+        }
+
+    artifact["recent_context"] = build_recent_context(req.session_id)
 
     # -----------------------------
     # Run LangGraph agent

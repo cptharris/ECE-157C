@@ -18,7 +18,10 @@ def respond_node(state: Dict[str, Any]) -> Dict[str, Any]:
     state["step"] = "respond"
 
     user_prompt = f"""
-Question:
+Recent conversation context:
+{state.get("recent_context", "None")}
+
+Current Question:
 {state["input_question"]}
 
 Result:

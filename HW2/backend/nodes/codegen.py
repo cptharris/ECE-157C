@@ -20,13 +20,16 @@ def codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
     state["step"] = "codegen"
 
     user_prompt = f"""
-User question:
+Recent conversation context:
+{state.get("recent_context", "None")}
+
+Current user question:
 {state["input_question"]}
 
 Columns and data types (with {state["dataset_context"]["row_count"]} rows):
 {state["dataset_context"]["column_types"]}
 
-Write Python code to answer the question.
+Write Python code to answer the current question while using prior context when relevant.
 """
 
     code = call_llm(SYSTEM_PROMPT, user_prompt)
