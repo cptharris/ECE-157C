@@ -1,13 +1,18 @@
+# INPUT
+
 a query arrives, containing the PROMPT and the DATESET to evaluate on
 - the PROMPT may be a question (which would result in a text response and could result in a visualization)
 - the PROMPT may be a visualization request (which would result in a visualization)
 - the PROMPT may be a follow-up question (which would result in a text response and could result in a visualization)
 
+
 # DESCRIPTION OF NODES
+
 
 ## *`history`*
 - adds `["recent_context"]` (Q/A pairs)
 - adds `["previous"]["data"]` and `["previous"]["data_desc"]`
+
 
 ## *`describe_dataset`*
 - adds `["dataset_desc"]`
@@ -27,6 +32,7 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
 - in 1-2 sentences, what data are necessary to answer the current question, generate a visualization, and answer potential follow-up questions (`["plan"]["data_spec"]`)?
     - make sure to be broad in the captured information so we can generate a visualization (if necessary) and answer follow-up  questions
 
+
 ## *`codegen`* (calls LLM)
 - given a dataframe called `df` and its description
     - this will be the contents of the dataset CSV
@@ -35,6 +41,7 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
 - do NOT include explanations; output ONLY Python code
 - generate code that captures necessary data
     - code is stored in `["execution"]["data_code"]`
+
 
 ## *`execute`*
 - execute the Python code created by codegen
@@ -48,6 +55,7 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
     - serialize `data` as a formatted string, include columns types and a summary
     - this helps LLM calls understand the captured data
 
+
 ## *`visualize-codegen`* (calls LLM) (conditional node)
 - given the captured data and the visualization goal, generate code for the visualization
     - result is preloaded
@@ -58,6 +66,7 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
     - output ONLY Python code
 - stored in `["vis"]["vis_code"]`
 
+
 ## *`visualize-execute`*
 - execute the code created by visualize-codegen
 - capture the `fig` variable and convert to plotly json
@@ -65,6 +74,7 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
 - handle errors
     - retry from visualize-codegen
     - otherwise, give up on visualization and store error in `["vis"]["error"]`
+
 
 ## *`respond`* (calls LLM) (conditional node)
 - given the captured data and the question, answer the question
@@ -77,12 +87,15 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
 
 # CONCERNS
 
+
 *`visualize`* and *`respond`* can run concurrently
 
 generally, we want to keep enough information from the dataset to answer the question, generate the visualization, and answer potential follow-up questions
 however, we also want to avoid passing a lot of data to the LLM (this will be a problem for the respond node, which must synthesize the data into a text response to the question)
 
+
 # STATE DICT
+
 
 ```json
 {
