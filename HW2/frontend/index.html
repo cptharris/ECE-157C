@@ -17,11 +17,68 @@
             color: #e8e8e8;
         }
 
-        /* Sidebar */
+        #app-shell {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
         #sidebar {
-            width: 220px;
-            border-right: 1px solid #ddd;
-            padding: 10px;
+            width: 240px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 14px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #session-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .session-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            word-break: break-all;
+        }
+
+        .session-item:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        #newSessionBtn {
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-family: var(--mono);
+        }
+
+        #newSessionBtn:hover {
+            background: var(--surface2);
         }
 
         #datasetSelect {
@@ -138,27 +195,42 @@
 
 <body>
 
-    <!-- Sidebar -->
-    <div id="sidebar">
-        <h4>Datasets</h4>
-        <select id="datasetSelect"></select>
-    </div>
+    <div id="app-shell">
 
-    <!-- Main -->
-    <div id="main">
-
-        <div id="chat"></div>
-
-        <div id="inputBar">
-            <input id="questionInput" placeholder="Ask a question..." />
-            <button onclick="sendQuestion()">Send</button>
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">Datasets</div>
+            <select id="datasetSelect"></select>
+            <div class="sidebar-header">
+                Sessions
+                <button id="newSessionBtn" type="button">+</button>
+            </div>
+            <div id="session-list"></div>
         </div>
+
+        <!-- Main -->
+        <div id="main">
+
+            <div id="chat"></div>
+
+            <div id="inputBar">
+                <input id="questionInput" placeholder="Ask a question..." />
+                <button onclick="sendQuestion()">Send</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
         const API_URL = "http://localhost:8000";
 
         let sessionId = crypto.randomUUID();
+
+        document.getElementById("newSessionBtn").addEventListener("click", function () {
+            sessionId = crypto.randomUUID();
+            document.getElementById("chat").innerHTML = "";
+            document.getElementById("questionInput").value = "";
+        });
 
         // Helper function to decode Plotly binary arrays
         function decodePlotlyArrays(obj) {
@@ -253,6 +325,58 @@
         }
 
         /* -------------------------
+           Load sessions
+        --------------------------*/
+        async function loadSessions() {
+            try {
+                const res = await fetch(`${API_URL}/sessions`);
+                const sessions = await res.json();
+
+                const list = document.getElementById('session-list');
+                list.innerHTML = '';
+
+                sessions.forEach(id => {
+                    const div = document.createElement('div');
+                    div.className = 'session-item';
+                    div.textContent = id;
+                    div.onclick = () => loadSession(id);
+                    list.appendChild(div);
+                });
+
+            } catch (e) {
+                console.warn('Could not load sessions:', e);
+            }
+        }
+
+        async function loadSession(id) {
+            try {
+                const res = await fetch(`${API_URL}/sessions/${id}`);
+                const session = await res.json();
+
+                if (session.error) return;
+
+                sessionId = session.session_id;
+
+                if (session.dataset_name) {
+                    document.getElementById('datasetSelect').value = session.dataset_name;
+                }
+
+                const area = document.getElementById('chat');
+                area.innerHTML = '';
+
+                (session.artifacts || []).forEach(artifact => {
+                    appendMessage("user", artifact.input_question);
+                    renderResponse(artifact);
+                });
+
+                scrollToBottom();
+
+            } catch (e) {
+                console.warn('Could not load session:', e);
+            }
+        }
+
+        /* -------------------------
            Send question
         --------------------------*/
         async function sendQuestion() {
@@ -281,6 +405,7 @@
                 const artifact = await res.json();
                 console.log("Artifact:", artifact);
                 renderResponse(artifact);
+                loadSessions();
 
             } catch (err) {
                 setLoading(false);
@@ -393,6 +518,7 @@
            Init
         --------------------------*/
         loadDatasets();
+        loadSessions();
     </script>
 
 </body>
