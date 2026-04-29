@@ -1,139 +1,59 @@
-from .call_llm import call_llm
 from typing import Dict, Any
 import json
 import plotly
-import base64
-import numpy as np
 import traceback
+from .call_llm import call_llm
+from utils import sanitize_plotly
 
 
-SYSTEM_PROMPT_DECISION = """You are a data visualization decision engine.
+VIS_SYSTEM_PROMPT = """Generate Plotly code. result is preloaded. Use plotly.express as px, assign figure to fig, do not call fig.show(), output ONLY Python code."""
 
-Your job is to determine whether a visualization is useful.
+VIS_USER_PROMPT = """
+Visualization goal:
+{viz_spec}
 
-Rules:
-- Be conservative
-- Only visualize if it improves understanding
-- Map:
-  comparisons → bar
-  trends → line
-  relationships → scatter
-  distributions → histogram
-
-Return ONLY JSON:
-{
-  "should_visualize": true/false,
-  "chart_type": "...",
-  "reason": "..."
-}
+Captured data:
+{data}
 """
 
 
-SYSTEM_PROMPT_VIZ_GEN = """You are a senior data visualization engineer.
-
-Generate Plotly code.
-
-Rules:
-- result is preloaded
-- use plotly.express as px
-- assign figure to `fig`
-- avoid non-JSON serializable objects
-- do not call fig.show()
-- output ONLY Python code
-"""
+def visualize_codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    state["vis"]["vis_code"] = call_llm(
+        VIS_SYSTEM_PROMPT,
+        VIS_USER_PROMPT.format(
+            viz_spec=state["plan"]["viz_spec"],
+            data=state["execution"]["data"],
+        ),
+    )
+    return state
 
 
-def visualization_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    state["step"] = "visualization_decision"
-    # ----------------------------
-    # 1. Decision step
-    # ----------------------------
-    decision_prompt = f"""User question:
-{state["input_question"]}
-
-Result:
-{state["execution"].get("result")}
-"""
-
-    decision_raw = call_llm(SYSTEM_PROMPT_DECISION, decision_prompt)
-    viz_decision = json.loads(decision_raw)
-
-    state["visualization"] = viz_decision
-
-    # ----------------------------
-    # 2. Conditional generation
-    # ----------------------------
-    if not viz_decision.get("should_visualize"):
-        return state
-
-    state["step"] = "visualization_generation"
-
-    generation_prompt = f"""User question:
-{state["input_question"]}
-
-Chart type:
-{viz_decision.get("chart_type")}
-
-Result:
-{state["execution"].get("result")}
-"""
-
-    plotly_code = call_llm(SYSTEM_PROMPT_VIZ_GEN, generation_prompt)
-
-    state["visualization"]["plotly_code"] = plotly_code
-
+def visualize_execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
     import plotly.express as px
-    import plotly.graph_objects as go
 
-    local_vars = {"result": state["execution"]["result"], "px": px, "go": go}
+    local_vars = {"result": state["execution"]["data"], "px": px}
 
     try:
-        exec(plotly_code, {}, local_vars)
+        exec(state["vis"]["vis_code"], {}, local_vars)
+
         fig = local_vars.get("fig")
 
-        if fig:
-            state["visualization"]["figure_json"] = json.loads(
+        state["vis"]["fig"] = (
+            json.loads(
                 json.dumps(
                     sanitize_plotly(fig.to_plotly_json()),
                     cls=plotly.utils.PlotlyJSONEncoder,
                 )
             )
-        else:
-            state["visualization"]["figure_json"] = None
-            state["visualization"]["error"] = "Visualization code did not create fig"
+            if fig
+            else None
+        )
+
+        state["vis"]["error"] = None
 
     except Exception as e:
-        state["visualization"]["figure_json"] = None
-        state["visualization"]["error"] = str(e)
+        state["vis"]["fig"] = None
+        state["vis"]["error"] = str(e)
         traceback.print_exception(e)
 
     return state
-
-
-def sanitize_plotly(obj):
-    """
-    Recursively convert Plotly figure dict into JSON-safe primitives.
-    Handles numpy arrays, pandas objects, and Plotly bdata structures.
-    """
-
-    if isinstance(obj, dict):
-        # Handle Plotly bdata pattern
-        if "bdata" in obj and "dtype" in obj:
-            arr = np.frombuffer(
-                base64.b64decode(obj["bdata"]), dtype=np.dtype(obj["dtype"])
-            )
-            return arr.tolist()
-
-        return {k: sanitize_plotly(v) for k, v in obj.items()}
-
-    elif isinstance(obj, (list, tuple)):
-        return [sanitize_plotly(v) for v in obj]
-
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-
-    elif hasattr(obj, "item"):  # numpy scalars
-        return obj.item()
-
-    else:
-        return obj

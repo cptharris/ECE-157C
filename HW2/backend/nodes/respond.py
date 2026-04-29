@@ -1,34 +1,25 @@
-from .call_llm import call_llm
 from typing import Dict, Any
+from .call_llm import call_llm
 
 
-SYSTEM_PROMPT = """You are a clear, concise data analyst.
-Given a question, the raw execution result from a pandas analysis, and a
-summary of the dataset, write a final human-readable answer.
+SYSTEM_PROMPT = """You are a clear, concise data analyst. Answer only from provided data. Be specific, under 150 words, and do not mention code."""
 
-Rules:
-- Answer only from the execution result — do not invent numbers.
-- Be specific: include key values, percentages, or rankings.
-- Keep the answer under 150 words.
-- Do not mention Python, pandas, or code.
+USER_PROMPT = """
+Question:
+{question}
+
+Captured data:
+{data}
 """
 
 
 def respond_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    state["step"] = "respond"
+    state["response"] = call_llm(
+        SYSTEM_PROMPT,
+        USER_PROMPT.format(
+            question=state["plan"]["question"],
+            data=state["execution"]["data"],
+        ),
+    )
 
-    user_prompt = f"""
-Recent conversation context:
-{state.get("recent_context", "None")}
-
-Current Question:
-{state["input_question"]}
-
-Result:
-{state["execution"].get("result")}
-"""
-
-    response = call_llm(SYSTEM_PROMPT, user_prompt)
-
-    state["final_answer"] = response
     return state

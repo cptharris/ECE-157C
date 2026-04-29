@@ -122,8 +122,7 @@ def load_session(session_id: str):
 @app.post("/query")
 def query(req: QueryRequest):
     """
-    Runs full LangGraph pipeline:
-    summarize → codegen → execute → visualize → respond
+    Runs full LangGraph pipeline
     """
 
     # -----------------------------
@@ -135,48 +134,53 @@ def query(req: QueryRequest):
     # Build initial artifact
     # -----------------------------
     artifact = {
-        "session_id": req.session_id,
-        "run_id": str(uuid.uuid4()),
-        "step": "start",
-        "input_question": req.question,
-        "dataset_name": req.dataset_name,
-        "recent_context": "",
-        "dataset_context": {},
-        "code": "",
-        "execution": {},
-        "visualization": {"should_visualize": False, "reason": "", "plotly_code": ""},
-        "final_answer": None,
+        "metadata": {
+            "session_id": req.session_id,
+            "run_id": str(uuid.uuid4()),
+            "prompt": req.question,
+            "dataset_name": req.dataset_name,
+            "status": "running",
+        },
+        "recent_context": None,
+        "previous": {"data": {}, "data_desc": None},
+        "dataset_desc": None,
+        "plan": {
+            "is_follow_up": False,
+            "do_response": True,
+            "do_vis": False,
+            "question": None,
+            "viz_spec": None,
+            "data_spec": None,
+        },
+        "execution": {"data_code": None, "data": {}, "data_desc": None, "error": None},
+        "vis": {"vis_code": "", "fig": {}, "error": None},
+        "response": None,
     }
 
     # Enforce one dataset per session
     if memory.dataset_name is None:
         memory.dataset_name = req.dataset_name
     elif memory.dataset_name != req.dataset_name:
-        artifact["step"] = "error"
-        artifact["final_answer"] = (
+        artifact["metadata"]["status"] = "error"
+        artifact["response"] = (
             "This session is already tied to a different dataset. "
             "Please start a new session for a new dataset."
         )
-        artifact["visualization"] = {"should_visualize": False}
         return make_json_safe(artifact)
-
-    # Inject recent conversational context
-    artifact["recent_context"] = build_recent_context(req.session_id)
 
     # -----------------------------
     # Run LangGraph agent
     # -----------------------------
     try:
         result = agent.invoke(artifact)
+        result["metadata"]["status"] = "complete"
 
         # Convert all numpy / pandas / non-JSON-safe objects
         result = make_json_safe(result)
 
     except Exception as e:
-        artifact["step"] = "error"
-        artifact["execution"] = {"result": None, "error": str(e)}
-        artifact["final_answer"] = f"Agent execution failed: {str(e)}"
-        artifact["visualization"] = {"should_visualize": False, "error": str(e)}
+        artifact["metadata"]["status"] = "error"
+        artifact["response"] = f"Agent execution failed: {str(e)}"
         return make_json_safe(artifact)
 
     # -----------------------------

@@ -1,5 +1,6 @@
 # INPUT
 
+
 a query arrives, containing the PROMPT and the DATESET to evaluate on
 - the PROMPT may be a question (which would result in a text response and could result in a visualization)
 - the PROMPT may be a visualization request (which would result in a visualization)
@@ -7,6 +8,9 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
 
 
 # DESCRIPTION OF NODES
+
+
+Nodes that call LLM should have a system and user prompt defined as global variables at the top of the file. Inject information into the user prompt with `.format()`. When nodes behave differently for a follow-up question, consider having separate prompts.
 
 
 ## *`history`*
@@ -103,7 +107,8 @@ however, we also want to avoid passing a lot of data to the LLM (this will be a 
         "session_id": str,
         "run_id": str,
         "prompt": str,
-        "dataset": str,
+        "dataset_name": str,
+        "status": str, // running, complete, error
     },
     "recent_context": str,
     "previous": {

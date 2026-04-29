@@ -53,6 +53,13 @@ def update_memory(session_id: str, artifact: dict):
     save_memory(mem)
 
 
+def get_previous_artifact(session_id: str):
+    mem = get_memory(session_id)
+    if not mem.artifacts:
+        return None
+    return mem.artifacts[-1]
+
+
 def build_recent_context(session_id: str, max_turns: int = 3) -> str:
     mem = get_memory(session_id)
 
@@ -64,7 +71,7 @@ def build_recent_context(session_id: str, max_turns: int = 3) -> str:
     lines = []
     for i, run in enumerate(recent, start=1):
         lines.append(
-            f"Turn {i}:\nQuestion: {run.get('input_question')}\nAnswer: {run.get('final_answer')}"
+            f"Turn {i}:\nQuestion: {run.get('metadata').get('prompt')}\nAnswer: {run.get('response')}"
         )
 
     return "\n\n".join(lines)
