@@ -365,7 +365,7 @@
                 area.innerHTML = '';
 
                 (session.artifacts || []).forEach(artifact => {
-                    appendMessage("user", artifact.input_question);
+                    appendMessage("user", artifact.metadata.prompt);
                     renderResponse(artifact);
                 });
 
