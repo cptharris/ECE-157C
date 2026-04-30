@@ -34,7 +34,7 @@ def visualize_execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
     local_vars = {"result": state["execution"]["data"], "px": px}
 
     try:
-        exec(state["vis"]["vis_code"], {}, local_vars)
+        exec(state["vis"]["vis_code"], local_vars)
 
         fig = local_vars.get("fig")
 

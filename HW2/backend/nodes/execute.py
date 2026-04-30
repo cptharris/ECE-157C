@@ -18,7 +18,7 @@ def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
     local_vars = {"df": df, "pd": pd}
 
     try:
-        exec(state["execution"]["data_code"], {}, local_vars)
+        exec(state["execution"]["data_code"], local_vars)
 
         data = make_json_safe(local_vars.get("data", None))
 
