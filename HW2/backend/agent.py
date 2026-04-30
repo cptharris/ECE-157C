@@ -13,14 +13,14 @@ from nodes.visualize import visualize_codegen_node, visualize_execute_node
 def build_graph():
     graph = StateGraph(Dict[str, Any])
 
-    graph.add_node("history", history_node)
-    graph.add_node("describe_dataset", describe_dataset_node)
-    graph.add_node("planner", planner_node)
-    graph.add_node("codegen", codegen_node)
-    graph.add_node("execute", execute_node)
-    graph.add_node("respond", respond_node)
-    graph.add_node("visualize_codegen", visualize_codegen_node)
-    graph.add_node("visualize_execute", visualize_execute_node)
+    graph.add_node("history", traced(history_node))
+    graph.add_node("describe_dataset", traced(describe_dataset_node))
+    graph.add_node("planner", traced(planner_node))
+    graph.add_node("codegen", traced(codegen_node))
+    graph.add_node("execute", traced(execute_node))
+    graph.add_node("respond", traced(respond_node))
+    graph.add_node("visualize_codegen", traced(visualize_codegen_node))
+    graph.add_node("visualize_execute", traced(visualize_execute_node))
 
     graph.set_entry_point("history")
 
@@ -29,13 +29,21 @@ def build_graph():
     graph.add_edge("planner", "codegen")
     graph.add_edge("codegen", "execute")
 
-    graph.add_conditional_edges("execute", route_post_execute)
-    graph.add_conditional_edges("visualize_codegen", route_visualize_execute)
+    graph.add_conditional_edges("execute", traced(route_post_execute))
+    graph.add_edge("visualize_codegen", "visualize_execute")
+    graph.add_conditional_edges("visualize_execute", traced(route_visualize_execute))
 
     graph.add_edge("respond", END)
     graph.add_edge("visualize_execute", END)
 
     return graph.compile()
+
+
+def traced(fn):
+    def wrapper(state):
+        print(f"\n{'='*50}\n{' '*5}[NODE] {fn.__name__}\n{'='*50}")
+        return fn(state)
+    return wrapper
 
 
 def route_post_execute(state: dict[str, Any]):
