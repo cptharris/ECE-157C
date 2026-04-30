@@ -6,6 +6,7 @@ import os
 import uuid
 from fastapi.responses import FileResponse
 import json
+import traceback
 
 from agent import agent
 from nodes.memory import get_memory, update_memory, build_recent_context, MEMORY_STORE
@@ -181,6 +182,7 @@ def query(req: QueryRequest):
     except Exception as e:
         artifact["metadata"]["status"] = "error"
         artifact["response"] = f"Agent execution failed: {str(e)}"
+        traceback.print_exception(e)
         return make_json_safe(artifact)
 
     # -----------------------------
