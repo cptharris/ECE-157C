@@ -1,3 +1,4 @@
 llm_cache.json
 *.csv
 backend/memory/*
+backend/good-memories/*

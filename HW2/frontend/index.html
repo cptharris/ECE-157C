@@ -224,10 +224,10 @@
     <script>
         const API_URL = "http://localhost:8000";
 
-        let sessionId = crypto.randomUUID();
+        let session_id = crypto.randomUUID();
 
         document.getElementById("newSessionBtn").addEventListener("click", function () {
-            sessionId = crypto.randomUUID();
+            session_id = crypto.randomUUID();
             document.getElementById("chat").innerHTML = "";
             document.getElementById("questionInput").value = "";
         });
@@ -355,7 +355,7 @@
 
                 if (session.error) return;
 
-                sessionId = session.session_id;
+                session_id = session.session_id;
 
                 if (session.dataset_name) {
                     document.getElementById('datasetSelect').value = session.dataset_name;
@@ -365,7 +365,7 @@
                 area.innerHTML = '';
 
                 (session.artifacts || []).forEach(artifact => {
-                    appendMessage("user", artifact.input_question);
+                    appendMessage("user", artifact.metadata.prompt);
                     renderResponse(artifact);
                 });
 
@@ -382,7 +382,7 @@
         async function sendQuestion() {
             const input = document.getElementById("questionInput");
             const question = input.value;
-            const dataset = document.getElementById("datasetSelect").value;
+            const dataset_name = document.getElementById("datasetSelect").value;
 
             if (!question) return;
 
@@ -396,9 +396,9 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        session_id: sessionId,
+                        session_id: session_id,
                         question: question,
-                        dataset_name: dataset
+                        dataset_name: dataset_name
                     })
                 });
 
@@ -425,11 +425,11 @@
             // Answer
             const answer = document.createElement("div");
             answer.className = "answer";
-            answer.textContent = artifact.final_answer;
+            answer.textContent = artifact.response;
             container.appendChild(answer);
 
             // Visualization
-            if (artifact.visualization?.should_visualize) {
+            if (artifact.plan?.do_vis) {
                 const vizDiv = document.createElement("div");
                 vizDiv.id = "viz_" + Math.random().toString(36).substring(7);
                 container.appendChild(document.createElement("br"));
@@ -437,7 +437,7 @@
 
                 setTimeout(() => {
                     try {
-                        const fig = decodePlotlyArrays(artifact.visualization.figure_json);
+                        const fig = decodePlotlyArrays(artifact.vis.fig);
                         Plotly.newPlot(vizDiv, fig.data, fig.layout, { responsive: true });
                     } catch (e) {
                         console.error("Plotly render error:", e);

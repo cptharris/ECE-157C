@@ -1,48 +1,64 @@
+# INPUT
+
+
 a query arrives, containing the PROMPT and the DATESET to evaluate on
 - the PROMPT may be a question (which would result in a text response and could result in a visualization)
 - the PROMPT may be a visualization request (which would result in a visualization)
 - the PROMPT may be a follow-up question (which would result in a text response and could result in a visualization)
 
+
 # DESCRIPTION OF NODES
 
+
+Nodes that call LLM should have a system and user prompt defined as global variables at the top of the file. Inject information into the user prompt with `.format()`. When nodes behave differently for a follow-up question, consider having separate prompts.
+
+
 ## *`history`*
-- adds recent context (Q/A pairs)
-- adds previous data and previous data description
+- adds `["recent_context"]` (Q/A pairs)
+- adds `["previous"]["data"]` and `["previous"]["data_desc"]`
+
 
 ## *`describe_dataset`*
-- adds dataset description
+- adds `["dataset_desc"]`
     - deterministically generates it or pulls it from previous artifact
+      - serialize the dataset as a formatted string, include columns types and a summary
     - this helps LLM calls understand the available dataset
 
 
 ## *`planner`* (calls LLM)
-- given recent_context and previous_data_description, is this a follow-up prompt (boolean)?
+- given `["recent_context"]` and `["previous"]["data_desc"]`, is this a follow-up prompt (boolean, `["plan"]["is_follow_up"]`)?
     - a follow-up is not allowed to access the original dataset again
-- should we generate a text output (boolean)?
+- should we generate a text output (boolean, `["plan"]["do_response"]`)?
     - this is almost always true, unless the prompt is specifically asking for a visualization
-    - clearly and concisely state the QUESTION that the text output must answer (considering recent_context if this is a follow-up question)
-- should we generate a VISUALIZATION (boolean)?
-    - what is our VISUALIZATION GOAL?
-- in 1-2 sentences, what DATA are necessary to answer the current question, generate a visualization, and answer potential follow-up questions?
+    - clearly and concisely state the QUESTION that the text output must answer (considering recent_context if this is a follow-up question) (`["plan"]["question"]`)
+- should we generate a VISUALIZATION (boolean, `["plan"]["do_vis"]`)?
+    - what is our VISUALIZATION specification (`["plan"]["viz_spec"]`)?
+- in 1-2 sentences, what data are necessary to answer the current question, generate a visualization, and answer potential follow-up questions (`["plan"]["data_spec"]`)?
     - make sure to be broad in the captured information so we can generate a visualization (if necessary) and answer follow-up  questions
+
 
 ## *`codegen`* (calls LLM)
 - given a dataframe called `df` and its description
-    - if this is a follow-up, the dataframe will be the previous run's data
-- must create a variable called `data`, which should be a JSON-safe dict (not print statements)
+    - this will be the contents of the dataset CSV
+    - unless! if this is a follow-up, the dataframe will be the previous run's data
+- must create a variable called `data`, which must be a JSON-safe dict or a list of dicts (not print statements)
 - do NOT include explanations; output ONLY Python code
-- generate code that captures necessary DATA
+- generate code that captures necessary data
+    - code is stored in `["execution"]["data_code"]`
 
-## *`data`*
+
+## *`execute`*
 - execute the Python code created by codegen
-- capture the data
+- capture the `data` variable to `["execution"]["data"]`
+    - make sure `data` is a plain dict or a list of dicts
+    - if it is a DataFrame, use `to_dict(orient="records")` to convert
 - handle errors
     - retry from codegen once
-    - otherwise, stop work and return errors here, no sense in continuing with no data
-
-## *`describe_data`*
-- adds data_description
+    - otherwise, stop work and return errors here (`["execution"]["error"]`), no sense in continuing with no data
+- add `["execution"]["data_desc"]`
+    - serialize `data` as a formatted string, include columns types and a summary
     - this helps LLM calls understand the captured data
+
 
 ## *`visualize-codegen`* (calls LLM) (conditional node)
 - given the captured data and the visualization goal, generate code for the visualization
@@ -52,13 +68,17 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
     - avoid non-JSON serializable objects
     - do not call fig.show()
     - output ONLY Python code
+- stored in `["vis"]["vis_code"]`
+
 
 ## *`visualize-execute`*
 - execute the code created by visualize-codegen
-- capture the figure plotly json
+- capture the `fig` variable and convert to plotly json
+    - store as `["vis"]["fig"]`
 - handle errors
     - retry from visualize-codegen
-    - otherwise, give up on visualization
+    - otherwise, give up on visualization and store error in `["vis"]["error"]`
+
 
 ## *`respond`* (calls LLM) (conditional node)
 - given the captured data and the question, answer the question
@@ -66,16 +86,20 @@ a query arrives, containing the PROMPT and the DATESET to evaluate on
     - Be specific: include key values, percentages, or rankings.
     - Keep the answer under 150 words.
     - Do not mention Python, pandas, or code.
+- store in `["response"]`
 
 
 # CONCERNS
+
 
 *`visualize`* and *`respond`* can run concurrently
 
 generally, we want to keep enough information from the dataset to answer the question, generate the visualization, and answer potential follow-up questions
 however, we also want to avoid passing a lot of data to the LLM (this will be a problem for the respond node, which must synthesize the data into a text response to the question)
 
+
 # STATE DICT
+
 
 ```json
 {
@@ -83,32 +107,31 @@ however, we also want to avoid passing a lot of data to the LLM (this will be a 
         "session_id": str,
         "run_id": str,
         "prompt": str,
-        "dataset": str,
-        "step": str,
+        "dataset_name": str,
+        "status": str, // running, complete, error
     },
     "recent_context": str,
     "previous": {
         "data": {},
-        "data_description": {
-            "column_types": {},
-        }
+        "data_desc": str,
     },
+    "dataset_desc": str,
     "plan": {
         "is_follow_up": bool,
         "do_response": bool,
-        "do-visualization": bool,
+        "do_vis": bool,
         "question": str,
-        "visualization_goal": str,
-        "need_data": str,
+        "vis_spec": str,
+        "data_spec": str,
     },
-    "information": {
+    "execution": {
         "data_code": str,
         "data": {},
-        "data_description": {},
+        "data_desc": {},
         "error": str,
     },
-    "visualization": {
-        "visualize_code": str,
+    "vis": {
+        "vis_code": str,
         "fig": {},
         "error": str,
     },
