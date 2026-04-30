@@ -11,7 +11,7 @@ do_response
 do_vis
 - should we create a visualization?
 - visualize if it improves understanding
-- good for comparisons, trends, relationships, distributions, etc.
+- comparisons → bar, trends → line, relationships → scatter, distributions → histogram
 question
 - given the recent context (if follow-up) and the prompt, clearly and concisely state the question
 viz_spec
