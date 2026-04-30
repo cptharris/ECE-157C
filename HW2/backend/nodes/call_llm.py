@@ -55,12 +55,12 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
-    print("===== MESSAGE =====")
+    print(f"{'='*10} QUERY LLM {'='*10}")
     print(user_prompt)
 
     cached = get_cached(user_prompt)
     if cached is not None:
-        print("===== RESPONSE (cached) =====")
+        print(f"{'='*10} RESPONSE (cached) {'='*10}")
         print(cached)
         return cached
 
@@ -78,7 +78,7 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
 
     set_cached(user_prompt, response)
 
-    print("===== RESPONSE (rqsted) =====")
+    print(f"{'='*10} RESPONSE (rqsted) {'='*10}")
     print(response)
 
     return response
