@@ -45,8 +45,8 @@ def describe_dataframe_like(data) -> str:
             "columns": df.dtypes.astype(str).to_dict(),
             "sample": df.head(2).to_dict(orient="records"),
         },
-        indent=2,
-    )
+        indent=None,
+    )[:3000]
 
 
 def sanitize_plotly(obj):
