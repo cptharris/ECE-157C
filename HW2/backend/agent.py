@@ -30,8 +30,8 @@ def build_graph():
     graph.add_edge("codegen", "execute")
 
     graph.add_conditional_edges("execute", traced(route_post_execute))
+    graph.add_conditional_edges("respond", traced(route_post_respond))
     graph.add_edge("visualize_codegen", "visualize_execute")
-    graph.add_conditional_edges("visualize_execute", traced(route_visualize_execute))
 
     graph.add_edge("respond", END)
     graph.add_edge("visualize_execute", END)
@@ -49,16 +49,16 @@ def traced(fn):
 def route_post_execute(state: dict[str, Any]):
     if state["execution"].get("error"):
         return END
-    if state["plan"].get("do_vis"):
-        return "visualize_codegen"
     if state["plan"].get("do_response"):
         return "respond"
+    if state["plan"].get("do_vis"):
+        return "visualize_codegen"
     return END
 
 
-def route_visualize_execute(state: dict[str, Any]):
-    if state["plan"].get("do_response"):
-        return "respond"
+def route_post_respond(state: dict[str, Any]):
+    if state["plan"].get("do_vis"):
+        return "visualize_codegen"
     return END
 
 
