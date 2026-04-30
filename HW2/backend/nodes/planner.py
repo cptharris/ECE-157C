@@ -9,14 +9,16 @@ do_response
 - should we generate a text response to the prompt? in most cases, this is true
 - unless the prompt specifically asks for a visualization
 do_vis
-- should we create a visualization? be conservative
-- only visualize if it improves understanding
+- should we create a visualization?
+- visualize if it improves understanding
+- good for comparisons, trends, relationships, distributions, etc.
 question
 - given the recent context (if follow-up) and the prompt, clearly and concisely state the question
 viz_spec
-- specify what to visualize
+- in 2-3 sentences, specify what to visualize
 data_spec
-- specify what data to extract to answer the question, generate the visualization (if applicable), and answer potential follow-up questions"""
+- in 2-3 sentences, specify what data to extract to answer the question, generate the visualization (if applicable), and answer potential follow-up questions, but do not store raw values
+- if this is a follow-up, we can ONLY extract from the previous data"""
 
 PLANNER_USER_PROMPT = """
 Recent context:

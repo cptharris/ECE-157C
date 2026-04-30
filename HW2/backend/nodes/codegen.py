@@ -7,6 +7,8 @@ Rules:
 - You are given a dataframe called df
 - You MUST return a variable named data
 - data must be JSON-safe dict or list of dicts
+- do not include raw values
+- do NOT make visualizations or figures
 - Do NOT include explanations
 - Output ONLY Python code
 """

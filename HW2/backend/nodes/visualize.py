@@ -1,4 +1,5 @@
 from typing import Dict, Any
+import pandas as pd
 import json
 import plotly
 import traceback
@@ -6,14 +7,16 @@ from .call_llm import call_llm
 from utils import sanitize_plotly
 
 
-VIS_SYSTEM_PROMPT = """Generate Plotly code. result is preloaded. Use plotly.express as px, assign figure to fig, do not call fig.show(), output ONLY Python code."""
+VIS_SYSTEM_PROMPT = """Generate Plotly code. data is preloaded. Use plotly.express as px, assign figure to fig, do not call fig.show(), output ONLY Python code."""
 
 VIS_USER_PROMPT = """
 Visualization goal:
 {viz_spec}
 
-Captured data:
+Data:
 {data}
+
+you are given `data` as a pre-loaded DataFrame. you MUST return the figure as `fig`.
 """
 
 
@@ -22,7 +25,7 @@ def visualize_codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
         VIS_SYSTEM_PROMPT,
         VIS_USER_PROMPT.format(
             viz_spec=state["plan"]["viz_spec"],
-            data=state["execution"]["data"],
+            data=state["execution"]["data_desc"],
         ),
     )
     return state
@@ -31,7 +34,7 @@ def visualize_codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
 def visualize_execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
     import plotly.express as px
 
-    local_vars = {"result": state["execution"]["data"], "px": px}
+    local_vars = {"data": pd.DataFrame(state["execution"]["data"]), "px": px}
 
     try:
         exec(state["vis"]["vis_code"], local_vars)
