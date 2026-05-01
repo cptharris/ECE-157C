@@ -94,7 +94,9 @@ def list_sessions():
 
     for file in os.listdir(memory_dir):
         if file.endswith(".json"):
-            sessions.append(file.replace(".json", ""))
+            with open("memory/" + file, "r", encoding="utf-8") as f:
+                contents = json.load(f)
+                sessions.append([contents["dataset_name"], file.replace(".json", ""), contents["artifacts"][-1]["plan"]["question"]])
 
     sessions.sort(reverse=True)
     return sessions

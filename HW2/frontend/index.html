@@ -339,9 +339,9 @@
                 sessions.forEach(id => {
                     const div = document.createElement('div');
                     div.className = 'session-item';
-                    div.textContent = id;
-                    div.id = id;
-                    div.onclick = () => loadSession(id);
+                    div.textContent = id[2];
+                    div.id = id[1];
+                    div.onclick = () => loadSession(id[1]);
                     list.appendChild(div);
                 });
 
@@ -351,6 +351,9 @@
         }
 
         async function loadSession(id) {
+            document.querySelectorAll(".session-item").forEach(el => {
+                el.style.fontWeight = "";
+            })
             try {
                 const res = await fetch(`${API_URL}/sessions/${id}`);
                 const session = await res.json();
@@ -363,10 +366,12 @@
                     document.getElementById('datasetSelect').value = session.dataset_name;
                 }
 
-                // document.getElementById(id).textContent = session.artifacts[0].metadata.prompt;
+                document.getElementById(id).style.fontWeight = "bold";
 
                 const area = document.getElementById('chat');
                 area.innerHTML = '';
+
+                appendMessage("admin", "Session ID: " + session.session_id);
 
                 (session.artifacts || []).forEach(artifact => {
                     appendMessage("user", artifact.metadata.prompt);
