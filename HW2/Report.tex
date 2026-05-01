@@ -29,11 +29,14 @@ pip install -r requirements.txt
 The key packages are:
 
 \begin{itemize}
-    \item \texttt{openai} --- LLM API client
-    \item \texttt{langgraph} --- agent graph framework
-    \item \texttt{langchain-core} --- required by LangGraph
-    \item \texttt{pandas} --- CSV loading and analysis inside generated code
-    \item \texttt{json} --- data, context, and memory storage
+    \item \texttt{openai} --- LLM access for planning, code generation, response generation, and visualization code generation
+    \item \texttt{langgraph} --- agent orchestration through directed stateful nodeexecution
+    \item \texttt{langchain}-core --- LangGraph dependency
+    \item \texttt{pandas} --- dataset loading and structured data analysis
+    \item \texttt{plotly} --- visualization generation
+    \item \texttt{fastapi} --- backend API
+    \item \texttt{uvicorn} --- backend server
+    \item \texttt{json} --- memory and artifact persistence
 \end{itemize}
 
 \sect{Configuration}
@@ -44,8 +47,25 @@ The agent authenticates with OpenAI using the environment variable \texttt{OPENA
 export OPENAI_API_KEY="sk-..."
 \end{minted}
 
-\sect{How to Run}
+Optionally, turn off LLM caching:
 
+\begin{minted}{bash}
+export LLM\_CACHE=0
+\end{minted}
+
+This enables local caching of repeated LLM calls, significantly reducing cost and latency during development.
+
+\sect{Stack Description}
+
+The frontend communicates with the FastAPI server and provides:
+
+\begin{itemize}
+    \item Dataset selection
+    \item Session management
+    \item Chat history
+    \item Visualization rendering
+    \item Debugging views
+\end{itemize}
 
 
 % ============================================================
@@ -56,9 +76,93 @@ export OPENAI_API_KEY="sk-..."
 \begin{figure}[ht!]
     \centering
     % inkscape graphics/agent_workflow_diagram.svg --export-type=png --export-dpi=200
-    % \includegraphics[width=0.8\linewidth]{agent_workflow_diagram.png}
+    \includegraphics[width=0.9\linewidth]{agent_workflow_diagram.png}
     \caption{Agent Workflow Graph}
 \end{figure}
+
+\break
+
+The system is implemented as a LangGraph state machine composed of modular nodes:
+
+\begin{multicols}{2}
+    \texttt{history}
+
+    Loads prior conversational context, prior execution artifact summaries,
+    and dataset continuity constraints.
+
+    \texttt{describe\_dataset}
+
+    Loads and summarizes dataset schema only once per session for efficiency.
+
+    \texttt{planner}
+
+    Uses an LLM to:
+
+    \begin{itemize}
+        \item Determine if the query is a follow-up
+        \item Decide whether visualization is useful
+        \item
+        Create:
+        \begin{itemize}
+            \item question
+            \item data\_spec
+            \item viz\_spec
+        \end{itemize}
+    \end{itemize}
+
+    \vspace*{\fill}\columnbreak
+
+    \texttt{codegen}
+
+    Generates Python analysis code over the dataset.
+
+    \texttt{execute}
+
+    Runs generated code, stores structured execution artifacts, and summarizes result structure.
+
+    \texttt{respond}
+
+    Generates concise natural-language answers from execution results.
+
+    \texttt{visualize\_codegen}
+
+    Generates Plotly code if visualization is useful.
+
+    \texttt{visualize\_execute}
+
+    Executes Plotly code and returns frontend-compatible JSON.
+
+    \vspace*{\fill}
+\end{multicols}
+
+\chap{Design}
+
+\sect{Architectural Design Principles}
+
+\begin{itemize}
+    \item Modular
+    \item Interpretable
+    \item Debuggable
+    \item Stateful
+    \item Frontend/backend separated
+\end{itemize}
+
+\sect{Design Rationale}
+
+Rather than forcing all downstream tasks to operate exclusively on reduced execution artifacts, the system preserves:
+
+
+Execution \textbf{artifact} = reasoning state
+\hfill
+Original \textbf{dataset} = authoritative information state
+
+This hybrid approach improved:
+
+\begin{itemize}
+    \item Visualization quality
+    \item Follow-up flexibility
+    \item Analytical correctness
+\end{itemize}
 
 
 % ============================================================
@@ -66,9 +170,128 @@ export OPENAI_API_KEY="sk-..."
 % ============================================================
 
 
-- How execution results are represented
-- Why you chose this representation
-- Trade-offs observed during implementation
+\sect{Representation}
+
+Each execution produces a structured artifact:
+
+\begin{minted}{Python}
+{
+    "metadata": {
+        "session_id": str,
+        "run_id": str,
+        "prompt": str,
+        "dataset_name": str,
+        "status": str,
+    },
+    "plan": {
+        "is_follow_up": bool,
+        "do_response": bool,
+        "do_vis": bool,
+        "question": str,
+        "viz_spec": str,
+        "data_spec": None,
+    },
+    "recent_context": None,
+    "previous": {
+        "data": {},
+        "data_desc": str
+    },
+    "dataset_desc": str,
+    "execution": {
+        "data_code": str,
+        "data": {},
+        "data_desc": str,
+        "error": str
+    },
+    "vis": {
+        "vis_code": str,
+        "fig": {},
+        "error": str
+    },
+    "response": str,
+}
+\end{minted}
+
+\sect{Why?}
+
+The execution result is designed primarily as a debuggable interface between reasoning stages
+
+\begin{multicols}{2}
+    It stores:
+
+    \begin{itemize}
+        \item Generated code
+        \item Computed structured outputs
+        \item Summary statistics
+        \item Errors
+        \item Visualization state
+    \end{itemize}
+
+    \vspace*{\fill}\columnbreak
+
+    This allows:
+
+    \begin{itemize}
+        \item Inspection
+        \item Logging
+        \item Session memory
+        \item Follow-up context
+    \end{itemize}
+
+    \vspace*{\fill}
+\end{multicols}
+
+\begin{multicols}{2}
+Through repeated testing, I found that reducing prior outputs into reusable artifacts often discarded critical dimensions necessary for:
+
+\begin{itemize}
+    \item Rich visualizations
+    \item Complex filtering
+    \item Aggregation changes
+    \item Alternate chart types
+    \item Flexible follow-up analysis
+\end{itemize}
+
+\vspace*{\fill}\columnbreak
+
+For example: If a prior result stores only top-10 geographic regions by median housing price, a later request like: ``Now compare these by population density'' cannot be completed without missing source columns.
+
+Thus, strict artifact-only reuse created:
+
+\begin{itemize}
+    \item Information bottlenecks
+    \item Reduced generality
+    \item Poor visualizations
+\end{itemize}
+
+\vspace*{\fill}
+\end{multicols}
+
+\sect{Trade-Offs}
+
+\begin{multicols}{2}
+    Advantages
+
+    \begin{itemize}
+        \item Higher correctness
+        \item Better visualizations
+        \item More flexible follow-up
+        \item Avoids lossy intermediate states
+        \item Cleaner debugging
+        \item Simpler, smaller LLM calls
+    \end{itemize}
+
+    \vspace*{\fill}\columnbreak
+
+    Disadvantages
+
+    \begin{itemize}
+        \item Less computational reuse
+        \item Divergence from assignment ideal
+    \end{itemize}
+
+    \vspace*{\fill}
+\end{multicols}
 
 
 % ============================================================
@@ -76,10 +299,75 @@ export OPENAI_API_KEY="sk-..."
 % ============================================================
 
 
-- Input state of the visualization agent
-- Output state of the visualization agent
-- What information is required for visualization
-- How the visualization output is used (e.g., frontend)
+\sect{In/Out}
+
+\begin{multicols}{2}
+    The visualization agent receives:
+
+    \begin{itemize}
+        \item User question
+        \item Planner-generated viz\_spec
+        \item Dataset description
+        \item Execution context
+    \end{itemize}
+
+    \vspace*{\fill}\columnbreak
+
+    It returns:
+
+    \begin{itemize}
+        \item Plotly Python code
+        \item Executed Plotly figure JSON
+        \item Error state
+    \end{itemize}
+    \vspace*{\fill}
+\end{multicols}
+
+\sect{Required Information for Visualization}
+
+\begin{multicols}{2}
+    The visualization system requires:
+
+    \begin{itemize}
+    \item Semantic chart goal
+    \item Dataset schema
+    \item Access to source-level granularity
+    \end{itemize}
+
+    \vspace*{\fill}\columnbreak
+
+    Visualizations often require:
+
+    \begin{itemize}
+        \item Multiple columns
+        \item Alternate grouping
+        \item Temporal context
+        \item Additional dimensions
+    \end{itemize}
+    \vspace*{\fill}
+\end{multicols}
+
+A reduced execution result almost always lacked enough structural richness.
+
+\sect{Frontend Usage}
+
+\begin{multicols}{2}
+    Plotly JSON is sanitized and passed to the frontend, where:
+
+    \begin{minted}{JavaScript}
+        Plotly.newPlot(...)
+    \end{minted}
+
+    \vspace*{\fill}\columnbreak
+
+    This allows:
+
+    \begin{itemize}
+        \item Interactive charts
+        \item Dynamic rendering
+        \item Session replay
+    \end{itemize}
+\end{multicols}
 
 
 % ============================================================
@@ -87,10 +375,193 @@ export OPENAI_API_KEY="sk-..."
 % ============================================================
 
 
-- Ask at least 5 different questions using your system
-- At least one question must involve a multi-turn interaction
-- Include the questions, generated answers, and visualizations (if any)
-- Provide a brief summary of the insights obtained from these results
+\sect{Question 1}
+
+``How does median income vary across different ocean proximity categories?''
+
+\begin{minted}{md}
+    Medians by ocean_proximity (n, median, IQR):
+
+    - <1H OCEAN (4380): median 3.82835, IQR 2.3302
+    - NEAR BAY (1092): median 3.77815, IQR 2.3427  
+    - NEAR OCEAN (1316): median 3.6543, IQR 2.279025  
+    - INLAND (3211): median 2.9812, IQR 1.78  
+    - ISLAND (1): median 2.8333, IQR 0.0 (single observation)
+
+    Summary: Coastal-related categories (<1H OCEAN, NEAR BAY, NEAR OCEAN) show higher
+    median_income (~3.65-3.83) than INLAND (~2.98); ISLAND is based on one record.
+\end{minted}
+
+\begin{center}
+    \includegraphics[width=0.9\linewidth]{83347eb6-4303-4fb4-b246-6e8002196554 run 0.png}
+\end{center}
+
+Insight: Coastal-dwelling people have higher median incomes. The boxplot reveals that, roughly, 75\% of inland-dwellers have median incomes similar to or less than the lower 50\% of coastal-dwellers. Interestingly, coastal-dwellers have higher median income IQR, meaning more variation in their median incomes than inland-dwellers' median incomes.
+
+
+\sect{Question 2}
+
+``Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.''
+
+\begin{minted}{md}
+    Top 5 (by median_house_value_median)
+    1. ISLAND - 414,700
+    2. NEAR OCEAN - 235,100
+    3. NEAR BAY - 231,900
+    4. <1H OCEAN - 213,600
+    5. INLAND - 109,400
+
+    Key factors from the dataset (values shown are medians)
+    - ISLAND: very highest price; older housing age (52),
+        high rooms/household (5.47) and higher bedrooms/household (1.37),
+        population/household 2.55 - proximity: ISLAND.
+    - NEAR OCEAN: high price; median income 3.65, age 29,
+        rooms/household 5.20, bedrooms/household 1.06,
+        population/household 2.69 - proximity: NEAR OCEAN.
+    - NEAR BAY: similar to NEAR OCEAN; income 3.78, age 39,
+        rooms 5.11, bedrooms 1.04, population 2.52 - proximity: NEAR BAY.
+    - <1H OCEAN: income 3.83, age 30, rooms 5.06, bedrooms 1.04,
+        population 2.94 - proximity: <1H OCEAN.
+    - INLAND: much lower price despite higher rooms/household (5.70);
+        income 2.98, age 23, bedrooms 1.11, population 2.90 - inland location.
+\end{minted}
+
+\begin{center}
+    \includegraphics[width=0.9\linewidth]{bdfa63b2-749f-45f1-a28f-cf6ebeb59748 run 0.png}
+\end{center}
+
+Insight: Of note is that the agent interpreted ``geographic area'' as refering to the five ocean proximity labels. That said, it produced a clear comparison of these areas. Let's try a follow-up.
+
+\textbf{Follow-Up}
+
+``Try again. Geographic areas by large longitude/latitude clusters.''
+
+\begin{minted}{md}
+    Cluster 0 - count 4284; center (lon, lat) = (-118.11258870214752, 34.017591036414565);
+        median_house_value = 197750.0; mean_house_value = 229129.56489262372;
+        median_income = 3.7022; median_housing_median_age = 32.0;
+        median_rooms_per_household = 4.99161403508772.
+
+    Cluster 1 - count 2305; center = (-122.16901518438179, 37.65891540130152);
+        median_house_value = 249500.0; mean_house_value = 265306.0190889371;
+        median_income = 4.0793; median_housing_median_age = 32.0;
+        median_rooms_per_household = 5.332432432432433.
+
+    Cluster 2 - count 870; center = (-119.6797356321839, 35.9221264367816);
+        median_house_value = 87000.0; mean_house_value = 123057.25287356322;
+        median_income = 2.69045; median_housing_median_age = 24.0;
+        median_rooms_per_household = 5.342637540453074.
+
+    Cluster 3 - count 1057; center = (-116.952270577105, 33.04552507095553);
+        median_house_value = 158500.0; mean_house_value = 182653.66792809838;
+        median_income = 3.2986; median_housing_median_age = 20.0;
+        median_rooms_per_household = 5.395209580838324.
+
+    Cluster 4 - count 348; center = (-122.76646551724137, 40.113649425287356);
+        median_house_value = 86150.0; mean_house_value = 91790.5172413793;
+        median_income = 2.35885; median_housing_median_age = 22.0;
+        median_rooms_per_household = 5.501989389920425.
+
+    Cluster 5 - count 1136; center = (-121.1230809859155, 38.41272887323944);
+        median_house_value = 118800.0; mean_house_value = 126980.0184859155;
+        median_income = 3.0; median_housing_median_age = 23.5;
+        median_rooms_per_household = 5.485934116275196.
+\end{minted}
+
+\begin{center}
+    \includegraphics[width=0.9\linewidth, trim={0 0 175 0}, clip]{bdfa63b2-749f-45f1-a28f-cf6ebeb59748 run 1.png}
+\end{center}
+
+Insight: Given clarification, the agent clustered by longitude/latitude coordinates. The figure reveals very high median house values in the Bay Area. LA County is also quite expensive. The middle of California and northern California are the least expensive areas.
+
+\sect{Question 3}
+
+``Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?''
+
+\begin{minted}{md}
+    Summary from the provided data
+
+    1) Coastal categories with unexpectedly low medians
+    - "<1H OCEAN" stands out as relatively low (median 213,600)
+        versus "NEAR OCEAN" (235,100) and "NEAR BAY" (231,900).
+
+    2) Geographic clusters of low-priced coastal block groups (from coordinates)
+    - Southern CA coast around Los Angeles / Long Beach / San Diego (many points
+        near lon ~= -118 to -117, lat ~= 32.6-34.1).
+    - San Francisco Bay fringe (lon ~= -122 to -121, lat ~= 37.7-37.98).
+    - Northern CA coast (lon ~= -124 to -123, lat ~= 40.6-41.0).
+    - Central coast pockets (lon ~= -120, lat ~= 34.6-35.8).
+
+    3) Local factors that likely explain low prices (medians among low-price block groups)
+    - Low median_income = 2.422 (dataset units).
+    - Older housing: housing_median_age median = 34 years.
+    - Moderate population per block group (median = 1,214) and households = 382.
+    - Housing characteristics: total_rooms median = 1,692, total_bedrooms = 406
+        → high rooms_per_household median = 4.42 but bedrooms_per_household ~= 1.055,
+        suggesting nonstandard room/bedroom mixes or crowded/multi-unit housing
+        that can depress prices.
+\end{minted}
+
+\begin{center}
+    \includegraphics[width=0.9\linewidth]{fe908f4b-305d-4a58-81e9-e507f16c254c run 0.png}
+\end{center}
+
+Insight: The agent suggests that older, multi-unit houses in low-income areas explain the low house prices despite ocean proximity.
+
+\sect{Question 4}
+
+``Which genres have the highest average danceability?''
+
+\begin{minted}{md}
+    Reggae - highest mean danceability 0.768025 (count = 40, std = 0.09599745923454006).
+\end{minted}
+
+\begin{center}
+    \includegraphics[width=0.9\linewidth]{91acc251-9d32-4ef9-96a6-62863057850d run 0.png}
+\end{center}
+
+Insight: Reggae is most danceable (with low standard deviation, suggesting high danceability for most reggae tracks). The bar chart reveals top 20 by mean danceability.
+
+
+\sect{Question 5}
+
+``Identify the top 10 most popular tracks and analyze what audio features (energy, danceability, valence, tempo) they share. Do popular tracks cluster around specific feature ranges?''
+
+\begin{minted}{md}
+    Top 10 most popular tracks (popularity descending)
+    1. Another Love - Tom Odell (93)
+    2. I Wanna Be Yours - Arctic Monkeys (92)
+    3. Party - Bad Bunny; Rauw Alejandro (90)
+    4. Watermelon Sugar - Harry Styles (89)
+    5. One Kiss (with Dua Lipa) - Calvin Harris; Dua Lipa (89)
+    6. 505 - Arctic Monkeys (88)
+    7. La Llevo Al Cielo (Ft. Ñengo Flow) - Chris Jedi; Anuel AA;
+        Chencho Corleone; Ñengo Flow (88)
+    8. LA CANCIÓN - J Balvin; Bad Bunny (88)
+    9. drivers license - Olivia Rodrigo (88)
+    10. Only Love Can Hurt Like This - Paloma Faith (87)
+
+    Feature ranges among these top 10
+    - Energy: 0.417 - 0.885
+    - Danceability: 0.445 - 0.829
+    - Valence: 0.131 - 0.769
+    - Tempo: 67.528 - 176.089 BPM
+
+    Do popular tracks cluster?
+    - Correlations with popularity are near zero (energy 0.01, danceability 0.06,
+        valence -0.03, tempo 0.01), so no strong linear relationship.
+    - Clustering shows a higher share of popular tracks in clusters centered on
+        higher energy/danceability/valence (e.g., k=2 cluster center energy 0.724,
+        danceability 0.662, valence 0.661 had larger high-popularity proportion).
+        Conclusion: popular tracks span wide feature ranges but are somewhat more frequent
+        in higher-energy, more danceable, higher-valence clusters - not tightly clustered.
+\end{minted}
+
+\begin{center}
+    \includegraphics[width=0.9\linewidth]{fb80a42e-340f-41cb-ad04-df22f6efe114 run 0.png}
+\end{center}
+
+Insight: Popularity did not have much correlation with audio features, though the top 10 were slightly higher-energy, more danceable, and of higher valence.
 
 
 % ============================================================
@@ -98,10 +569,32 @@ export OPENAI_API_KEY="sk-..."
 % ============================================================
 
 
-- At least one failure or limitation related to system behavior (e.g., reasoning, execution, mem-
-ory, or visualization)
+- At least one failure or limitation related to system behavior (e.g., reasoning, execution, memory, or visualization)
 - What went wrong and why
 - How the system could be improved
+
+
+In an earlier iteration of the architecture, a consistent failure was in creating visualizations. I instructed the model to pass forward enough information to create visualizations from the data extraction node. However, this information was consistently hard to explain to the visualization code generated, as it was non-deterministically presented, despite my best efforts. Often, visualization would fail entirely due to this issue. Further, this created huge, expensive API calls.
+
+A related failure case is as follows:
+
+``Identify areas with similar median income levels but significantly different median house values. What factors might explain these differences?''
+
+The data extraction node extracted so many points from the dataset, that the node responsible for generating responses was overwhelmed. It said:
+
+\begin{minted}{md}
+    Examples from the data (coordinates, median_income → median_house_value) and likely explanatory factors:
+
+    - (-118.09,33.74) 4.6369 → 422,200 (NEAR OCEAN) vs (-121.37,38.63) 4.6127 → 151,800 (INLAND). Explanation: ocean_proximity (coastal premium) is the primary difference; housing ages (44 vs 30) and similar persons/household suggest location drives value gap.
+
+    - (-122.49,37.50) 4.5625 → 500,000 (NEAR OCEAN) vs (-117.69,34.08) 4.5185 → 142,500 (INLAND). Explanation: near-ocean location correlates with much higher value despite similar incomes; housing size/age differences are secondary.
+
+    - (-118.34,34.16) 3.6486 → 246,900 vs (-118.36,33.96) 3.6583 → 177,300 (both <1H OCEAN). Explanation: newer/larger housing and much lower population-per-household (1.59 vs 3.39) and total_rooms differences explain higher value within same proximity.
+\end{minted}
+
+To me, this indicated that it was not really able to identify factors leading to different median house values despite similar median income levels. This also might be because the prompt itself is vague. As noted in HW1, ``similar'' and ``significantly different'' are not very clear requirements.
+
+However, possibly improvements could be made to the system. Shifting to a plan involving less output from the data extraction node would help the response node to generate coherent responses. This was a large part of the reasoning to shift towards referencing the whole dataset. Not doing so created a big data size/explanation issue that did not make sense in production.
 
 
 % ============================================================
@@ -109,5 +602,34 @@ ory, or visualization)
 % ============================================================
 
 
+This project demonstrated that building an interactive dataset agent is fundamentally a systems design problem rather than only an LLM problem.
+
+\sect{Key Lessons}
+
+\begin{itemize}
+    \item Clean modularity matters
+    \item Memory is more than chat history
+    \item Visualization requires richer context than text responses
+    \item Over-compressing execution state can reduce system usefulness
+\end{itemize}
+
+\sect{Major Design Conclusion}
+
+While assignment specifications emphasized artifact-only downstream reuse, practical testing revealed that preserving original dataset access significantly improved analytical flexibility and visualization quality.
+
+Thus, I adopted a hybrid design that where prior results inform reasoning and the original dataset preserves capability.
+
+\sect{Final Assessment}
+
+This design prioritizes:
+
+\begin{itemize}
+    \item Correctness
+    \item Robustness
+    \item Generality
+    \item Developer interpretability
+\end{itemize}
+
+Although this approach increases recomputation, it better supports real-world interactive data analysis.
 
 \end{document}
