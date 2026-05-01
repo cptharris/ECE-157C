@@ -33,7 +33,6 @@ def build_graph():
     graph.add_conditional_edges("respond", traced(route_post_respond))
     graph.add_edge("visualize_codegen", "visualize_execute")
 
-    graph.add_edge("respond", END)
     graph.add_edge("visualize_execute", END)
 
     return graph.compile()
