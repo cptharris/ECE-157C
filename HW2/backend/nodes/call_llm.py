@@ -2,6 +2,40 @@ import os
 import json
 import hashlib
 from pathlib import Path
+from openai import OpenAI
+
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+
+def call_llm(system_prompt: str, user_prompt: str) -> str:
+    print(f"{'='*10} QUERY LLM {'='*10}")
+    print(user_prompt)
+
+    cached = get_cached(user_prompt)
+    if cached is not None:
+        print(f"{'='*10} RESPONSE (cached) {'='*10}")
+        print(cached)
+        return cached
+
+    response = (
+        client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        .choices[0]
+        .message.content.strip()
+    )
+
+    set_cached(user_prompt, response)
+
+    print(f"{'='*10} RESPONSE (rqsted) {'='*10}")
+    print(response)
+
+    return response
 
 
 # CACHING
@@ -44,41 +78,3 @@ def set_cached(messages, value):
     cache = _load_cache()
     cache[_key(messages)] = value
     CACHE_PATH.write_text(json.dumps(cache, indent=2))
-
-
-# API
-
-from openai import OpenAI
-
-
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-
-def call_llm(system_prompt: str, user_prompt: str) -> str:
-    print(f"{'='*10} QUERY LLM {'='*10}")
-    print(user_prompt)
-
-    cached = get_cached(user_prompt)
-    if cached is not None:
-        print(f"{'='*10} RESPONSE (cached) {'='*10}")
-        print(cached)
-        return cached
-
-    response = (
-        client.chat.completions.create(
-            model="gpt-5-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-        )
-        .choices[0]
-        .message.content.strip()
-    )
-
-    set_cached(user_prompt, response)
-
-    print(f"{'='*10} RESPONSE (rqsted) {'='*10}")
-    print(response)
-
-    return response
