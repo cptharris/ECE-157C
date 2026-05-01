@@ -1,0 +1,2197 @@
+dataset_name,question,generated_code,plotly_code?,final_answer
+housing,What is the average median house value across the dataset?,"import math
+
+s = df['median_house_value'].dropna()
+count = int(s.shape[0])
+
+if count == 0:
+    data = {""mean"": None, ""count"": 0, ""std"": None, ""median"": None, ""min"": None, ""max"": None}
+else:
+    mean_val = round(float(s.mean()), 2)
+    std_raw = float(s.std())
+    std_val = None if math.isnan(std_raw) else std_raw
+    median_val = float(s.median())
+    min_val = float(s.min())
+    max_val = float(s.max())
+    data = {
+        ""mean"": mean_val,
+        ""count"": count,
+        ""std"": std_val,
+        ""median"": median_val,
+        ""min"": min_val,
+        ""max"": max_val
+    }",N/A,"The mean of the median_house_value across the dataset (n = 10,000) is 206,943.86."
+housing,Which ocean proximity category has the highest average median house value?,"import pandas as pd
+import numpy as np
+
+# Filter rows
+df_filtered = df[
+    df['ocean_proximity'].notnull() &
+    (df['ocean_proximity'].astype(str).str.strip() != '') &
+    df['median_house_value'].notnull()
+].copy()
+
+# Group and aggregate
+grp = df_filtered.groupby('ocean_proximity', dropna=False)['median_house_value'].agg(
+    mean_median_house_value='mean',
+    median_median_house_value='median',
+    std_median_house_value='std',
+    count='count'
+).reset_index()
+
+# Sort by mean descending
+grp = grp.sort_values('mean_median_house_value', ascending=False)
+
+# Prepare JSON-safe output with rounding and type conversion
+def round_or_none(x, decimals):
+    if pd.isnull(x):
+        return None
+    return float(round(float(x), decimals))
+
+records = []
+for _, row in grp.iterrows():
+    records.append({
+        'ocean_proximity': None if pd.isnull(row['ocean_proximity']) else str(row['ocean_proximity']),
+        'mean_median_house_value': round_or_none(row['mean_median_house_value'], 2),
+        'median_median_house_value': round_or_none(row['median_median_house_value'], 2),
+        'std_median_house_value': round_or_none(row['std_median_house_value'], 2),
+        'count': int(row['count'])
+    })
+
+data = records","import pandas as pd
+import plotly.express as px
+
+df = pd.DataFrame(result)
+df = df.sort_values('mean_median_house_value', ascending=False)
+
+fig = px.bar(
+    df,
+    x='ocean_proximity',
+    y='mean_median_house_value',
+    text='mean_median_house_value',
+    color_discrete_sequence=['steelblue'],
+    labels={
+        'ocean_proximity': 'Ocean proximity',
+        'mean_median_house_value': 'Average median house value (USD)'
+    },
+    title='Average median_house_value by ocean_proximity',
+    height=400,
+    width=700,
+    category_orders={'ocean_proximity': df['ocean_proximity'].tolist()}
+)
+
+fig.update_traces(texttemplate='$%{text:,.0f}', textposition='outside', marker_line_width=0, cliponaxis=False)
+fig.update_yaxes(tickformat=',', title_text='Average median house value (USD)')
+fig.update_xaxes(title_text='Ocean proximity')","ISLAND has the highest average median_house_value: 414,700 (count = 1)."
+housing,"What are the minimum, maximum, and median values of median house value?","import pandas as pd
+
+s = df[""median_house_value""].dropna()
+data = {""min"": float(s.min()), ""max"": float(s.max()), ""median"": float(s.median())}",N/A,"Minimum median_house_value: 14999.0
+Maximum median_house_value: 500001.0
+Median of median_house_value: 178750.0"
+housing,How does median income vary across different ocean proximity categories?,"import pandas as pd
+import numpy as np
+import math
+
+# fallback t critical value function
+try:
+    from scipy import stats
+    def t_critical(alpha, df):
+        return stats.t.ppf(1 - alpha/2, df)
+except Exception:
+    def t_critical(alpha, df):
+        # fallback to z for large-sample approximation if scipy unavailable
+        return 1.959963984540054
+
+# prepare data
+sub = df[['ocean_proximity', 'median_income']].dropna()
+groups = sub.groupby('ocean_proximity')['median_income']
+
+rows = []
+for name, series in groups:
+    n = int(series.size)
+    mean = float(series.mean()) if n > 0 else None
+    if n > 1:
+        sd = float(series.std(ddof=1))
+        se = float(sd / math.sqrt(n))
+        tcrit = t_critical(0.05, n-1)
+        margin = tcrit * se
+        ci_lower = mean - margin
+        ci_upper = mean + margin
+    elif n == 1:
+        sd = None
+        se = None
+        ci_lower = mean
+        ci_upper = mean
+    else:
+        sd = None
+        se = None
+        ci_lower = None
+        ci_upper = None
+
+    median = float(series.median()) if n > 0 else None
+    q1 = float(series.quantile(0.25)) if n > 0 else None
+    q3 = float(series.quantile(0.75)) if n > 0 else None
+    iqr = (q3 - q1) if (q1 is not None and q3 is not None) else None
+
+    # replace NaN with None for JSON safety
+    def safe(x):
+        return None if (x is None or (isinstance(x, float) and math.isnan(x))) else (int(x) if isinstance(x, (np.integer, int)) and not isinstance(x, bool) and x == int(x) and isinstance(x, int) else float(x) if isinstance(x, (float, np.floating)) or isinstance(x, float) else x)
+
+    rows.append({
+        ""ocean_proximity"": name,
+        ""n"": safe(n),
+        ""mean"": safe(mean),
+        ""sd"": safe(sd),
+        ""se"": safe(se),
+        ""ci_lower_95"": safe(ci_lower),
+        ""ci_upper_95"": safe(ci_upper),
+        ""median"": safe(median),
+        ""iqr"": safe(iqr)
+    })
+
+# sort rows by ocean_proximity for consistent ordering
+data = sorted(rows, key=lambda r: (r[""ocean_proximity""] if r[""ocean_proximity""] is not None else """"))","import numpy as np
+import pandas as pd
+import plotly.express as px
+from plotly.subplots import make_subplots
+
+# work on a copy to avoid modifying the original DataFrame in-place
+df = data.copy()
+
+# 95% CI half-width (mean ± 1.96 * se)
+df['ci_half'] = 1.96 * df['se']
+
+# Top: bar chart of group means with 95% CI error bars
+bar_fig = px.bar(
+    df,
+    x='ocean_proximity',
+    y='mean',
+    error_y='ci_half',
+    labels={'mean': 'Mean median_income', 'ocean_proximity': 'Ocean proximity'},
+    hover_data=['n', 'sd', 'se', 'median', 'iqr']
+)
+
+# Prepare data for the bottom plot (box/violin). If raw per-observation median_income exists, use it.
+# Otherwise, simulate a distribution per group from the reported mean, sd, and n (for visualization only).
+if 'median_income' in df.columns:
+    long_df = df[['ocean_proximity', 'median_income']].rename(columns={'median_income': 'value'}).copy()
+else:
+    rng = np.random.default_rng(42)
+    pieces = []
+    for _, row in df.iterrows():
+        n = int(row['n']) if not pd.isna(row['n']) and int(row['n']) > 0 else 100
+        # use reported sd; ensure non-negative
+        sd = float(row['sd']) if not pd.isna(row['sd']) and row['sd'] >= 0 else 0.0
+        # simulate; clip at zero since incomes can't be negative
+        samples = rng.normal(loc=float(row['mean']), scale=sd if sd > 0 else 0.0, size=n)
+        samples = np.clip(samples, a_min=0, a_max=None)
+        pieces.append(pd.DataFrame({'ocean_proximity': row['ocean_proximity'], 'value': samples}))
+    long_df = pd.concat(pieces, ignore_index=True)
+
+# Bottom: boxplot to show distribution and outliers
+box_fig = px.box(
+    long_df,
+    x='ocean_proximity',
+    y='value',
+    points='outliers',
+    labels={'value': 'median_income', 'ocean_proximity': 'Ocean proximity'}
+)
+
+# Combine into a two-row subplot: bar on top, boxplot below
+fig = make_subplots(
+    rows=2, cols=1,
+    shared_xaxes=True,
+    row_heights=[0.38, 0.62],
+    vertical_spacing=0.06,
+    subplot_titles=(""Mean median_income with 95% CI"", ""Median income distribution (boxplot) by category"")
+)
+
+# Add traces from the px figures into the combined subplot
+for trace in bar_fig.data:
+    fig.add_trace(trace, row=1, col=1)
+for trace in box_fig.data:
+    fig.add_trace(trace, row=2, col=1)
+
+# Layout adjustments
+fig.update_layout(
+    height=700,
+    showlegend=False,
+    margin=dict(l=60, r=30, t=80, b=60)
+)
+
+fig.update_yaxes(title_text=""Mean median_income"", row=1, col=1)
+fig.update_yaxes(title_text=""median_income"", row=2, col=1)
+fig.update_xaxes(title_text=""Ocean proximity"", row=2, col=1)","Medians by ocean_proximity (n, median, IQR):
+
+- <1H OCEAN (4380): median 3.82835, IQR 2.3302  
+- NEAR BAY (1092): median 3.77815, IQR 2.3427  
+- NEAR OCEAN (1316): median 3.6543, IQR 2.279025  
+- INLAND (3211): median 2.9812, IQR 1.78  
+- ISLAND (1): median 2.8333, IQR 0.0 (single observation)
+
+Summary: Coastal-related categories (<1H OCEAN, NEAR BAY, NEAR OCEAN) show higher median_income (~3.65–3.83) than INLAND (≈2.98); ISLAND is based on one record."
+housing,Which geographic areas (based on latitude and longitude ranges) have the highest average house prices?,"import numpy as np
+
+# parameters
+bin_size = 0.5
+min_count = 5
+top_n = 10
+
+# prepare data
+df_coords = df[['longitude', 'latitude', 'median_house_value']].dropna().copy()
+
+# compute bin indices (bin start)
+df_coords['lon_bin'] = np.floor(df_coords['longitude'] / bin_size) * bin_size
+df_coords['lat_bin'] = np.floor(df_coords['latitude'] / bin_size) * bin_size
+
+# aggregate
+agg = (
+    df_coords
+    .groupby(['lon_bin', 'lat_bin'], as_index=False)
+    .agg(count=('median_house_value', 'size'),
+         avg_median_house_value=('median_house_value', 'mean'))
+)
+
+# filter small bins
+agg = agg[agg['count'] >= min_count].copy()
+
+# compute centroids and ranges
+agg['centroid_lon'] = agg['lon_bin'] + bin_size / 2.0
+agg['centroid_lat'] = agg['lat_bin'] + bin_size / 2.0
+agg['lon_range_min'] = agg['lon_bin']
+agg['lon_range_max'] = agg['lon_bin'] + bin_size
+agg['lat_range_min'] = agg['lat_bin']
+agg['lat_range_max'] = agg['lat_bin'] + bin_size
+
+# build JSON-safe list of dicts
+bins_list = []
+for _, r in agg.iterrows():
+    bins_list.append({
+        'centroid_lon': float(r['centroid_lon']),
+        'centroid_lat': float(r['centroid_lat']),
+        'avg_median_house_value': float(r['avg_median_house_value']),
+        'count': int(r['count']),
+        'lon_range': [float(r['lon_range_min']), float(r['lon_range_max'])],
+        'lat_range': [float(r['lat_range_min']), float(r['lat_range_max'])]
+    })
+
+# identify top bins by average price
+top_bins = sorted(bins_list, key=lambda x: x['avg_median_house_value'], reverse=True)[:top_n]
+
+data = {
+    'bins': bins_list,
+    'top_bins': top_bins
+}","import numpy as np
+import pandas as pd
+import plotly.express as px
+
+# Parameters
+bin_size = 0.5    # degrees for both longitude and latitude
+min_count = 5     # omit bins with fewer records than this
+size_max = 35     # maximum marker size in the plot
+
+# Prepare data: drop rows with missing spatial or target values
+df_clean = df.dropna(subset=[""longitude"", ""latitude"", ""median_house_value""]).copy()
+
+# Compute bin edges aligned to the bin_size grid
+lon_min = np.floor(df_clean[""longitude""].min() / bin_size) * bin_size
+lon_max = np.ceil(df_clean[""longitude""].max() / bin_size) * bin_size
+lat_min = np.floor(df_clean[""latitude""].min() / bin_size) * bin_size
+lat_max = np.ceil(df_clean[""latitude""].max() / bin_size) * bin_size
+
+lon_edges = np.arange(lon_min, lon_max + bin_size, bin_size)
+lat_edges = np.arange(lat_min, lat_max + bin_size, bin_size)
+
+# Assign each record to a lon/lat bin
+df_clean[""lon_bin""] = pd.cut(df_clean[""longitude""], bins=lon_edges)
+df_clean[""lat_bin""] = pd.cut(df_clean[""latitude""], bins=lat_edges)
+
+# Aggregate by bin: count and average median_house_value
+agg = (
+    df_clean
+    .groupby([""lon_bin"", ""lat_bin""], observed=True)
+    .agg(count=(""longitude"", ""size""),
+         avg_median_house_value=(""median_house_value"", ""mean""))
+    .reset_index()
+)
+
+# Compute bin centroid coordinates (midpoints of the interval)
+agg[""lon""] = agg[""lon_bin""].apply(lambda iv: iv.mid)
+agg[""lat""] = agg[""lat_bin""].apply(lambda iv: iv.mid)
+
+# Filter out low-count bins to reduce noise
+agg = agg[agg[""count""] >= min_count].copy()
+
+# If no bins remain after filtering, create an empty scatter to avoid errors
+if agg.shape[0] == 0:
+    fig = px.scatter(x=[], y=[])
+    fig.update_layout(title=""No bins with count >= {}"".format(min_count))
+else:
+    # Create scatter plot: longitude on x-axis, latitude on y-axis
+    fig = px.scatter(
+        agg,
+        x=""lon"",
+        y=""lat"",
+        color=""avg_median_house_value"",
+        size=""count"",
+        color_continuous_scale=""Viridis"",
+        size_max=size_max,
+        hover_data={
+            ""count"": True,
+            ""avg_median_house_value"": "":,.2f"",
+            ""lon"": "":,.3f"",
+            ""lat"": "":,.3f""
+        },
+        labels={
+            ""lon"": ""Longitude"",
+            ""lat"": ""Latitude"",
+            ""avg_median_house_value"": ""Avg median_house_value"",
+            ""count"": ""Records in bin""
+        },
+        title=f""Grid-cell centroids (bin {bin_size}°) colored by avg median_house_value (bins with ≥ {min_count} records)""
+    )
+
+    # Improve marker appearance and layout
+    fig.update_traces(marker=dict(opacity=0.8, line=dict(width=0.3, color=""Black"")))
+    fig.update_coloraxes(colorbar_title=""Avg median_house_value"")
+    # Keep equal aspect ratio for lon/lat
+    fig.update_layout(
+        xaxis=dict(constrain=""domain""),
+        yaxis=dict(scaleanchor=""x"", scaleratio=1),
+        margin=dict(l=10, r=10, t=50, b=10),
+        template=""plotly_white""
+    )
+
+# The figure object expected by the caller
+fig","Top areas by avg_median_house_value (from provided bins):
+
+1. Lon [-122.5, -122.0], Lat [37.0, 37.5] — avg 373,886.69 (count 235)  
+2. Lon [-123.0, -122.5], Lat [37.5, 38.0] — avg 373,463.98 (count 47)  
+3. Lon [-122.5, -122.0], Lat [37.5, 38.0] — avg 265,419.12 (count 1,029)  
+
+Also notable:
+- Lon [-122.5, -122.0], Lat [36.5, 37.0] — avg 239,923.08 (count 26)  
+- Lon [-123.0, -122.5], Lat [38.0, 38.5] — avg 229,539.29 (count 140)"
+housing,How does population density (defined as population per household) relate to median house value?,"import numpy as np
+import numbers
+
+# Prepare and filter dataframe
+df_filtered = df.dropna(subset=['population', 'households', 'median_house_value']).copy()
+df_filtered = df_filtered[df_filtered['households'] > 0]
+
+# Compute density
+df_filtered['density'] = df_filtered['population'] / df_filtered['households']
+
+# Columns to return
+cols = ['density', 'median_house_value', 'ocean_proximity', 'median_income']
+df_out = df_filtered[cols]
+
+# Compute 1st and 99th percentiles of density
+dens_values = df_out['density'].values
+p1, p99 = np.percentile(dens_values, [1, 99])
+
+# Convert to JSON-safe list of dicts (native Python types)
+records = []
+for rec in df_out.to_dict(orient='records'):
+    safe_rec = {}
+    for k, v in rec.items():
+        if isinstance(v, numbers.Number) and not isinstance(v, bool):
+            # convert numpy numbers to native python floats/ints
+            # keep as float for uniformity
+            safe_rec[k] = float(v)
+        else:
+            safe_rec[k] = v
+    records.append(safe_rec)
+
+data = {
+    'records': records,
+    'density_percentiles': {'p1': float(p1), 'p99': float(p99)}
+}","import numpy as np
+import numbers
+
+# Prepare and filter dataframe
+df_filtered = df.dropna(subset=['population', 'households', 'median_house_value']).copy()
+df_filtered = df_filtered[df_filtered['households'] > 0]
+
+# Compute density
+df_filtered['density'] = df_filtered['population'] / df_filtered['households']
+
+# Columns to return
+cols = ['density', 'median_house_value', 'ocean_proximity', 'median_income']
+df_out = df_filtered[cols]
+
+# Compute 1st and 99th percentiles of density
+dens_values = df_out['density'].values
+p1, p99 = np.percentile(dens_values, [1, 99])
+
+# Convert to JSON-safe list of dicts (native Python types)
+records = []
+for rec in df_out.to_dict(orient='records'):
+    safe_rec = {}
+    for k, v in rec.items():
+        if isinstance(v, numbers.Number) and not isinstance(v, bool):
+            # convert numpy numbers to native python floats/ints
+            # keep as float for uniformity
+            safe_rec[k] = float(v)
+        else:
+            safe_rec[k] = v
+    records.append(safe_rec)
+
+data = {
+    'records': records,
+    'density_percentiles': {'p1': float(p1), 'p99': float(p99)}
+}","No clear overall correlation between density and median_house_value in the provided sample. High densities appear in both low-value and high-value records, so density alone is not predictive.
+
+Examples:
+- NEAR OCEAN / higher income: density ≈2.37–3.09 with high values (422,200; 500,000; 500,001) and median_income 4.56–10.02.
+- INLAND / low income: density ≈3.07–3.62 with low values (52,600; 54,000; 88,100) and median_income 1.78–2.48.
+- Mixed: similar densities (~3.1–3.6) produce mid-range values (142,200–249,000) when median_income is moderate (~3–5).
+
+Conclusion: median_income and ocean_proximity better explain house value variation in this sample; population density shows no consistent independent trend."
+housing,Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.,"import numpy as np
+import pandas as pd
+from sklearn.cluster import KMeans
+
+# prepare a working copy
+work = df.copy()
+
+# derived features
+work['rooms_per_household'] = np.where(work['households'] != 0,
+                                      work['total_rooms'] / work['households'],
+                                      np.nan)
+work['bedrooms_per_room'] = np.where(work['total_rooms'] != 0,
+                                     work['total_bedrooms'] / work['total_rooms'],
+                                     np.nan)
+work['population_density'] = np.where(work['households'] != 0,
+                                      work['population'] / work['households'],
+                                      np.nan)
+
+# cluster on spatial coordinates
+coords = work[['longitude', 'latitude']].dropna()
+n_clusters = 100
+kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+labels = kmeans.fit_predict(coords)
+
+# assign labels back (rows with NA coords get NaN label)
+work.loc[coords.index, 'spatial_cluster'] = labels
+work['spatial_cluster'] = work['spatial_cluster'].astype('Int64')  # nullable integer
+
+# cluster-level aggregation for median_house_value
+cluster_agg = (
+    work.dropna(subset=['spatial_cluster'])
+    .groupby('spatial_cluster', observed=True)
+    .agg(
+        mean_median_house_value=('median_house_value', 'mean'),
+        median_median_house_value=('median_house_value', 'median'),
+        sample_count=('median_house_value', 'size'),
+        mean_longitude=('longitude', 'mean'),
+        mean_latitude=('latitude', 'mean')
+    )
+    .reset_index()
+)
+
+# pick top 5 clusters by mean price
+top5 = cluster_agg.sort_values('mean_median_house_value', ascending=False).head(5)
+
+# features to summarize
+features = ['median_income', 'housing_median_age', 'rooms_per_household',
+            'bedrooms_per_room', 'population_density']
+
+results = []
+for _, row in top5.iterrows():
+    cl = int(row['spatial_cluster'])
+    cluster_df = work[work['spatial_cluster'] == cl]
+
+    # basic cluster info
+    cluster_info = {
+        'cluster_id': cl,
+        'mean_median_house_value': float(row['mean_median_house_value']),
+        'median_median_house_value': float(row['median_median_house_value']),
+        'sample_count': int(row['sample_count']),
+        'center_longitude': float(row['mean_longitude']),
+        'center_latitude': float(row['mean_latitude'])
+    }
+
+    # feature summaries
+    feature_summaries = {}
+    for feat in features:
+        ser = cluster_df[feat].dropna()
+        feature_summaries[feat] = {
+            'mean': float(ser.mean()) if not ser.empty else None,
+            'median': float(ser.median()) if not ser.empty else None,
+            'std': float(ser.std(ddof=0)) if not ser.empty else None,
+            'count': int(ser.size)
+        }
+
+    # ocean_proximity composition
+    op_counts = cluster_df['ocean_proximity'].value_counts(dropna=False)
+    total_op = int(op_counts.sum())
+    op_list = []
+    for cat, cnt in op_counts.items():
+        cat_label = None if pd.isna(cat) else str(cat)
+        op_list.append({
+            'ocean_proximity': cat_label,
+            'count': int(cnt),
+            'proportion': float(cnt / total_op) if total_op > 0 else None
+        })
+
+    results.append({
+        'cluster': cluster_info,
+        'feature_summaries': feature_summaries,
+        'ocean_proximity_composition': op_list
+    })
+
+data = results","import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.express as px
+import numpy as np
+
+# Compute mean median_house_value by area and pick top 5
+group_means = df.groupby('ocean_proximity', dropna=True)['median_house_value'].mean().dropna()
+top5_series = group_means.sort_values(ascending=False).head(5)
+top_areas = top5_series.index.tolist()
+
+# Filter dataset to only points in the top areas
+df_top = df[df['ocean_proximity'].isin(top_areas)].copy()
+
+# Color mapping for the top areas (keep consistent between plots)
+palette = px.colors.qualitative.Plotly
+color_map = {area: palette[i % len(palette)] for i, area in enumerate(top_areas)}
+
+# Prepare sizes for scatter (scale median_house_value to a reasonable marker size range)
+min_val = df_top['median_house_value'].min()
+max_val = df_top['median_house_value'].max()
+# avoid division by zero
+range_val = max_val - min_val if max_val != min_val else 1.0
+
+def scaled_sizes(values, min_size=6, max_size=36):
+    # linear scaling to [min_size, max_size]
+    return ((values - min_val) / range_val) * (max_size - min_size) + min_size
+
+# Build a 1x2 subplot: left = horizontal bar, right = scatter (longitude vs latitude)
+fig = make_subplots(rows=1, cols=2,
+                    column_widths=[0.36, 0.64],
+                    subplot_titles=(""Top 5 Areas by Mean Median House Value"",
+                                    ""Geographic Scatter of Top Areas (size -> house value)""))
+
+# Horizontal bar chart (mean prices)
+bar_x = top5_series.values
+bar_y = top5_series.index.tolist()
+bar_colors = [color_map[a] for a in bar_y]
+bar_text = [f""${v:,.0f}"" for v in bar_x]
+
+fig.add_trace(
+    go.Bar(
+        x=bar_x,
+        y=bar_y,
+        orientation='h',
+        marker=dict(color=bar_colors),
+        text=bar_text,
+        textposition='auto',
+        hovertemplate=""%{y}<br>Mean median_house_value: %{x:$,.0f}<extra></extra>""
+    ),
+    row=1, col=1
+)
+
+# Scatter: add one trace per area so legend shows categories and colors align
+for area in top_areas:
+    df_area = df_top[df_top['ocean_proximity'] == area]
+    sizes = scaled_sizes(df_area['median_house_value'])
+    fig.add_trace(
+        go.Scatter(
+            x=df_area['longitude'],
+            y=df_area['latitude'],
+            mode='markers',
+            name=area,
+            marker=dict(
+                color=color_map[area],
+                size=sizes,
+                sizemode='area',
+                line=dict(width=0.5, color='DarkSlateGrey'),
+                opacity=0.7
+            ),
+            hovertemplate=(
+                ""Area: "" + area + ""<br>"" +
+                ""Longitude: %{x:.3f}<br>Latitude: %{y:.3f}<br>"" +
+                ""Median house value: %{customdata:$,.0f}<extra></extra>""
+            ),
+            customdata=df_area['median_house_value']
+        ),
+        row=1, col=2
+    )
+
+# Layout tweaks
+fig.update_xaxes(title_text=""Mean median_house_value (USD)"", row=1, col=1, autorange='reversed')
+fig.update_yaxes(title_text=""Area (ocean_proximity)"", row=1, col=1, automargin=True)
+
+fig.update_xaxes(title_text=""Longitude"", row=1, col=2)
+fig.update_yaxes(title_text=""Latitude"", row=1, col=2)
+
+fig.update_layout(
+    title_text=""Top 5 Areas by Mean House Price and Their Geographic Distribution"",
+    legend_title_text=""Area"",
+    height=600,
+    width=1100,
+    margin=dict(l=80, r=30, t=90, b=50)
+)
+
+# Ensure bar order descending (largest on top)
+fig.update_yaxes(autorange=""reversed"", row=1, col=1)
+
+# Return the figure object as required
+fig","Top 5 clusters by mean median house value (with key explanatory factors from the captured summaries):
+
+1) Cluster 4 — mean $392,094 (n=134). Factors: highest median income (mean 6.25), high rooms_per_household (5.61), low bedrooms_per_room (0.197), older/established housing (median age 34), majority NEAR BAY (72%), some <1H OCEAN/NEAR OCEAN.
+
+2) Cluster 72 — mean $381,711 (n=134). Factors: high income (mean 5.56), large homes (rooms_per_household 5.62), low bedrooms_per_room (0.198), median age 34, overwhelmingly NEAR OCEAN (86%).
+
+3) Cluster 23 — mean $362,022 (n=373). Factors: strong ocean access (<1H OCEAN 99.7%), moderate income (mean 4.64), moderate rooms_per_household (4.85), older housing (median age 38).
+
+4) Cluster 82 — mean $358,351 (n=73). Factors: high income (mean 5.29), highest rooms_per_household (5.90), low bedrooms_per_room (0.190), mainly NEAR BAY (74%) with some NEAR OCEAN.
+
+5) Cluster 13 — mean $326,542 (n=320). Factors: moderate income (mean 4.07), older housing (median age 52), moderate rooms_per_household (4.84), mostly NEAR BAY (72%) and substantial NEAR OCEAN (28%).
+
+Primary drivers across these clusters: proximity to bay/ocean, higher median income, and larger homes (high rooms_per_household / low bedrooms_per_room)."
+housing,Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?,"import pandas as pd
+import numpy as np
+
+# define coastal proximity categories
+_coastal_vals = {""<1H OCEAN"", ""NEAR OCEAN"", ""NEAR BAY"", ""ISLAND""}
+
+# filter coastal subset
+coastal = df[df[""ocean_proximity""].isin(_coastal_vals)].copy()
+
+# ensure numeric columns exist and are numeric
+numeric_cols = [
+    ""median_house_value"",
+    ""median_income"",
+    ""housing_median_age"",
+    ""population"",
+    ""total_rooms"",
+    ""total_bedrooms"",
+    ""households"",
+]
+for c in numeric_cols:
+    coastal[c] = pd.to_numeric(coastal[c], errors=""coerce"")
+
+# summary statistics for median_house_value
+mhv = coastal[""median_house_value""].dropna()
+summary = {
+    ""count"": int(mhv.count()),
+    ""mean"": float(mhv.mean()) if mhv.size else None,
+    ""median"": float(mhv.median()) if mhv.size else None,
+    ""q1"": float(mhv.quantile(0.25)) if mhv.size else None,
+    ""q3"": float(mhv.quantile(0.75)) if mhv.size else None,
+}
+
+# thresholds for ""relatively low"" (provide both options)
+thresholds = {
+    ""q1"": summary[""q1""],
+    ""median"": summary[""median""],
+    ""chosen_threshold"": summary[""q1""],  # using Q1 as the threshold for ""relatively low""
+}
+
+# extract records at or below chosen threshold
+th = thresholds[""chosen_threshold""]
+if th is None:
+    low_coastal = coastal.iloc[0:0]
+else:
+    low_coastal = coastal[coastal[""median_house_value""] <= th].copy()
+
+# select required columns and convert to JSON-safe python types
+cols_out = [
+    ""longitude"",
+    ""latitude"",
+    ""median_house_value"",
+    ""median_income"",
+    ""housing_median_age"",
+    ""population"",
+    ""total_rooms"",
+    ""total_bedrooms"",
+    ""households"",
+    ""ocean_proximity"",
+]
+
+def _to_py(val):
+    if pd.isnull(val):
+        return None
+    if isinstance(val, (np.floating, float)):
+        return float(val)
+    if isinstance(val, (np.integer, int)):
+        return int(val)
+    return val
+
+low_records = []
+for _, row in low_coastal[cols_out].iterrows():
+    rec = {c: _to_py(row[c]) for c in cols_out}
+    low_records.append(rec)
+
+# correlations between median_house_value and selected features within coastal subset
+corr_features = [
+    ""median_income"",
+    ""housing_median_age"",
+    ""population"",
+    ""total_rooms"",
+    ""total_bedrooms"",
+    ""households"",
+]
+
+# prepare DataFrame for correlation calculations (drop rows with NA in required cols)
+corr_df = coastal[[""median_house_value""] + corr_features].dropna()
+
+pearson_corr = {}
+spearman_corr = {}
+if not corr_df.empty:
+    pearson_series = corr_df.corr(method=""pearson"")[""median_house_value""]
+    spearman_series = corr_df.corr(method=""spearman"")[""median_house_value""]
+    for f in corr_features:
+        pearson_corr[f] = float(pearson_series.get(f, np.nan)) if not pd.isnull(
+            pearson_series.get(f, np.nan)
+        ) else None
+        spearman_corr[f] = float(spearman_series.get(f, np.nan)) if not pd.isnull(
+            spearman_series.get(f, np.nan)
+        ) else None
+else:
+    for f in corr_features:
+        pearson_corr[f] = None
+        spearman_corr[f] = None
+
+# assemble final JSON-safe data structure
+data = {
+    ""coastal_summary"": summary,
+    ""thresholds"": thresholds,
+    ""low_price_records"": low_records,
+    ""correlations"": {
+        ""pearson"": pearson_corr,
+        ""spearman"": spearman_corr,
+    },
+}","import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Define coastal categories of interest
+coastal_cats = ['<1H OCEAN', 'NEAR OCEAN', 'NEAR BAY', 'ISLAND']
+
+# Filter coastal records
+coastal_df = df[df['ocean_proximity'].isin(coastal_cats)].copy()
+
+# If there are no coastal records, create an empty figure
+if coastal_df.empty:
+    fig = go.Figure()
+else:
+    # Compute a low-value threshold (first quartile)
+    low_threshold = coastal_df['median_house_value'].quantile(0.25)
+
+    # Masks for low and non-low coastal points
+    low_mask = coastal_df['median_house_value'] < low_threshold
+    high_mask = ~low_mask
+
+    # Color scale parameters
+    cmin = coastal_df['median_house_value'].min()
+    cmax = coastal_df['median_house_value'].max()
+    colorscale = 'Viridis'  # sequential: cool (low) -> warm (high)
+
+    # Create a 1x3 subplot: map-like scatter (lon vs lat), boxplot by coastal category, scatter income vs house value
+    fig = make_subplots(
+        rows=1, cols=3,
+        column_widths=[0.55, 0.25, 0.20],
+        subplot_titles=[
+            ""Coastal locations (longitude vs latitude)\n(color = median_house_value)"",
+            ""Median house value by coastal category"",
+            ""median_income vs median_house_value (coastal)""
+        ],
+        specs=[[{""type"": ""xy""}, {""type"": ""xy""}, {""type"": ""xy""}]]
+    )
+
+    # 1) Main geographic scatter (longitude vs latitude)
+    # Add higher-value coastal points (colorbar shown on this trace)
+    fig.add_trace(
+        go.Scatter(
+            x=coastal_df.loc[high_mask, 'longitude'],
+            y=coastal_df.loc[high_mask, 'latitude'],
+            mode='markers',
+            marker=dict(
+                size=6,
+                color=coastal_df.loc[high_mask, 'median_house_value'],
+                colorscale=colorscale,
+                cmin=cmin,
+                cmax=cmax,
+                colorbar=dict(title=""Median<br>House Value"", len=0.6, y=0.5),
+                line=dict(width=0)  # no outline for regular points
+            ),
+            hovertemplate=(
+                ""lon: %{x}<br>lat: %{y}<br>""
+                ""median_house_value: %{marker.color:$,.0f}<br>""
+                ""median_income: %{customdata[0]:.3f}<br>""
+                ""ocean_proximity: %{customdata[1]}""
+            ),
+            customdata=np.stack([
+                coastal_df.loc[high_mask, 'median_income'],
+                coastal_df.loc[high_mask, 'ocean_proximity']
+            ], axis=-1),
+            name='Coastal (>= Q1)'
+        ),
+        row=1, col=1
+    )
+
+    # Add low-value coastal points with an outline / distinct marker
+    fig.add_trace(
+        go.Scatter(
+            x=coastal_df.loc[low_mask, 'longitude'],
+            y=coastal_df.loc[low_mask, 'latitude'],
+            mode='markers',
+            marker=dict(
+                size=8,
+                symbol='circle',
+                color=coastal_df.loc[low_mask, 'median_house_value'],
+                colorscale=colorscale,
+                cmin=cmin,
+                cmax=cmax,
+                line=dict(color='black', width=1.5)  # outline to highlight low values
+            ),
+            hovertemplate=(
+                ""lon: %{x}<br>lat: %{y}<br>""
+                ""median_house_value: %{marker.color:$,.0f}<br>""
+                ""median_income: %{customdata[0]:.3f}<br>""
+                ""ocean_proximity: %{customdata[1]}<br>""
+                ""<b>Below coastal Q1 threshold</b>""
+            ),
+            customdata=np.stack([
+                coastal_df.loc[low_mask, 'median_income'],
+                coastal_df.loc[low_mask, 'ocean_proximity']
+            ], axis=-1),
+            name=f'Coastal (< Q1 = ${low_threshold:,.0f})',
+            showlegend=True
+        ),
+        row=1, col=1
+    )
+
+    # Set axes for first subplot (map-like)
+    fig.update_xaxes(title_text=""Longitude"", row=1, col=1)
+    fig.update_yaxes(title_text=""Latitude"", row=1, col=1)
+
+    # 2) Boxplot of median_house_value by coastal category
+    # Use x=category grouping so Plotly creates separate boxes
+    fig.add_trace(
+        go.Box(
+            x=coastal_df['ocean_proximity'],
+            y=coastal_df['median_house_value'],
+            boxpoints='outliers',
+            marker=dict(color='steelblue'),
+            name='Value by Category',
+            showlegend=False,
+            hovertemplate=""Category: %{x}<br>median_house_value: %{y:$,.0f}""
+        ),
+        row=1, col=2
+    )
+    fig.update_xaxes(title_text=""Coastal Category"", row=1, col=2)
+    fig.update_yaxes(title_text=""Median House Value"", row=1, col=2)
+
+    # 3) Scatter median_income vs median_house_value for coastal records
+    # Highlight low-value points here as well with outlines
+    fig.add_trace(
+        go.Scatter(
+            x=coastal_df['median_income'],
+            y=coastal_df['median_house_value'],
+            mode='markers',
+            marker=dict(
+                size=6,
+                color=coastal_df['median_house_value'],
+                colorscale=colorscale,
+                cmin=cmin,
+                cmax=cmax,
+                showscale=False,
+                opacity=0.7,
+                line=dict(width=0)
+            ),
+            hovertemplate=(
+                ""median_income: %{x:.3f}<br>""
+                ""median_house_value: %{y:$,.0f}<br>""
+                ""ocean_proximity: %{customdata}""
+            ),
+            customdata=coastal_df['ocean_proximity'],
+            name='Income vs Value (coastal)',
+            showlegend=False
+        ),
+        row=1, col=3
+    )
+
+    # Add overlay for low-value points in the income vs value plot
+    fig.add_trace(
+        go.Scatter(
+            x=coastal_df.loc[low_mask, 'median_income'],
+            y=coastal_df.loc[low_mask, 'median_house_value'],
+            mode='markers',
+            marker=dict(
+                size=8,
+                symbol='circle',
+                color=coastal_df.loc[low_mask, 'median_house_value'],
+                colorscale=colorscale,
+                cmin=cmin,
+                cmax=cmax,
+                line=dict(color='black', width=1.5)
+            ),
+            hovertemplate=(
+                ""median_income: %{x:.3f}<br>""
+                ""median_house_value: %{y:$,.0f}<br>""
+                ""<b>Below coastal Q1 threshold</b>""
+            ),
+            name='Below coastal Q1',
+            showlegend=False
+        ),
+        row=1, col=3
+    )
+
+    fig.update_xaxes(title_text=""Median Income"", row=1, col=3)
+    fig.update_yaxes(title_text=""Median House Value"", row=1, col=3)
+
+    # Layout adjustments
+    fig.update_layout(
+        title_text=""Coastal Housing: Locations, Value Distributions, and Income vs Value (coastal only)"",
+        height=600,
+        margin=dict(l=50, r=30, t=80, b=50),
+        legend=dict(orientation=""h"", yanchor=""bottom"", y=1.02, xanchor=""right"", x=1)
+    )
+
+# Return the figure object as required
+fig","Lowest-priced coastal tracts in the sample (examples):
+- (-124.18, 40.79) NEAR OCEAN — median_house_value 70,500
+- (-124.15, 40.59) NEAR OCEAN — 79,600
+- (-122.30, 37.81) NEAR BAY — 84,400
+- (-122.36, 37.93) NEAR BAY — 86,100
+- (-120.45, 34.65) NEAR OCEAN — 87,500
+- (-118.30, 33.98) <1H OCEAN — 94,000
+
+Features in these low-price coastal tracts that likely explain lower prices:
+- low median_income (many ≤ ~2–3, one as low as 0.8056) — limited local buying power
+- older housing stock (housing_median_age often 30–50 years) — possible deterioration
+- signs of density/pressure on housing (high population and large household counts relative to units), suggesting overcrowding or lower-quality housing
+- some tracts show many bedrooms/rooms but still low incomes, implying lower-quality or multi-family dwellings rather than high-value single-family coastal homes."
+housing,Identify areas with similar median income levels but significantly different median house values. What factors might explain these differences?,"import numpy as np
+import pandas as pd
+
+# Columns to extract per specification
+cols = [
+    ""longitude"",
+    ""latitude"",
+    ""housing_median_age"",
+    ""total_rooms"",
+    ""total_bedrooms"",
+    ""population"",
+    ""households"",
+    ""median_income"",
+    ""median_house_value"",
+    ""ocean_proximity"",
+]
+
+df_sel = df[cols].copy()
+
+# Helper to convert numpy/pandas types -> native Python (JSON-safe)
+def to_py_val(v):
+    if pd.isna(v):
+        return None
+    if isinstance(v, (np.integer,)):
+        return int(v)
+    if isinstance(v, (np.floating,)):
+        return float(v)
+    if isinstance(v, (np.bool_,)):
+        return bool(v)
+    return v
+
+# Records: extract requested fields for every record
+records_raw = df_sel.where(pd.notnull(df_sel), None).to_dict(orient=""records"")
+records = []
+for r in records_raw:
+    rec = {k: to_py_val(v) for k, v in r.items()}
+    records.append(rec)
+
+# Create income bins (try quintiles, fallback to equal-width)
+n_bins = 5
+try:
+    df_sel[""_income_bin""] = pd.qcut(df_sel[""median_income""], q=n_bins, labels=[f""Q{i+1}"" for i in range(n_bins)])
+except Exception:
+    df_sel[""_income_bin""] = pd.cut(df_sel[""median_income""], bins=n_bins, labels=[f""B{i+1}"" for i in range(n_bins)])
+
+# Compute bin ranges for median_income
+bin_ranges = []
+for bin_label, grp in df_sel.groupby(""_income_bin""):
+    if bin_label is None:
+        continue
+    mi_min = grp[""median_income""].min()
+    mi_max = grp[""median_income""].max()
+    bin_ranges.append({
+        ""income_bin"": str(bin_label),
+        ""median_income_min"": to_py_val(mi_min),
+        ""median_income_max"": to_py_val(mi_max),
+        ""count"": to_py_val(len(grp))
+    })
+
+# Compute group summary by income_bin and ocean_proximity
+summary = []
+g = df_sel.groupby([""_income_bin"", ""ocean_proximity""], dropna=False)
+for (income_bin, ocean), grp in g:
+    if pd.isna(income_bin):
+        bin_label = None
+    else:
+        bin_label = str(income_bin)
+    # median and IQR of median_house_value
+    mhv_med = grp[""median_house_value""].median()
+    mhv_q25 = grp[""median_house_value""].quantile(0.25)
+    mhv_q75 = grp[""median_house_value""].quantile(0.75)
+    mhv_iqr = None
+    if pd.notna(mhv_q25) and pd.notna(mhv_q75):
+        mhv_iqr = float(mhv_q75 - mhv_q25)
+    # mean housing_median_age
+    mean_age = grp[""housing_median_age""].mean()
+    # average rooms per household (group-level)
+    total_rooms_sum = grp[""total_rooms""].sum(min_count=1)
+    households_sum = grp[""households""].sum(min_count=1)
+    if pd.isna(total_rooms_sum) or pd.isna(households_sum) or households_sum == 0:
+        avg_rooms_per_household = None
+    else:
+        avg_rooms_per_household = float(total_rooms_sum / households_sum)
+    summary.append({
+        ""income_bin"": bin_label,
+        ""ocean_proximity"": to_py_val(ocean),
+        ""count"": to_py_val(len(grp)),
+        ""median_house_value_median"": to_py_val(mhv_med),
+        ""median_house_value_q25"": to_py_val(mhv_q25),
+        ""median_house_value_q75"": to_py_val(mhv_q75),
+        ""median_house_value_iqr"": to_py_val(mhv_iqr),
+        ""housing_median_age_mean"": to_py_val(mean_age),
+        ""avg_rooms_per_household"": to_py_val(avg_rooms_per_household)
+    })
+
+# Compute divergence of median_house_value across ocean_proximity for each income bin
+divergence = []
+for bin_label, grp in df_sel.groupby(""_income_bin"", dropna=False):
+    if pd.isna(bin_label):
+        label = None
+    else:
+        label = str(bin_label)
+    # compute median_house_value per ocean_proximity
+    med_by_ocean = grp.groupby(""ocean_proximity"", dropna=False)[""median_house_value""].median()
+    if med_by_ocean.empty:
+        continue
+    # find max/min and difference
+    max_ocean = med_by_ocean.idxmax()
+    min_ocean = med_by_ocean.idxmin()
+    max_val = med_by_ocean.loc[max_ocean]
+    min_val = med_by_ocean.loc[min_ocean]
+    diff = None
+    if pd.notna(max_val) and pd.notna(min_val):
+        diff = float(max_val - min_val)
+    divergence.append({
+        ""income_bin"": label,
+        ""max_median_house_value"": to_py_val(max_val),
+        ""max_ocean_proximity"": to_py_val(max_ocean),
+        ""min_median_house_value"": to_py_val(min_val),
+        ""min_ocean_proximity"": to_py_val(min_ocean),
+        ""difference"": to_py_val(diff)
+    })
+
+# Sort divergence by descending difference to highlight bins with largest divergence
+divergence_sorted = sorted(divergence, key=lambda x: (x[""difference""] is not None, x[""difference""]), reverse=True)
+
+# Package results into JSON-safe structure
+data = {
+    ""records"": records,
+    ""income_bin_ranges"": bin_ranges,
+    ""summary_by_income_and_ocean"": summary,
+    ""divergence_by_income"": divergence_sorted
+}","import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
+
+# Choose size column (prefer population, fallback to households)
+size_col = 'population' if 'population' in df.columns else 'households'
+
+# Base scatter
+fig = px.scatter(
+    df,
+    x='median_income',
+    y='median_house_value',
+    color='ocean_proximity',
+    size=size_col,
+    hover_data=['population', 'households', 'latitude', 'longitude', 'housing_median_age'],
+    size_max=20,
+    opacity=0.6,
+    labels={
+        'median_income': 'Median Income',
+        'median_house_value': 'Median House Value'
+    },
+    title='Median House Value vs Median Income (colored by ocean_proximity; size ~ population)'
+)
+
+# Build a mapping from category name to the color Plotly assigned in the scatter above
+color_map = {}
+for trace in fig.data:
+    # Only consider the scatter traces corresponding to categories (markers)
+    if getattr(trace, 'mode', None) and 'markers' in trace.mode:
+        name = trace.name
+        # marker.color can be a single color string or array; prefer the single color
+        col = None
+        if hasattr(trace, 'marker') and getattr(trace.marker, 'color', None) is not None:
+            col = trace.marker.color
+        # fallback to trace.line.color if present
+        if col is None and getattr(trace, 'line', None) is not None:
+            col = trace.line.color
+        color_map[name] = col
+
+# Attempt to use LOWESS smoothing (statsmodels), otherwise fall back to a quadratic fit
+use_lowess = False
+try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    use_lowess = True
+except Exception:
+    use_lowess = False
+
+# Add a smoothed trend line per ocean_proximity category
+categories = df['ocean_proximity'].dropna().unique()
+for cat in categories:
+    sub = df[df['ocean_proximity'] == cat]
+    x = sub['median_income']
+    y = sub['median_house_value']
+    # drop NaNs
+    mask = x.notna() & y.notna()
+    x = x[mask]
+    y = y[mask]
+    if len(x) < 10:
+        continue
+
+    # Sort by x for plotting
+    sort_idx = np.argsort(x.values)
+    x_sorted = x.values[sort_idx]
+    y_sorted = y.values[sort_idx]
+
+    if use_lowess:
+        # frac controls the amount of smoothing; tweak as needed
+        sm = lowess(y_sorted, x_sorted, frac=0.25, return_sorted=True)
+        xs = sm[:, 0]
+        ys = sm[:, 1]
+        line_style = dict(width=2)
+    else:
+        # Quadratic polynomial fit fallback
+        try:
+            coeffs = np.polyfit(x_sorted, y_sorted, deg=2)
+            p = np.poly1d(coeffs)
+            xs = np.linspace(x_sorted.min(), x_sorted.max(), 200)
+            ys = p(xs)
+            line_style = dict(dash='dash', width=2)
+        except Exception:
+            # If polyfit fails, skip this category
+            continue
+
+    line_color = color_map.get(cat, None)
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode='lines',
+            name=f'{cat} trend',
+            line=dict(color=line_color, **line_style),
+            showlegend=True,
+            legendgroup=str(cat),
+            hoverinfo='skip'
+        )
+    )
+
+# Improve layout readability
+fig.update_layout(
+    xaxis_title='Median Income',
+    yaxis_title='Median House Value',
+    legend_title='Ocean Proximity / Trend',
+    template='plotly_white',
+    margin=dict(l=60, r=40, t=70, b=60)
+)
+
+# Return the figure object (do not call fig.show())
+fig","Examples from the data (coordinates, median_income → median_house_value) and likely explanatory factors:
+
+- (-118.09,33.74) 4.6369 → 422,200 (NEAR OCEAN) vs (-121.37,38.63) 4.6127 → 151,800 (INLAND). Explanation: ocean_proximity (coastal premium) is the primary difference; housing ages (44 vs 30) and similar persons/household suggest location drives value gap.
+
+- (-122.49,37.50) 4.5625 → 500,000 (NEAR OCEAN) vs (-117.69,34.08) 4.5185 → 142,500 (INLAND). Explanation: near-ocean location correlates with much higher value despite similar incomes; housing size/age differences are secondary.
+
+- (-118.34,34.16) 3.6486 → 246,900 vs (-118.36,33.96) 3.6583 → 177,300 (both <1H OCEAN). Explanation: newer/larger housing and much lower population-per-household (1.59 vs 3.39) and total_rooms differences explain higher value within same proximity."
+custom_dataset,What is the average popularity score across all tracks in the dataset?,"pop = df['popularity'].dropna()
+count = int(pop.shape[0])
+if count > 0:
+    mean_popularity = float(pop.mean())
+    std_popularity = float(pop.std(ddof=0))
+else:
+    mean_popularity = None
+    std_popularity = None
+
+data = {
+    ""count"": count,
+    ""mean_popularity"": mean_popularity,
+    ""std_popularity"": std_popularity
+}",N/A,"The mean popularity score across all 5,000 tracks is 32.8416."
+custom_dataset,Which track genre has the highest average danceability?,"import pandas as pd
+import numpy as np
+
+grp = df.groupby('track_genre', dropna=False)['danceability']
+agg = grp.agg(['mean', 'count', 'std']).reset_index()
+agg = agg.rename(columns={'mean': 'mean_danceability', 'count': 'count', 'std': 'std_danceability'})
+
+# Optional: filter out genres with very small sample sizes
+agg_filtered = agg[agg['count'] >= 5].copy()
+
+agg_sorted = agg_filtered.sort_values('mean_danceability', ascending=False).reset_index(drop=True)
+
+# Convert to JSON-safe types
+def _convert_value(v):
+    if pd.isna(v):
+        return None
+    if isinstance(v, (np.generic,)):
+        return v.item()
+    return v
+
+table = []
+for row in agg_sorted.to_dict(orient='records'):
+    table.append({k: _convert_value(v) for k, v in row.items()})
+
+top = table[0] if table else None
+
+data = {
+    ""table"": table,
+    ""top_genre"": top['track_genre'] if top else None,
+    ""top_mean_danceability"": top['mean_danceability'] if top else None,
+    ""top_count"": top['count'] if top else None
+}","import pandas as pd
+import plotly.graph_objects as go
+
+# Parameters
+MAX_BARS = 20
+
+# Compute mean danceability by genre (exclude missing genres)
+genre_means = (
+    df.dropna(subset=['track_genre', 'danceability'])
+      .groupby('track_genre', sort=False)['danceability']
+      .mean()
+      .reset_index()
+)
+
+# Sort descending and take top N (or all if fewer)
+genre_means = genre_means.sort_values('danceability', ascending=False).reset_index(drop=True)
+top_n = min(MAX_BARS, len(genre_means))
+top_genres = genre_means.head(top_n).copy()
+
+# Prepare colors: highlight the top genre
+colors = ['crimson' if i == 0 else 'lightslategray' for i in range(len(top_genres))]
+
+# Create bar chart (categories on x, average danceability on y)
+fig = go.Figure(
+    go.Bar(
+        x=top_genres['track_genre'],
+        y=top_genres['danceability'],
+        marker_color=colors,
+        text=top_genres['danceability'].round(3),
+        textposition='outside',
+        hovertemplate='<b>%{x}</b><br>Average Danceability: %{y:.3f}<extra></extra>',
+    )
+)
+
+# Annotate the top genre explicitly
+if len(top_genres) > 0:
+    top_genre = top_genres.loc[0, 'track_genre']
+    top_value = top_genres.loc[0, 'danceability']
+    fig.add_annotation(
+        x=top_genre,
+        y=top_value,
+        text=f""Top: {top_genre} ({top_value:.3f})"",
+        showarrow=True,
+        arrowhead=3,
+        ax=0,
+        ay=-40,
+        bgcolor=""rgba(255,255,255,0.8)"",
+        bordercolor=""crimson""
+    )
+
+# Layout settings
+title_suffix = f""(Top {top_n} by mean danceability)"" if len(genre_means) > MAX_BARS else ""(All genres)""
+fig.update_layout(
+    title=f""Mean Danceability by Track Genre {title_suffix}"",
+    xaxis_title=""Track Genre"",
+    yaxis_title=""Average Danceability"",
+    yaxis=dict(range=[0, 1], tickformat='.2f'),
+    bargap=0.2,
+    plot_bgcolor='white',
+    height=600,
+    margin=dict(l=60, r=40, t=80, b=180)
+)
+
+# Improve x-axis readability for many categories
+fig.update_xaxes(tickangle=-45, automargin=True)
+
+# Return the figure object
+fig","Reggae — highest mean danceability 0.768025 (count = 40, std = 0.09599745923454006)."
+custom_dataset,What percentage of tracks in the dataset are marked as explicit?,"total_count = int(len(df))
+explicit_count = int(df['explicit'].sum()) if total_count > 0 else 0
+percentage = round((explicit_count / total_count) * 100, 1) if total_count > 0 else 0.0
+data = {""explicit_count"": explicit_count, ""total_count"": total_count, ""percentage"": percentage}",N/A,"8.0% of tracks are marked explicit — 401 out of 5,000 tracks."
+custom_dataset,How does average energy level differ across the top 10 most common genres?,"import numpy as np
+import pandas as pd
+
+# compute top 10 genres by track count
+genre_counts = df['track_genre'].dropna().value_counts()
+top_genres = genre_counts.head(10).index.tolist()
+
+# aggregate energy statistics for the top genres
+group = df[df['track_genre'].isin(top_genres)].groupby('track_genre')['energy']
+agg = group.agg(['count', 'mean', 'std'])
+agg['sem'] = agg['std'] / np.sqrt(agg['count'])
+
+# ensure order matches descending counts
+agg = agg.reindex(top_genres)
+
+# rename columns to requested names
+agg = agg.rename(columns={'mean': 'mean_energy', 'std': 'std_energy', 'sem': 'sem_energy'})
+
+# build JSON-safe list of dicts, converting numpy types and NaN to Python types/None
+records = []
+for genre, row in agg.iterrows():
+    records.append({
+        'genre': str(genre),
+        'count': int(row['count']),
+        'mean_energy': None if pd.isna(row['mean_energy']) else float(row['mean_energy']),
+        'std_energy': None if pd.isna(row['std_energy']) else float(row['std_energy']),
+        'sem_energy': None if pd.isna(row['sem_energy']) else float(row['sem_energy']),
+    })
+
+data = records","import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+
+# Prepare top 10 genres by count (ignore missing genres)
+genre_counts = df['track_genre'].dropna().value_counts()
+top_genres = genre_counts.nlargest(10).index.tolist()
+
+# Filter to top genres and compute statistics
+sub = df[df['track_genre'].isin(top_genres)].copy()
+grp = sub.groupby('track_genre')['energy'].agg(['mean', 'std', 'count']).rename(
+    columns={'mean': 'mean_energy', 'std': 'std_energy', 'count': 'count'}
+)
+# Standard error of the mean
+grp['sem'] = grp['std_energy'] / np.sqrt(grp['count'])
+grp['sem'] = grp['sem'].fillna(0)
+
+# Order genres by mean energy descending
+grp = grp.sort_values('mean_energy', ascending=False)
+
+# Text labels with counts
+count_texts = [f""n={int(c)}"" for c in grp['count']]
+
+# Build horizontal bar chart with error bars
+fig = go.Figure(
+    go.Bar(
+        x=grp['mean_energy'],
+        y=grp.index,
+        orientation='h',
+        error_x=dict(type='data', array=grp['sem'], visible=True),
+        text=count_texts,
+        textposition='outside',
+        marker_color='steelblue',
+        hovertemplate=(
+            ""<b>%{y}</b><br>"" +
+            ""Mean energy: %{x:.3f}<br>"" +
+            ""SEM: %{customdata[0]:.3f}<br>"" +
+            ""%{text}<extra></extra>""
+        ),
+        customdata=np.stack([grp['sem'].values], axis=1)
+    )
+)
+
+fig.update_layout(
+    title=""Average Energy by Genre (Top 10 most common genres)"",
+    xaxis_title=""Mean Energy"",
+    yaxis_title=""Genre"",
+    template=""plotly_white"",
+    margin=dict(l=180, r=120, t=80, b=60)
+)
+
+# Put highest mean at top
+fig.update_yaxes(autorange=""reversed"")
+
+# Return the figure object
+fig","Average energy (mean) for the top 10 genres (descending):
+
+- grindcore: 0.938  
+- black-metal: 0.880  
+- industrial: 0.845  
+- house: 0.762  
+- j-dance: 0.715  
+- samba: 0.708  
+- country: 0.635  
+- pop-film: 0.600  
+- idm: 0.585  
+- tango: 0.347
+
+Comparison summary: grindcore, black-metal, and industrial are high-energy (≥0.84). House, j-dance and samba are mid-high (≈0.71–0.76). Country and pop-film are moderate (0.60–0.64). IDM is slightly lower (0.585). Tango is substantially lower (0.347). Overall range: 0.347 (tango) to 0.938 (grindcore), difference ≈0.591."
+custom_dataset,"Is there a relationship between tempo and danceability? Bin tempo into slow (<90 BPM), medium (90–130 BPM), and fast (>130 BPM) and compare average danceability across bins.","import numpy as np
+import pandas as pd
+from scipy import stats
+
+# Prepare data: drop rows with missing tempo or danceability
+df_clean = df[['tempo', 'danceability']].dropna().copy()
+
+# Create tempo bins: slow (<90), medium (90–130), fast (>130)
+bin_labels = np.where(df_clean['tempo'] < 90, 'slow', np.where(df_clean['tempo'] <= 130, 'medium', 'fast'))
+df_clean['tempo_bin'] = bin_labels
+
+# Compute summary statistics per bin
+bins = ['slow', 'medium', 'fast']
+summary_list = []
+for b in bins:
+    grp = df_clean.loc[df_clean['tempo_bin'] == b, 'danceability']
+    count = int(grp.count())
+    if count > 0:
+        mean = float(grp.mean())
+        std = float(grp.std(ddof=1)) if count > 1 else None
+        sem = float(std / np.sqrt(count)) if (std is not None) else None
+        median = float(grp.median())
+        q1 = float(np.percentile(grp, 25))
+        q3 = float(np.percentile(grp, 75))
+        iqr = float(q3 - q1)
+    else:
+        mean = std = sem = median = q1 = q3 = iqr = None
+    summary_list.append({
+        'tempo_bin': b,
+        'count': count,
+        'mean_danceability': mean,
+        'std_danceability': std,
+        'sem_danceability': sem,
+        'median_danceability': median,
+        'q1_danceability': q1,
+        'q3_danceability': q3,
+        'iqr_danceability': iqr
+    })
+
+# Prepare arrays for statistical tests (only include bins with at least 1 value)
+groups = [df_clean.loc[df_clean['tempo_bin'] == b, 'danceability'].values for b in bins]
+valid_groups = [g for g in groups if g.size > 0]
+
+# One-way ANOVA (if at least two groups with >1 observation)
+anova_result = None
+try:
+    if sum(g.size > 1 for g in groups) >= 2:
+        anova_stat, anova_p = stats.f_oneway(*[g for g in groups if g.size > 0])
+        anova_result = {'F_statistic': float(anova_stat), 'p_value': float(anova_p)}
+except Exception:
+    anova_result = None
+
+# Kruskal-Wallis test (non-parametric) if at least two non-empty groups
+kruskal_result = None
+try:
+    if len(valid_groups) >= 2:
+        kw_stat, kw_p = stats.kruskal(*valid_groups)
+        kruskal_result = {'H_statistic': float(kw_stat), 'p_value': float(kw_p)}
+except Exception:
+    kruskal_result = None
+
+data = {
+    'bin_summary': summary_list,
+    'anova': anova_result,
+    'kruskal_wallis': kruskal_result
+}","import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from scipy import stats
+
+# 1) Create 3 tempo bins (slow, medium, fast) using quantiles so bins are roughly balanced
+labels = ['slow', 'medium', 'fast']
+try:
+    df['tempo_bin'] = pd.qcut(df['tempo'], q=3, labels=labels)
+except Exception:
+    # fallback if qcut fails (e.g., many identical tempo values) — use cut with quantiles
+    quantiles = df['tempo'].quantile([0, 1/3, 2/3, 1.0]).values
+    df['tempo_bin'] = pd.cut(df['tempo'], bins=quantiles, labels=labels, include_lowest=True)
+
+# 2) Aggregate: mean, count, sem, and 95% CI for each bin
+agg = df.groupby('tempo_bin')['danceability'].agg(['mean', 'std', 'count']).reindex(labels)
+agg['sem'] = agg['std'] / np.sqrt(agg['count'])
+# t-critical for 95% CI; use t-dist when count>1, else fallback to 0
+def ci95(row):
+    n = int(row['count'])
+    if n > 1 and not np.isnan(row['sem']):
+        t = stats.t.ppf(0.975, df=n-1)
+        return float(t * row['sem'])
+    else:
+        return 0.0
+agg['ci95'] = agg.apply(ci95, axis=1)
+
+# Prepare plotting arrays
+x_positions = list(range(len(labels)))
+means = agg['mean'].fillna(0).tolist()
+errors = agg['ci95'].tolist()
+counts = agg['count'].astype(int).tolist()
+
+# Colors
+bar_colors = ['#636EFA', '#EF553B', '#00CC96']  # slow, medium, fast
+
+# 3) Build the figure
+fig = go.Figure()
+
+# Add bar trace with 95% CI error bars
+fig.add_trace(go.Bar(
+    x=x_positions,
+    y=means,
+    error_y=dict(type='data', array=errors, visible=True, thickness=1.5, width=6),
+    marker_color=bar_colors,
+    width=0.5,
+    name='Mean danceability'
+))
+
+# 4) Optionally overlay semi-transparent boxplots to show distribution
+for i, lab in enumerate(labels):
+    vals = df.loc[df['tempo_bin'] == lab, 'danceability'].dropna().values
+    if len(vals) > 0:
+        fig.add_trace(go.Box(
+            x=np.full(len(vals), x_positions[i]),
+            y=vals,
+            boxpoints='outliers',  # show outliers only to keep visual clean
+            marker=dict(color='rgba(0,0,0,0.6)'),
+            line=dict(color='rgba(0,0,0,0.6)'),
+            fillcolor='rgba(0,0,0,0.07)',
+            width=0.3,
+            showlegend=False,
+            hoverinfo='y'
+        ))
+
+# 5) Add small jittered points to show individual samples
+rng = np.random.default_rng(seed=42)
+jitter_scale = 0.12
+for i, lab in enumerate(labels):
+    vals = df.loc[df['tempo_bin'] == lab, 'danceability'].dropna().values
+    if len(vals) > 0:
+        jitter = rng.normal(loc=0.0, scale=jitter_scale, size=len(vals))
+        fig.add_trace(go.Scatter(
+            x=(np.full(len(vals), x_positions[i]) + jitter),
+            y=vals,
+            mode='markers',
+            marker=dict(size=6, color='rgba(0,0,0,0.12)'),
+            showlegend=False,
+            hoverinfo='y'
+        ))
+
+# 6) Annotate each bar with the sample count
+for xi, (mean_val, err, cnt) in enumerate(zip(means, errors, counts)):
+    # place annotation slightly above the top of the error bar (if present) or above the mean
+    y_pos = mean_val + err + 0.03
+    fig.add_annotation(
+        x=xi,
+        y=y_pos,
+        text=f""n={cnt}"",
+        showarrow=False,
+        font=dict(size=12, color='black'),
+        xanchor='center'
+    )
+
+# 7) Layout tweaks: use numeric x positions but label them as categories
+fig.update_layout(
+    title=""Mean Danceability by Tempo Bin (with 95% CI, counts, and distribution)"",
+    xaxis=dict(
+        tickmode='array',
+        tickvals=x_positions,
+        ticktext=labels,
+        title='Tempo bin'
+    ),
+    yaxis=dict(title='Danceability (0-1)', range=[0, 1]),
+    bargap=0.35,
+    template='simple_white',
+    width=800,
+    height=520
+)
+
+# Return the figure object
+fig","Yes — tempo bins show different average danceability. Means: slow = 0.477 (n=708), medium = 0.618 (n=2,439), fast = 0.523 (n=1,853). Medians follow the same pattern (slow 0.494, medium 0.636, fast 0.527). Both one-way ANOVA (F=282.40, p≈6.37×10⁻¹¹⁷) and Kruskal–Wallis (H=507.94, p≈5.05×10⁻¹¹¹) are highly significant, indicating these group differences are not due to chance. In this sample, medium-tempo tracks are substantially more danceable on average than slow or fast tracks."
+custom_dataset,"Which genres have the highest average valence (musical positivity), and how does that compare to their average popularity?","import pandas as pd
+
+grp = (
+    df
+    .groupby('track_genre', dropna=False)
+    .agg(count=('track_id', 'size'),
+         mean_valence=('valence', 'mean'),
+         mean_popularity=('popularity', 'mean'))
+    .reset_index()
+)
+
+filtered = grp[grp['count'] >= 20]
+sorted_top = filtered.sort_values('mean_valence', ascending=False).head(10)
+
+data = sorted_top.round({'mean_valence': 6, 'mean_popularity': 3}).to_dict(orient='records')","import pandas as pd
+import plotly.graph_objects as go
+
+# Aggregate stats by genre
+stats = (
+    df
+    .dropna(subset=['track_genre', 'valence', 'popularity'])
+    .groupby('track_genre', as_index=False)
+    .agg(
+        avg_valence=('valence', 'mean'),
+        avg_popularity=('popularity', 'mean'),
+        count=('track_id', 'count')
+    )
+)
+
+# Select top 10 genres by average valence
+top10 = stats.sort_values('avg_valence', ascending=False).head(10).copy()
+
+# Scale popularity to 0-1 so it can be grouped with valence on the same x-axis,
+# and create a secondary x-axis that maps ticks back to the 0-100 popularity scale.
+top10['pop_scaled'] = top10['avg_popularity'] / 100.0
+top10['label'] = top10['track_genre'] + ' (n=' + top10['count'].astype(int).astype(str) + ')'
+
+# Reverse order so highest valence appears at the top of the horizontal bar chart
+top10 = top10.iloc[::-1]
+
+y_labels = top10['label']
+valence_x = top10['avg_valence']
+pop_x = top10['pop_scaled']
+
+# Text labels for bars
+valence_text = top10['avg_valence'].round(3).astype(str)
+pop_text = top10['avg_popularity'].round(1).astype(str)
+
+# Create figure with grouped horizontal bars (both on same primary x scaled 0-1)
+fig = go.Figure()
+
+fig.add_trace(
+    go.Bar(
+        x=valence_x,
+        y=y_labels,
+        orientation='h',
+        name='Avg Valence (0–1)',
+        marker_color='steelblue',
+        text=valence_text,
+        textposition='inside',
+        hovertemplate='%{y}<br>Avg Valence: %{x:.3f}<extra></extra>'
+    )
+)
+
+fig.add_trace(
+    go.Bar(
+        x=pop_x,
+        y=y_labels,
+        orientation='h',
+        name='Avg Popularity (0–100)',
+        marker_color='orange',
+        text=pop_text,
+        textposition='outside',
+        hovertemplate='%{y}<br>Avg Popularity: %{text}<extra></extra>'
+    )
+)
+
+# Configure layout: primary x-axis is 0-1 (valence scale),
+# add a secondary overlaying x-axis on top to show popularity ticks in 0-100
+pop_tick_vals = list(range(0, 101, 20))
+fig.update_layout(
+    title='Top 10 Genres by Average Valence (with Average Popularity)',
+    barmode='group',
+    xaxis=dict(
+        title='Scale (Valence 0–1; Popularity scaled to 0–1)',
+        range=[0, 1],
+        showgrid=True
+    ),
+    xaxis2=dict(
+        title='Avg Popularity (0–100)',
+        overlaying='x',
+        side='top',
+        tickvals=[v / 100.0 for v in pop_tick_vals],
+        ticktext=[str(v) for v in pop_tick_vals],
+        range=[0, 1]
+    ),
+    yaxis=dict(automargin=True),
+    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+    height=600,
+    margin=dict(l=220, r=40, t=80, b=40)
+)
+
+# Return the figure object
+fig","Top genres by mean valence (with mean popularity):
+
+- salsa — mean_valence 0.8289; mean_popularity 28.361  
+- disco — mean_valence 0.7523; mean_popularity 29.674  
+- forro — mean_valence 0.7392; mean_popularity 42.324  
+- reggae — mean_valence 0.7131; mean_popularity 20.925  
+- afrobeat — mean_valence 0.7035; mean_popularity 22.489
+
+Comparison: the highest-valence genres (salsa, disco, forro) vary in popularity — forro is substantially more popular (42.324), while salsa and disco are similar (~28–30). Reggae and afrobeat have lower popularities despite moderately high valence."
+custom_dataset,"Identify the top 10 most popular tracks and analyze what audio features (energy, danceability, valence, tempo) they share. Do popular tracks cluster around specific feature ranges?","import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+features = ['energy', 'danceability', 'valence', 'tempo']
+
+# Top 10 by popularity with selected columns
+top10_df = df.nlargest(10, 'popularity')[['track_name', 'artists', 'popularity'] + features].reset_index(drop=True)
+
+# Summary statistics for top-10 subset
+top10_stats = top10_df[features].agg(['mean', 'median', 'std', 'min', 'max']).to_dict()
+
+# Correlations between popularity and each feature across whole dataset
+corrs = df[['popularity'] + features].corr().loc['popularity', features].to_dict()
+
+# Top 10% most popular threshold and group stats
+cutoff = df['popularity'].quantile(0.9)
+top10pct_df = df[df['popularity'] >= cutoff]
+rest_df = df[df['popularity'] < cutoff]
+
+def group_feature_stats(group_df):
+    agg = group_df[features].agg(['mean', 'median', 'std']).to_dict()
+    return agg
+
+top10pct_stats = group_feature_stats(top10pct_df)
+rest_stats = group_feature_stats(rest_df)
+
+# K-means clustering on standardized features for k=2..4
+X = df[features].copy()
+valid_idx = X.dropna().index
+X_valid = X.loc[valid_idx].values
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X_valid)
+
+kmeans_results = {}
+for k in [2, 3, 4]:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10)
+    labels = km.fit_predict(X_scaled)
+    centers_std = km.cluster_centers_
+    centers_orig = scaler.inverse_transform(centers_std)
+    # For each cluster compute size and proportion of high-popularity tracks
+    labels_series = pd.Series(labels, index=valid_idx)
+    cluster_info = {}
+    for i in range(k):
+        cluster_idx = labels_series[labels_series == i].index
+        size = int(len(cluster_idx))
+        if size == 0:
+            prop_high = 0.0
+        else:
+            prop_high = float((df.loc[cluster_idx, 'popularity'] >= cutoff).sum()) / size
+        center_dict = {features[j]: float(centers_orig[i, j]) for j in range(len(features))}
+        cluster_info[i] = {
+            'size': size,
+            'proportion_high_popularity': prop_high,
+            'center': center_dict
+        }
+    kmeans_results[k] = cluster_info
+
+# Helper to convert numpy/pandas types to JSON-safe Python types
+def to_py(obj):
+    if isinstance(obj, dict):
+        return {str(k): to_py(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [to_py(v) for v in obj]
+    if isinstance(obj, pd.DataFrame):
+        return to_py(obj.to_dict(orient='records'))
+    if isinstance(obj, pd.Series):
+        return to_py(obj.to_dict())
+    if isinstance(obj, np.ndarray):
+        return to_py(obj.tolist())
+    if pd.isna(obj):
+        return None
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        v = float(obj)
+        if np.isnan(v):
+            return None
+        return v
+    return obj
+
+data = to_py({
+    'top_10': top10_df.to_dict(orient='records'),
+    'top_10_summary': top10_stats,
+    'correlations_with_popularity': corrs,
+    'top_10pct_vs_rest': {
+        'cutoff_popularity': float(cutoff),
+        'top_10_percent_stats': top10pct_stats,
+        'rest_stats': rest_stats
+    },
+    'kmeans_clustering': kmeans_results
+})","import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Prepare top 10 by popularity
+top10 = df.nlargest(10, ""popularity"").copy()
+top10[""label""] = top10[""track_name""].astype(str) + "" — "" + top10[""artists""].astype(str)
+# For the bar chart, show highest popularity at top
+top10 = top10.sort_values(""popularity"", ascending=True)
+
+# Size scaling for tempo (for scatter marker size)
+tempo = df[""tempo""].fillna(df[""tempo""].median()).astype(float)
+min_size, max_size = 6, 20
+# avoid division by zero
+if tempo.max() - tempo.min() == 0:
+    sizes = np.full(len(tempo), (min_size + max_size) / 2.0)
+else:
+    sizes = min_size + (tempo - tempo.min()) / (tempo.max() - tempo.min()) * (max_size - min_size)
+
+# Prepare color (valence) and hover text
+valence = df[""valence""].fillna(0).astype(float)
+hover_text = (
+    df[""track_name""].astype(str)
+    + "" — ""
+    + df[""artists""].astype(str)
+    + ""<br>Popularity: ""
+    + df[""popularity""].astype(str)
+    + ""<br>Tempo: ""
+    + df[""tempo""].astype(str)
+    + ""<br>Valence: ""
+    + df[""valence""].astype(str)
+)
+
+# Create subplots: left = horizontal bar (top10), right = scatter
+fig = make_subplots(rows=1, cols=2, column_widths=[0.34, 0.66],
+                    subplot_titles=(""Top 10 Tracks by Popularity"", ""Energy vs Danceability (colored by Valence, size=Tempo)""))
+
+# Bar chart (left)
+fig.add_trace(
+    go.Bar(
+        x=top10[""popularity""],
+        y=top10[""label""],
+        orientation=""h"",
+        marker=dict(color=top10[""popularity""], colorscale=""Blues"", showscale=False),
+        hovertemplate=""%{y}<br>Popularity: %{x}<extra></extra>"",
+    ),
+    row=1, col=1
+)
+
+# Main scatter (right) - full dataset
+fig.add_trace(
+    go.Scattergl(
+        x=df[""danceability""],
+        y=df[""energy""],
+        mode=""markers"",
+        marker=dict(
+            size=sizes,
+            color=valence,
+            colorscale=""Viridis"",
+            colorbar=dict(title=""valence""),
+            showscale=True,
+            opacity=0.7,
+            line=dict(width=0)
+        ),
+        text=hover_text,
+        hovertemplate=""%{text}<br>Danceability: %{x}<br>Energy: %{y}<extra></extra>"",
+        name=""Tracks""
+    ),
+    row=1, col=2
+)
+
+# Highlight top 10 on scatter
+# scale their sizes up for emphasis
+top10_idx = top10.index
+top10_sizes = min_size + (top10[""tempo""].fillna(tempo.median()) - tempo.min())/(tempo.max()-tempo.min()+1e-9)*(max_size-min_size)
+top10_sizes = list(np.clip(top10_sizes * 1.8, min_size, max_size*2))
+
+fig.add_trace(
+    go.Scattergl(
+        x=top10[""danceability""],
+        y=top10[""energy""],
+        mode=""markers+text"",
+        marker=dict(
+            size=top10_sizes,
+            color=top10[""valence""],
+            colorscale=""Viridis"",
+            showscale=False,
+            line=dict(color=""black"", width=1.5),
+            symbol=""circle""
+        ),
+        text=top10[""track_name""] + "" — "" + top10[""artists""],
+        textposition=""top center"",
+        hovertemplate=(
+            top10[""track_name""].astype(str)
+            + "" — ""
+            + top10[""artists""].astype(str)
+            + ""<br>Popularity: ""
+            + top10[""popularity""].astype(str)
+            + ""<br>Tempo: ""
+            + top10[""tempo""].astype(str)
+            + ""<br>Valence: ""
+            + top10[""valence""].astype(str)
+            + ""<br>Danceability: %{x}<br>Energy: %{y}<extra></extra>""
+        ),
+        name=""Top 10""
+    ),
+    row=1, col=2
+)
+
+# Layout tweaks
+fig.update_xaxes(title_text=""Popularity"", row=1, col=1, automargin=True)
+fig.update_yaxes(title_text="""", row=1, col=1, automargin=True)
+
+fig.update_xaxes(title_text=""Danceability"", row=1, col=2, range=[0, 1], showgrid=True)
+fig.update_yaxes(title_text=""Energy"", row=1, col=2, range=[0, 1], showgrid=True)
+
+fig.update_layout(
+    height=600,
+    width=1100,
+    title_text=""Track Popularity and Audio Feature Distribution"",
+    legend=dict(orientation=""h"", yanchor=""bottom"", y=1.02, xanchor=""right"", x=1),
+    margin=dict(l=60, r=30, t=80, b=60)
+)
+
+# Return the figure
+fig","Top 10 most popular tracks (popularity descending)
+1. Another Love — Tom Odell (93)
+2. I Wanna Be Yours — Arctic Monkeys (92)
+3. Party — Bad Bunny; Rauw Alejandro (90)
+4. Watermelon Sugar — Harry Styles (89)
+5. One Kiss (with Dua Lipa) — Calvin Harris; Dua Lipa (89)
+6. 505 — Arctic Monkeys (88)
+7. La Llevo Al Cielo (Ft. Ñengo Flow) — Chris Jedi; Anuel AA; Chencho Corleone; Ñengo Flow (88)
+8. LA CANCIÓN — J Balvin; Bad Bunny (88)
+9. drivers license — Olivia Rodrigo (88)
+10. Only Love Can Hurt Like This — Paloma Faith (87)
+
+Feature ranges among these top 10
+- Energy: 0.417 – 0.885
+- Danceability: 0.445 – 0.829
+- Valence: 0.131 – 0.769
+- Tempo: 67.528 – 176.089 BPM
+
+Do popular tracks cluster?
+- Correlations with popularity are near zero (energy 0.01, danceability 0.06, valence −0.03, tempo 0.01), so no strong linear relationship.
+- Clustering shows a higher share of popular tracks in clusters centered on higher energy/danceability/valence (e.g., k=2 cluster center energy 0.724, danceability 0.662, valence 0.661 had larger high-popularity proportion). Conclusion: popular tracks span wide feature ranges but are somewhat more frequent in higher-energy, more danceable, higher-valence clusters — not tightly clustered."
+custom_dataset,"Find genres where high acousticness (>0.7) coexists with high popularity (>60). What characteristics do these genres share, and what might explain the combination?","import pandas as pd
+import numpy as np
+
+def _safe_num(x, ndigits=4):
+    if pd.isna(x):
+        return None
+    if isinstance(x, (np.integer, int)):
+        return int(x)
+    if isinstance(x, (np.floating, float, np.float64)):
+        return float(round(float(x), ndigits))
+    # fallback
+    try:
+        return float(round(float(x), ndigits))
+    except Exception:
+        return x
+
+filtered = df[(df['acousticness'] > 0.7) & (df['popularity'] > 60)].copy()
+
+results = []
+if not filtered.empty:
+    grouped = filtered.groupby('track_genre')
+    for genre, g in grouped:
+        count = int(len(g))
+        # compute means and medians
+        stats = {}
+        for col in ['acousticness', 'popularity', 'energy', 'danceability', 'instrumentalness', 'speechiness', 'tempo', 'valence']:
+            mean_val = g[col].mean(skipna=True)
+            median_val = g[col].median(skipna=True)
+            # popularity as mean/median may be integer-like; keep 2 decimals for popularity, 4 for others
+            nd_mean = 2 if col == 'popularity' else 4
+            nd_med = 2 if col == 'popularity' else 4
+            stats[f'{col}_mean'] = _safe_num(mean_val, nd_mean)
+            stats[f'{col}_median'] = _safe_num(median_val, nd_med)
+        # proportion explicit
+        if 'explicit' in g.columns:
+            explicit_prop = float(g['explicit'].astype(int).mean()) if len(g) > 0 else None
+            explicit_prop = _safe_num(explicit_prop, 4)
+        else:
+            explicit_prop = None
+        # examples: top 3 by popularity
+        examples = []
+        top_examples = g.sort_values('popularity', ascending=False).head(3)
+        for _, row in top_examples.iterrows():
+            examples.append({
+                'track_name': row.get('track_name'),
+                'artists': row.get('artists'),
+                'album_name': row.get('album_name'),
+                'popularity': _safe_num(row.get('popularity'), 2),
+                'acousticness': _safe_num(row.get('acousticness'), 4)
+            })
+        entry = {
+            'track_genre': genre,
+            'count': count,
+            'acousticness_mean': stats['acousticness_mean'],
+            'acousticness_median': stats['acousticness_median'],
+            'popularity_mean': stats['popularity_mean'],
+            'popularity_median': stats['popularity_median'],
+            'energy_mean': stats['energy_mean'],
+            'energy_median': stats['energy_median'],
+            'danceability_mean': stats['danceability_mean'],
+            'danceability_median': stats['danceability_median'],
+            'instrumentalness_mean': stats['instrumentalness_mean'],
+            'instrumentalness_median': stats['instrumentalness_median'],
+            'speechiness_mean': stats['speechiness_mean'],
+            'speechiness_median': stats['speechiness_median'],
+            'tempo_mean': stats['tempo_mean'],
+            'tempo_median': stats['tempo_median'],
+            'valence_mean': stats['valence_mean'],
+            'valence_median': stats['valence_median'],
+            'explicit_proportion': explicit_prop,
+            'examples': examples
+        }
+        results.append(entry)
+
+data = results","import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Filter tracks that meet the thresholds
+filtered = df[(df[""acousticness""] > 0.7) & (df[""popularity""] > 60)].copy()
+
+# If no data after filtering, return a figure with a clear annotation
+if filtered.empty:
+    fig = go.Figure()
+    fig.add_annotation(
+        text=""No tracks meet the criteria (acousticness > 0.7 and popularity > 60)"",
+        xref=""paper"", yref=""paper"", x=0.5, y=0.5, showarrow=False, font=dict(size=14)
+    )
+    fig.update_layout(title=""No data to display"")
+else:
+    # Aggregate by genre
+    agg = (
+        filtered.groupby(""track_genre"")
+        .agg(
+            count=(""track_id"", ""size""),
+            mean_acousticness=(""acousticness"", ""mean""),
+            mean_popularity=(""popularity"", ""mean""),
+            mean_energy=(""energy"", ""mean""),
+        )
+        .reset_index()
+    )
+
+    # Sort for bar chart (descending by count)
+    agg_bar = agg.sort_values(""count"", ascending=False)
+
+    # Prepare sizes for scatter (scale counts to reasonable marker sizes)
+    max_count = agg[""count""].max()
+    # Avoid division by zero
+    if max_count == 0:
+        marker_sizes = [10] * len(agg)
+    else:
+        # scale to range 12-60
+        marker_sizes = 12 + (agg[""count""] / max_count) * 48
+
+    # Create two-panel subplot: left bar, right scatter
+    fig = make_subplots(rows=1, cols=2, subplot_titles=(
+        ""Genres by count (acousticness > 0.7 & popularity > 60)"",
+        ""Genre acousticness vs popularity (point size = count, color = mean energy)""
+    ))
+
+    # Panel 1: descending bar chart
+    fig.add_trace(
+        go.Bar(
+            x=agg_bar[""track_genre""],
+            y=agg_bar[""count""],
+            marker=dict(color=agg_bar[""count""], colorscale=""Blues""),
+            hovertemplate=""<b>%{x}</b><br>Count: %{y}<extra></extra>"",
+        ),
+        row=1, col=1
+    )
+
+    # Panel 2: scatter plot (each point = genre)
+    fig.add_trace(
+        go.Scatter(
+            x=agg[""mean_acousticness""],
+            y=agg[""mean_popularity""],
+            mode=""markers+text"",
+            text=agg[""track_genre""],
+            textposition=""top center"",
+            marker=dict(
+                size=marker_sizes,
+                color=agg[""mean_energy""],
+                colorscale=""Viridis"",
+                showscale=True,
+                colorbar=dict(title=""Mean Energy""),
+                sizemode=""area"",
+                line=dict(width=1, color=""DarkSlateGrey"")
+            ),
+            hovertemplate=(
+                ""<b>%{text}</b><br>""
+                ""Mean Acousticness: %{x:.3f}<br>""
+                ""Mean Popularity: %{y:.1f}<br>""
+                ""Mean Energy: %{marker.color:.3f}<br>""
+                ""Count: %{customdata}<extra></extra>""
+            ),
+            customdata=agg[""count""]
+        ),
+        row=1, col=2
+    )
+
+    # Layout adjustments
+    fig.update_xaxes(title_text=""Genre"", row=1, col=1, tickangle=-45)
+    fig.update_yaxes(title_text=""Count of tracks"", row=1, col=1)
+    fig.update_xaxes(title_text=""Mean Acousticness"", row=1, col=2)
+    fig.update_yaxes(title_text=""Mean Popularity"", row=1, col=2)
+
+    fig.update_layout(
+        height=600,
+        width=1100,
+        margin=dict(l=60, r=40, t=80, b=100),
+        showlegend=False,
+        template=""simple_white"",
+    )
+
+# Return the figure object
+fig","Genres: ambient, blues, children, chill, classical, electro, folk, hip‑hop, indian, indie, indie‑pop, jazz, new‑age.
+
+Shared characteristics (from the provided means/medians):
+- Low-to-moderate energy (means mostly 0.06–0.54; typically <0.55).
+- Acoustic instrumentation common; instrumentalness is very high in ambient/classical/new‑age (~0.81–0.978) and low in vocal genres (blues/hip‑hop/indian ≈0–0.10).
+- Explicit content is rare (explicit_proportion = 0.0 for most genres; exceptions: chill 0.2, electro 0.5).
+- Tempo varies but clusters mid‑tempo (many medians ~88–120 BPM), with some faster outliers (new‑age, indie‑pop).
+- Danceability ranges widely (≈0.26–0.74) and valence is generally low‑to‑moderate.
+
+Possible explanations (from these features): high acousticness co‑occurs with popularity when tracks are soothing or melodic (instrumental or clean vocal), playlist‑friendly (low explicitness, moderate tempo/danceability), or familiar/classic performances that attract broad streaming attention."
+custom_dataset,"Find genre pairs where average tempo differs by less than 5 BPM and average energy differs by less than 0.05, but average popularity differs by more than 15 points. For each pair, identify which audio features (danceability, acousticness, speechiness, instrumentalness, valence) show the largest differences.","# compute per-genre means
+import itertools
+import pandas as pd
+
+cols = [""tempo"", ""energy"", ""popularity"", ""danceability"", ""acousticness"", ""speechiness"", ""instrumentalness"", ""valence""]
+genre_means_df = df.groupby(""track_genre"")[cols].mean()
+
+results = []
+genres = list(genre_means_df.index)
+
+for g1, g2 in itertools.combinations(genres, 2):
+    m1 = genre_means_df.loc[g1]
+    m2 = genre_means_df.loc[g2]
+    tempo_diff = abs(float(m1[""tempo""]) - float(m2[""tempo""]))
+    energy_diff = abs(float(m1[""energy""]) - float(m2[""energy""]))
+    popularity_diff = abs(float(m1[""popularity""]) - float(m2[""popularity""]))
+    if (tempo_diff < 5) and (energy_diff < 0.05) and (popularity_diff > 15):
+        # compute absolute differences for the five specified features
+        feature_list = [""danceability"", ""acousticness"", ""speechiness"", ""instrumentalness"", ""valence""]
+        feature_diffs = []
+        for f in feature_list:
+            diff = abs(float(m1[f]) - float(m2[f]))
+            feature_diffs.append({""feature"": f, ""difference"": diff})
+        # sort descending by difference
+        feature_diffs_sorted = sorted(feature_diffs, key=lambda x: x[""difference""], reverse=True)
+        top = feature_diffs_sorted[0]
+        second = feature_diffs_sorted[1] if len(feature_diffs_sorted) > 1 else None
+        results.append({
+            ""genre_pair"": [g1, g2],
+            ""genre_means"": {
+                g1: {k: float(m1[k]) for k in cols},
+                g2: {k: float(m2[k]) for k in cols}
+            },
+            ""differences"": {
+                ""tempo_diff"": tempo_diff,
+                ""energy_diff"": energy_diff,
+                ""popularity_diff"": popularity_diff
+            },
+            ""feature_differences_ranked"": feature_diffs_sorted,
+            ""largest_feature"": {""feature"": top[""feature""], ""difference"": top[""difference""]},
+            ""second_largest_feature"": {""feature"": second[""feature""], ""difference"": second[""difference""]} if second is not None else None
+        })
+
+data = results",N/A,"Pairs meeting criteria and their largest audio-feature difference:
+
+- afrobeat vs hip-hop — instrumentalness: 0.2715368428205128  
+- afrobeat vs k-pop — instrumentalness: 0.2522020681666667  
+- afrobeat vs samba — instrumentalness: 0.27709189649122806  
+- afrobeat vs sertanejo — instrumentalness: 0.2796068217886179  
+- alt-rock vs deep-house — instrumentalness: 0.20303745407755106  
+- alt-rock vs electronic — instrumentalness: 0.21627630071282053  
+- alt-rock vs j-pop — acousticness: 0.08949752123404256  
+- alt-rock vs latin — danceability: 0.1911940540540541"
