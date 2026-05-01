@@ -449,210 +449,114 @@ Examples:
 - Mixed: similar densities (~3.1–3.6) produce mid-range values (142,200–249,000) when median_income is moderate (~3–5).
 
 Conclusion: median_income and ocean_proximity better explain house value variation in this sample; population density shows no consistent independent trend."
-housing,Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.,"import numpy as np
-import pandas as pd
-from sklearn.cluster import KMeans
+housing,Identify the top 5 most expensive geographic areas and explain the key factors contributing to their high prices.,"import pandas as pd
 
-# prepare a working copy
-work = df.copy()
-
-# derived features
-work['rooms_per_household'] = np.where(work['households'] != 0,
-                                      work['total_rooms'] / work['households'],
-                                      np.nan)
-work['bedrooms_per_room'] = np.where(work['total_rooms'] != 0,
-                                     work['total_bedrooms'] / work['total_rooms'],
-                                     np.nan)
-work['population_density'] = np.where(work['households'] != 0,
-                                      work['population'] / work['households'],
-                                      np.nan)
-
-# cluster on spatial coordinates
-coords = work[['longitude', 'latitude']].dropna()
-n_clusters = 100
-kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-labels = kmeans.fit_predict(coords)
-
-# assign labels back (rows with NA coords get NaN label)
-work.loc[coords.index, 'spatial_cluster'] = labels
-work['spatial_cluster'] = work['spatial_cluster'].astype('Int64')  # nullable integer
-
-# cluster-level aggregation for median_house_value
-cluster_agg = (
-    work.dropna(subset=['spatial_cluster'])
-    .groupby('spatial_cluster', observed=True)
-    .agg(
-        mean_median_house_value=('median_house_value', 'mean'),
-        median_median_house_value=('median_house_value', 'median'),
-        sample_count=('median_house_value', 'size'),
-        mean_longitude=('longitude', 'mean'),
-        mean_latitude=('latitude', 'mean')
-    )
-    .reset_index()
+# group and aggregate
+grouped = df.groupby('ocean_proximity').agg(
+    median_house_value_median=('median_house_value', 'median'),
+    median_house_value_mean=('median_house_value', 'mean'),
+    median_income_median=('median_income', 'median'),
+    housing_median_age_median=('housing_median_age', 'median'),
+    total_rooms_sum=('total_rooms', 'sum'),
+    total_bedrooms_sum=('total_bedrooms', 'sum'),
+    population_sum=('population', 'sum'),
+    households_sum=('households', 'sum'),
+    count=('ocean_proximity', 'size')
 )
 
-# pick top 5 clusters by mean price
-top5 = cluster_agg.sort_values('mean_median_house_value', ascending=False).head(5)
+# compute per-household ratios
+grouped['rooms_per_household'] = grouped['total_rooms_sum'] / grouped['households_sum']
+grouped['bedrooms_per_household'] = grouped['total_bedrooms_sum'] / grouped['households_sum']
+grouped['population_per_household'] = grouped['population_sum'] / grouped['households_sum']
 
-# features to summarize
-features = ['median_income', 'housing_median_age', 'rooms_per_household',
-            'bedrooms_per_room', 'population_density']
+# prepare final summary and sort by median house value
+summary = grouped[[
+    'median_house_value_median',
+    'median_house_value_mean',
+    'median_income_median',
+    'housing_median_age_median',
+    'rooms_per_household',
+    'bedrooms_per_household',
+    'population_per_household',
+    'count'
+]].sort_values('median_house_value_median', ascending=False)
 
-results = []
-for _, row in top5.iterrows():
-    cl = int(row['spatial_cluster'])
-    cluster_df = work[work['spatial_cluster'] == cl]
+top5 = summary.head(5)
 
-    # basic cluster info
-    cluster_info = {
-        'cluster_id': cl,
-        'mean_median_house_value': float(row['mean_median_house_value']),
-        'median_median_house_value': float(row['median_median_house_value']),
-        'sample_count': int(row['sample_count']),
-        'center_longitude': float(row['mean_longitude']),
-        'center_latitude': float(row['mean_latitude'])
-    }
-
-    # feature summaries
-    feature_summaries = {}
-    for feat in features:
-        ser = cluster_df[feat].dropna()
-        feature_summaries[feat] = {
-            'mean': float(ser.mean()) if not ser.empty else None,
-            'median': float(ser.median()) if not ser.empty else None,
-            'std': float(ser.std(ddof=0)) if not ser.empty else None,
-            'count': int(ser.size)
-        }
-
-    # ocean_proximity composition
-    op_counts = cluster_df['ocean_proximity'].value_counts(dropna=False)
-    total_op = int(op_counts.sum())
-    op_list = []
-    for cat, cnt in op_counts.items():
-        cat_label = None if pd.isna(cat) else str(cat)
-        op_list.append({
-            'ocean_proximity': cat_label,
-            'count': int(cnt),
-            'proportion': float(cnt / total_op) if total_op > 0 else None
-        })
-
-    results.append({
-        'cluster': cluster_info,
-        'feature_summaries': feature_summaries,
-        'ocean_proximity_composition': op_list
+# convert to JSON-safe list of dicts with native Python types
+records = []
+for idx, row in top5.iterrows():
+    records.append({
+        'ocean_proximity': str(idx),
+        'median_house_value_median': float(round(row['median_house_value_median'], 2)),
+        'median_house_value_mean': float(round(row['median_house_value_mean'], 2)),
+        'median_income_median': float(round(row['median_income_median'], 4)),
+        'housing_median_age_median': float(round(row['housing_median_age_median'], 2)),
+        'rooms_per_household': float(round(row['rooms_per_household'], 4)),
+        'bedrooms_per_household': float(round(row['bedrooms_per_household'], 4)),
+        'population_per_household': float(round(row['population_per_household'], 4)),
+        'count': int(row['count'])
     })
 
-data = results","import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import plotly.express as px
-import numpy as np
+data = records","import plotly.graph_objects as go
 
-# Compute mean median_house_value by area and pick top 5
-group_means = df.groupby('ocean_proximity', dropna=True)['median_house_value'].mean().dropna()
-top5_series = group_means.sort_values(ascending=False).head(5)
-top_areas = top5_series.index.tolist()
-
-# Filter dataset to only points in the top areas
-df_top = df[df['ocean_proximity'].isin(top_areas)].copy()
-
-# Color mapping for the top areas (keep consistent between plots)
-palette = px.colors.qualitative.Plotly
-color_map = {area: palette[i % len(palette)] for i, area in enumerate(top_areas)}
-
-# Prepare sizes for scatter (scale median_house_value to a reasonable marker size range)
-min_val = df_top['median_house_value'].min()
-max_val = df_top['median_house_value'].max()
-# avoid division by zero
-range_val = max_val - min_val if max_val != min_val else 1.0
-
-def scaled_sizes(values, min_size=6, max_size=36):
-    # linear scaling to [min_size, max_size]
-    return ((values - min_val) / range_val) * (max_size - min_size) + min_size
-
-# Build a 1x2 subplot: left = horizontal bar, right = scatter (longitude vs latitude)
-fig = make_subplots(rows=1, cols=2,
-                    column_widths=[0.36, 0.64],
-                    subplot_titles=(""Top 5 Areas by Mean Median House Value"",
-                                    ""Geographic Scatter of Top Areas (size -> house value)""))
-
-# Horizontal bar chart (mean prices)
-bar_x = top5_series.values
-bar_y = top5_series.index.tolist()
-bar_colors = [color_map[a] for a in bar_y]
-bar_text = [f""${v:,.0f}"" for v in bar_x]
-
-fig.add_trace(
-    go.Bar(
-        x=bar_x,
-        y=bar_y,
-        orientation='h',
-        marker=dict(color=bar_colors),
-        text=bar_text,
-        textposition='auto',
-        hovertemplate=""%{y}<br>Mean median_house_value: %{x:$,.0f}<extra></extra>""
-    ),
-    row=1, col=1
+# Aggregate medians by ocean_proximity and sort descending by median house value
+grouped = (
+    df
+    .groupby(""ocean_proximity"", as_index=False)
+    .agg(median_house_value=(""median_house_value"", ""median""),
+         median_income=(""median_income"", ""median""))
+    .sort_values(""median_house_value"", ascending=False)
 )
 
-# Scatter: add one trace per area so legend shows categories and colors align
-for area in top_areas:
-    df_area = df_top[df_top['ocean_proximity'] == area]
-    sizes = scaled_sizes(df_area['median_house_value'])
-    fig.add_trace(
-        go.Scatter(
-            x=df_area['longitude'],
-            y=df_area['latitude'],
-            mode='markers',
-            name=area,
-            marker=dict(
-                color=color_map[area],
-                size=sizes,
-                sizemode='area',
-                line=dict(width=0.5, color='DarkSlateGrey'),
-                opacity=0.7
-            ),
-            hovertemplate=(
-                ""Area: "" + area + ""<br>"" +
-                ""Longitude: %{x:.3f}<br>Latitude: %{y:.3f}<br>"" +
-                ""Median house value: %{customdata:$,.0f}<extra></extra>""
-            ),
-            customdata=df_area['median_house_value']
+# Prepare a short formatted income label for annotations
+grouped[""income_label""] = grouped[""median_income""].map(lambda v: f""{v:.2f}"")
+
+# Create bar chart: bar height = median_house_value; bar color intensity = median_income
+fig = go.Figure(
+    data=go.Bar(
+        x=grouped[""ocean_proximity""],
+        y=grouped[""median_house_value""],
+        marker=dict(
+            color=grouped[""median_income""],
+            colorscale=""Viridis"",
+            colorbar=dict(title=""Median Income""),
+            showscale=True,
         ),
-        row=1, col=2
+        text=grouped[""income_label""],
+        texttemplate=""Income: %{text}"",
+        textposition=""outside"",
+        hovertemplate=(
+            ""<b>%{x}</b><br>""
+            ""Median house value: $%{y:,.0f}<br>""
+            ""Median income: %{text}<extra></extra>""
+        ),
     )
-
-# Layout tweaks
-fig.update_xaxes(title_text=""Mean median_house_value (USD)"", row=1, col=1, autorange='reversed')
-fig.update_yaxes(title_text=""Area (ocean_proximity)"", row=1, col=1, automargin=True)
-
-fig.update_xaxes(title_text=""Longitude"", row=1, col=2)
-fig.update_yaxes(title_text=""Latitude"", row=1, col=2)
-
-fig.update_layout(
-    title_text=""Top 5 Areas by Mean House Price and Their Geographic Distribution"",
-    legend_title_text=""Area"",
-    height=600,
-    width=1100,
-    margin=dict(l=80, r=30, t=90, b=50)
 )
 
-# Ensure bar order descending (largest on top)
-fig.update_yaxes(autorange=""reversed"", row=1, col=1)
+# Layout tweaks: sorted order already applied via grouped ordering
+fig.update_layout(
+    title=""Median House Value by Ocean Proximity (sorted descending)"",
+    xaxis_title=""Ocean Proximity"",
+    yaxis_title=""Median House Value (USD)"",
+    yaxis=dict(tickformat=""$,.0f""),
+    template=""simple_white"",
+    margin=dict(t=60, b=120)  # extra bottom margin to accommodate long category labels
+)
 
-# Return the figure object as required
-fig","Top 5 clusters by mean median house value (with key explanatory factors from the captured summaries):
+fig","Top 5 (by median_house_value_median)
+1. ISLAND — 414,700
+2. NEAR OCEAN — 235,100
+3. NEAR BAY — 231,900
+4. <1H OCEAN — 213,600
+5. INLAND — 109,400
 
-1) Cluster 4 — mean $392,094 (n=134). Factors: highest median income (mean 6.25), high rooms_per_household (5.61), low bedrooms_per_room (0.197), older/established housing (median age 34), majority NEAR BAY (72%), some <1H OCEAN/NEAR OCEAN.
-
-2) Cluster 72 — mean $381,711 (n=134). Factors: high income (mean 5.56), large homes (rooms_per_household 5.62), low bedrooms_per_room (0.198), median age 34, overwhelmingly NEAR OCEAN (86%).
-
-3) Cluster 23 — mean $362,022 (n=373). Factors: strong ocean access (<1H OCEAN 99.7%), moderate income (mean 4.64), moderate rooms_per_household (4.85), older housing (median age 38).
-
-4) Cluster 82 — mean $358,351 (n=73). Factors: high income (mean 5.29), highest rooms_per_household (5.90), low bedrooms_per_room (0.190), mainly NEAR BAY (74%) with some NEAR OCEAN.
-
-5) Cluster 13 — mean $326,542 (n=320). Factors: moderate income (mean 4.07), older housing (median age 52), moderate rooms_per_household (4.84), mostly NEAR BAY (72%) and substantial NEAR OCEAN (28%).
-
-Primary drivers across these clusters: proximity to bay/ocean, higher median income, and larger homes (high rooms_per_household / low bedrooms_per_room)."
+Key factors from the dataset (values shown are medians)
+- ISLAND: very highest price; older housing age (52), high rooms/household (5.47) and higher bedrooms/household (1.37), population/household 2.55 — proximity: ISLAND.
+- NEAR OCEAN: high price; median income 3.65, age 29, rooms/household 5.20, bedrooms/household 1.06, population/household 2.69 — proximity: NEAR OCEAN.
+- NEAR BAY: similar to NEAR OCEAN; income 3.78, age 39, rooms 5.11, bedrooms 1.04, population 2.52 — proximity: NEAR BAY.
+- <1H OCEAN: income 3.83, age 30, rooms 5.06, bedrooms 1.04, population 2.94 — proximity: <1H OCEAN.
+- INLAND: much lower price despite higher rooms/household (5.70); income 2.98, age 23, bedrooms 1.11, population 2.90 — inland location."
 housing,Find coastal areas where house prices are relatively low despite proximity to the ocean. What factors might explain this?,"import pandas as pd
 import numpy as np
 
