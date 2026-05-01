@@ -1,0 +1,113 @@
+\documentclass[12pt, oneside]{report}
+
+\pdfcompresslevel=1
+\pdfobjcompresslevel=\pdfcompresslevel
+
+\input{../ECE 157C Packages.tex}
+
+\title{ECE 157C/272C HW 02}
+\author{Caleb Harris}
+\date{}
+
+\begin{document}
+\input{../ECE 157C Title.tex}
+
+
+% ============================================================
+\chap{Setup and Execution}
+% ============================================================
+
+
+\sect{Dependencies}
+
+The project requires Python 3.10 or later. All dependencies are listed in \texttt{requirements.txt} and can be installed with:
+
+\begin{minted}{bash}
+pip install -r requirements.txt
+\end{minted}
+
+The key packages are:
+
+\begin{itemize}
+    \item \texttt{openai} --- LLM API client
+    \item \texttt{langgraph} --- agent graph framework
+    \item \texttt{langchain-core} --- required by LangGraph
+    \item \texttt{pandas} --- CSV loading and analysis inside generated code
+    \item \texttt{json} --- data, context, and memory storage
+\end{itemize}
+
+\sect{Configuration}
+
+The agent authenticates with OpenAI using the environment variable \texttt{OPENAI\_API\_KEY}, which should be exported:
+
+\begin{minted}{bash}
+export OPENAI_API_KEY="sk-..."
+\end{minted}
+
+\sect{How to Run}
+
+
+
+% ============================================================
+\chap{Agent Graph}
+% ============================================================
+
+
+\begin{figure}[ht!]
+    \centering
+    % inkscape graphics/agent_workflow_diagram.svg --export-type=png --export-dpi=200
+    % \includegraphics[width=0.8\linewidth]{agent_workflow_diagram.png}
+    \caption{Agent Workflow Graph}
+\end{figure}
+
+
+% ============================================================
+\chap{Execution Result Design}
+% ============================================================
+
+
+- How execution results are represented
+- Why you chose this representation
+- Trade-offs observed during implementation
+
+
+% ============================================================
+\chap{Visualization Agent Interface}
+% ============================================================
+
+
+- Input state of the visualization agent
+- Output state of the visualization agent
+- What information is required for visualization
+- How the visualization output is used (e.g., frontend)
+
+
+% ============================================================
+\chap{System Usage and Summary}
+% ============================================================
+
+
+- Ask at least 5 different questions using your system
+- At least one question must involve a multi-turn interaction
+- Include the questions, generated answers, and visualizations (if any)
+- Provide a brief summary of the insights obtained from these results
+
+
+% ============================================================
+\chap{Failure Case}
+% ============================================================
+
+
+- At least one failure or limitation related to system behavior (e.g., reasoning, execution, mem-
+ory, or visualization)
+- What went wrong and why
+- How the system could be improved
+
+
+% ============================================================
+\chap{Final Reflection}
+% ============================================================
+
+
+
+\end{document}
