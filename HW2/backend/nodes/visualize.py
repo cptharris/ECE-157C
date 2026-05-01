@@ -7,16 +7,19 @@ from .call_llm import call_llm
 from utils import sanitize_plotly
 
 
-VIS_SYSTEM_PROMPT = """Generate Plotly code. data is preloaded. Use plotly.express as px, assign figure to fig, do not call fig.show(), output ONLY Python code."""
+VIS_SYSTEM_PROMPT = """You are a data visualization expert.
+Rules:
+- Generate Plotly code.
+- you are given a dataframe called df
+- you must return the figure as fig
+- do not call fig.show()
+- output ONLY Python code."""
 
 VIS_USER_PROMPT = """
 Visualization goal:
 {viz_spec}
-
-Data:
-{data}
-
-you are given `data` as a pre-loaded DataFrame. you MUST return the figure as `fig`.
+Dataset description:
+{dataset_desc}
 """
 
 
@@ -25,7 +28,7 @@ def visualize_codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
         VIS_SYSTEM_PROMPT,
         VIS_USER_PROMPT.format(
             viz_spec=state["plan"]["viz_spec"],
-            data=state["execution"]["data_desc"],
+            dataset_desc=state["dataset_desc"],
         ),
     )
     return state
@@ -34,7 +37,9 @@ def visualize_codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
 def visualize_execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
     import plotly.express as px
 
-    local_vars = {"data": pd.DataFrame(state["execution"]["data"]), "px": px}
+    df = pd.read_csv(f"datasets/{state['metadata']['dataset_name']}")
+
+    local_vars = {"df": df, "px": px}
 
     try:
         exec(state["vis"]["vis_code"], local_vars)

@@ -17,8 +17,8 @@ question
 viz_spec
 - in 2-3 sentences, specify what to visualize
 data_spec
-- in 2-3 sentences, specify what data to extract to answer the question, generate the visualization (if applicable), and answer potential follow-up questions, but do not store raw values
-- if this is a follow-up, we can ONLY extract from the previous data"""
+- in 2-3 sentences, specify what data to extract to answer the question
+- summary statistics are easier to reason on"""
 
 PLANNER_USER_PROMPT = """
 Recent context:

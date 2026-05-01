@@ -5,15 +5,7 @@ from utils import make_json_safe, describe_dataframe_like
 
 
 def execute_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    source_data = (
-        state["previous"].get("data") if state["plan"].get("is_follow_up") else None
-    )
-
-    df = (
-        pd.DataFrame(source_data)
-        if source_data
-        else pd.read_csv(f"datasets/{state['metadata']['dataset_name']}")
-    )
+    df = pd.read_csv(f"datasets/{state['metadata']['dataset_name']}")
 
     local_vars = {"df": df, "pd": pd}
 

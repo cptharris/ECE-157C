@@ -27,7 +27,7 @@ def codegen_node(state: Dict[str, Any]) -> Dict[str, Any]:
         CODEGEN_USER_PROMPT.format(
             question=state["plan"]["question"],
             data_spec=state["plan"]["data_spec"],
-            dataset_desc=state["dataset_desc"] if state["plan"]["is_follow_up"] is False else state["previous"]["data_desc"],
+            dataset_desc=state["dataset_desc"],
         ),
     )
 
