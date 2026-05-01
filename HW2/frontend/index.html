@@ -340,6 +340,7 @@
                     const div = document.createElement('div');
                     div.className = 'session-item';
                     div.textContent = id;
+                    div.id = id;
                     div.onclick = () => loadSession(id);
                     list.appendChild(div);
                 });
@@ -361,6 +362,8 @@
                 if (session.dataset_name) {
                     document.getElementById('datasetSelect').value = session.dataset_name;
                 }
+
+                // document.getElementById(id).textContent = session.artifacts[0].metadata.prompt;
 
                 const area = document.getElementById('chat');
                 area.innerHTML = '';
@@ -428,6 +431,25 @@
             answer.className = "answer";
             answer.textContent = artifact.response;
             container.appendChild(answer);
+
+            // container.appendChild(document.createElement("br"));
+
+            // let code = document.createElement("code");
+            // code.innerHTML = artifact.execution.data_code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            // let pre = document.createElement("pre");
+            // pre.appendChild(code)
+            // container.appendChild(pre);
+
+            // if (artifact.plan?.do_vis) {
+            //     container.appendChild(document.createElement("br"));
+            //     container.appendChild(document.createElement("br"));
+            //     container.appendChild(document.createElement("br"));
+            //     code = document.createElement("code");
+            //     code.innerHTML = artifact.vis.vis_code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            //     let pre = document.createElement("pre");
+            //     pre.appendChild(code)
+            //     container.appendChild(pre);
+            // }
 
             // Visualization
             if (artifact.plan?.do_vis) {
