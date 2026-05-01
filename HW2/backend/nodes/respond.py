@@ -19,7 +19,7 @@ def respond_node(state: Dict[str, Any]) -> Dict[str, Any]:
         SYSTEM_PROMPT,
         USER_PROMPT.format(
             question=state["plan"]["question"],
-            data=json.dumps(state["execution"]["data"], indent=None)[:3000],
+            data=json.dumps(state["execution"]["data"], indent=None)[:10000],
         ),
     )
 
