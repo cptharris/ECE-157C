@@ -173,3 +173,16 @@ class AgentState(TypedDict):
     final_answer: Optional[str]    # filled by responder_node
     retry_count: int           # tracks re-plan attempts
     max_retries: int           # set at invocation time, e.g. 2
+
+
+# ---------------------------------------------------------------------------
+# Format Node
+# ---------------------------------------------------------------------------
+
+
+def format_node(state: State) -> State:
+    state["trace"] = ["step  | operation       | input rows | output rows "] \
+        + ["-"*51] \
+        + [e.__str__() for e in state["trace"]]
+
+    return state

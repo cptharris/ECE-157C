@@ -71,8 +71,6 @@ def run_all(output_csv: str = "results.csv") -> None:
 
         result = run_agent(question, csv_path)
 
-        result["trace"] = ["step  | operation       | input rows | output rows "] + ["-"*51] + [e.__str__() for e in result["trace"]]
-
         print(json.dumps(result, indent=4))
 
         rows.append(
