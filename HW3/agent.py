@@ -1,40 +1,60 @@
-from typing import Dict, Any
 from langgraph.graph import StateGraph, END
-
+from schemas import AgentState
 
 from describe_dataset import describe_dataset_node
-from planner import planner_node
-from executor import execute_node
-from respond import respond_node
+# from planner import planner_node
+# from executor import execute_node
+# from respond import respond_node
 
-from schemas import *
+
+# ---------------------------------------------------------------------------
+# Routing logic
+# ---------------------------------------------------------------------------
+
+
+def route_after_execute(state: AgentState) -> str:
+    """
+    After execution:
+      - If all steps succeeded → respond
+      - If a step failed and retries remain → re-plan (planner will see the
+        error-annotated trace and produce a corrected plan)
+      - If a step failed and retries are exhausted → respond anyway so the
+        responder can surface a graceful error message
+    """
+    if all(entry.error is None for entry in state["trace"]):
+        return "respond"
+
+    if state["retry_count"] < state["max_retries"]:
+        return "planner"  # re-plan with error context in state
+
+    return "respond"  # give up gracefully
+
+
+# ---------------------------------------------------------------------------
+# Graph
+# ---------------------------------------------------------------------------
 
 
 def build_graph():
-    graph = StateGraph(State)
+    graph = StateGraph(state_schema=AgentState)
 
-    graph.add_node("describe_dataset", traced(describe_dataset_node))
-    graph.add_node("planner", traced(planner_node))
-    graph.add_node("execute", traced(execute_node))
-    graph.add_node("respond", traced(respond_node))
+    graph.add_node("describe_dataset", describe_dataset_node)
+    # graph.add_node("planner", planner_node)
+    # graph.add_node("execute", execute_node)
+    # graph.add_node("respond", respond_node)
 
     graph.set_entry_point("describe_dataset")
 
-    graph.add_edge("describe_dataset", "planner")
-    graph.add_edge("planner", "execute")
-    graph.add_edge("execute", "respond")
+    graph.set_finish_point("describe_dataset")
 
-    graph.set_finish_point("respond")
+    # graph.add_edge("describe_dataset", "planner")
+    # graph.add_edge("planner", "execute")
+
+    # graph.add_conditional_edges("execute", route_after_execute)
+
+    # graph.add_edge("respond", END)
 
     return graph.compile()
-
-
-def traced(fn):
-    def wrapper(state):
-        print(f"\n{'='*50}\n{' '*5}[NODE] {fn.__name__}\n{'='*50}")
-        return fn(state)
-
-    return wrapper
 
 
 agent = build_graph()
