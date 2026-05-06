@@ -9,9 +9,16 @@ def describe_dataset_node(state: AgentState) -> AgentState:
 
     df = pd.read_csv("dataset.csv")
 
+    columns = []
+
+    for col, dtype in df.dtypes.items():
+        columns.append(f"{col!r} ({dtype})")
+
+    rows, cols = df.shape
+
     state["dataset_description"] = {
-        "row_count": len(df),
-        "columns": df.dtypes.astype(str).to_dict(),
+        "shape": f"{rows} rows by {cols} columns",  
+        "columns": ", ".join(columns),
         "sample": df.head(2).to_dict(orient="records"),
     }
 
