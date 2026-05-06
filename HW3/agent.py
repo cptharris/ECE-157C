@@ -24,6 +24,8 @@ def route_after_execute(state: AgentState) -> str:
     """
     if all(entry.error is None for entry in state["trace"]):
         return "respond"
+    
+    state["retry_count"] += 1
 
     if state["retry_count"] < state["max_retries"]:
         return "planner"  # re-plan with error context in state
