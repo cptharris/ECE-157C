@@ -13,14 +13,23 @@ def execute_node(state: AgentState) -> AgentState:
         trace_entries: List[TraceEntry] = []
 
         for i, step in enumerate(state["plan"].steps):
+            error = ""
             try:
                 before = df.shape
                 df = dispatch_op(df, step)
                 after = df.shape
             except Exception as e:
-                trace_entries.append(TraceEntry(
-                    step_index=i, op=op, input_shape=before, output_shape=after, error=str(e)
-                    ))
+                error = str(e)
+
+            trace_entries.append(
+                TraceEntry(
+                    step_index=i,
+                    op=step.op,
+                    input_shape=before,
+                    output_shape=after,
+                    error=error,
+                )
+            )
 
         state["trace"] = trace_entries
         state["execution_result"] = df.to_dict(orient="records")
