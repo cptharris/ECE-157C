@@ -78,6 +78,8 @@ def run_all(output_csv: str = "results.csv") -> None:
 
         result = run_agent(question, csv_path)
 
+        print(f"\n\n{'='*45} END TASK {'='*45}\n")
+
         print(json.dumps(result, indent=4))
 
         rows.append(
