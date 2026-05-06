@@ -72,9 +72,9 @@ def run_all(output_csv: str = "results.csv") -> None:
 
     for csv_path, question in all_tasks:
         dataset_name = os.path.splitext(os.path.basename(csv_path))[0]
-        print(f"\n\n{'='*45} BEGIN TASK {'='*45}\n\n")
-        print(f"Dataset : {dataset_name}")
-        print(f"Question: {question}")
+        print(f"\n\n{'='*45} BEGIN TASK {'='*45}\n")
+        print(f"{'='*5}  Dataset  : {dataset_name}")
+        print(f"{'='*5}  Question : {question}\n\n")
 
         result = run_agent(question, csv_path)
 
@@ -84,7 +84,7 @@ def run_all(output_csv: str = "results.csv") -> None:
             {
                 "dataset_name": dataset_name,
                 "question": question,
-                "plan": result["plan"],
+                "plan": result["plan"]["steps"],
                 "trace": result["trace"],
                 "final_answer": result["final_answer"],
             }

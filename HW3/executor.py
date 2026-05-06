@@ -27,5 +27,6 @@ def execute_node(state: AgentState) -> AgentState:
     except Exception as e:
         state["execution_result"] = str(e)
         state["trace"] = trace_entries
+        traceback.print_exception(e)
 
     return state
