@@ -24,7 +24,7 @@ class FilterCondition(BaseModel):
     conjunction: Literal["AND", "OR"] = "AND"  # joins this condition with the next
 
 
-class DeriveColumn(BaseModel):
+class DerivedColumn(BaseModel):
     new_column: str             # output column name
     left_source_column: str
     right_source_column: str
@@ -139,7 +139,6 @@ class TraceEntry(BaseModel):
     input_shape: tuple[int, int]   # (rows, cols) before the step
     output_shape: tuple[int, int]  # (rows, cols) after the step
     error: Optional[str] = None    # set if execution failed
-    duration_ms: Optional[float] = None
 
     def __str__(self):
         return f"{str(self.step_index).ljust(5)} | {self.op.ljust(15)} | {str(self.input_shape[0]).ljust(10)} | {str(self.output_shape[0]).ljust(12)}"
@@ -168,9 +167,13 @@ class AgentState(TypedDict):
     question: str
     csv_path: str
     dataset_description: str       # filled by describe_dataset_node
+
+    execution_result: Optional[str]
+    final_answer: Optional[str]    # filled by responder_node
+
     plan: Optional[Plan]           # filled by planner_node
     trace: list[TraceEntry]        # appended to by executor_node
-    final_answer: Optional[str]    # filled by responder_node
+
     retry_count: int           # tracks re-plan attempts
     max_retries: int           # set at invocation time, e.g. 2
 
@@ -179,10 +182,14 @@ class AgentState(TypedDict):
 # Format Node
 # ---------------------------------------------------------------------------
 
-
 def format_node(state: State) -> State:
     state["trace"] = ["step  | operation       | input rows | output rows "] \
         + ["-"*51] \
         + [e.__str__() for e in state["trace"]]
+
+    state["plan"] = {
+        "reasoning": state["plan"].reasoning,
+        "steps": [str(step) for step in state["plan"].steps]
+    }
 
     return state
