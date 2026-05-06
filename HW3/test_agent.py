@@ -26,21 +26,7 @@ def run_agent(question: str, csv_path: str) -> dict:
             "question": question,
             "csv_path": csv_path,
             "dataset_description": None,
-            "plan": Plan(
-                reasoning="",
-                steps=[
-                    {
-                        "op": "filter_rows",
-                        "conditions": [
-                            {
-                                "column": "A",
-                                "operator": "==",
-                                "value": 1
-                            }
-                        ]
-                    }
-                ]
-            ),
+            "plan": None,
             "trace": [],
             "final_answer": None,
             "retry_count": 0,
@@ -53,9 +39,41 @@ def run_agent(question: str, csv_path: str) -> dict:
 # Question lists
 # ---------------------------------------------------------------------------
 
+DATASET_NAME = "dataset.csv"
 
 CUSTOM_QUESTIONS = [
-    "What's goin' on?",
+    # BASIC
+    "What is the average nightly price for entire home/apt listings in Manhattan?",
+    "Which borough has the most listings that are available year-round (availability_365 = 365)?",
+    "How many listings in Brooklyn are priced under $100 per night?",
+    "What are the top 5 hosts by total number of listings across all boroughs?",
+    "What is the average number of reviews for listings that require a minimum stay of exactly 1 night?",
+    "What is the most expensive room type on average in Queens?",
+    "Which neighbourhoods in Staten Island have fewer than 10 listings?",
+    "What is the average availability (availability_365) for private room listings that have at least 1 review?",
+
+    # INTERMEDIATE
+    "Which borough has the highest average estimated annual revenue potential, defined as price times availability_365?",
+    "Among listings with at least 10 reviews, what is the average price-per-review by room type?",
+    "What percentage of listings in each borough are entire home/apt?",
+    "For listings requiring a minimum stay of at least 7 nights, what is the average price and average availability_365 by room type?",
+    "What is the average price-per-minimum-night by room type, for listings priced under $500?",
+    "For listings with above-average reviews_per_month (> 1.0), what is the average price by borough?",
+    "Which neighbourhood has the highest ratio of average price to average number of reviews, among those with at least 20 listings?",
+    "Among hosts with more than 3 listings, what is the average price of their listings by borough?",
+
+    # ADVANCED
+    "Among entire home/apt listings in Manhattan available more than 200 days per year and priced under $300, what are the top 3 neighbourhoods by average number of reviews?",
+    "Which neighbourhood has the highest concentration of \"high-value\" listings (price > $150 AND availability_365 > 100 AND number_of_reviews > 20), among neighbourhoods with at least 30 total listings?",
+    "For each borough, what is the top neighbourhood by average estimated annual revenue potential (price times availability_365), among listings with at least 50 reviews?",
+    "Among private room listings that are available at least 100 days per year and have a reviews_per_month above 0.5, which 5 neighbourhoods have the lowest average price?",
+    "What is the average price gap between entire home/apt and private room listings within each borough, and which borough has the largest gap?",
+    "Among listings with at least 20 reviews and a minimum stay of 1—3 nights, which room type in which borough produces the best reviews-per-dollar (reviews_per_month / price)?",
+    "Which hosts operating in more than one borough have the highest average listing price, among hosts with at least 5 total listings?",
+    "For entire home/apt listings priced between $75 and $250, which borough shows the strongest correlation proxy between availability and review count — i.e., highest average (availability_365 times reviews_per_month) — and what is that value?",
+
+    # "Which hosts are the busiest and why?",
+    # "Is there any noticeable difference of traffic among different areas and what could be the reason for it?"
 ]
 
 
@@ -68,7 +86,7 @@ def run_all(output_csv: str = "results.csv") -> None:
     """Run all questions and write results to results.csv."""
     rows = []
 
-    all_tasks = [("dataset.csv", q) for q in CUSTOM_QUESTIONS]
+    all_tasks = [(DATASET_NAME, q) for q in CUSTOM_QUESTIONS]
 
     for csv_path, question in all_tasks:
         dataset_name = os.path.splitext(os.path.basename(csv_path))[0]
