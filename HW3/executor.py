@@ -14,12 +14,15 @@ def execute_node(state: AgentState) -> AgentState:
 
         for i, step in enumerate(state["plan"].steps):
             error = ""
+            before = df.shape
+
             try:
-                before = df.shape
                 df = dispatch_op(df, step)
-                after = df.shape
             except Exception as e:
                 error = str(e)
+                traceback.print_exception(e)
+
+            after = df.shape
 
             trace_entries.append(
                 TraceEntry(
