@@ -142,7 +142,7 @@ class TraceEntry(BaseModel):
     error: Optional[str] = None    # set if execution failed
 
     def __str__(self):
-        return f"{str(self.step_index).ljust(5)} | {self.op.ljust(15)} | {str(self.input_shape[0]).ljust(10)} | {str(self.output_shape[0]).ljust(12)}"
+        return f"{str(self.step_index).rjust(5)} | {self.op.ljust(15)} | {str(self.input_shape).rjust(11)} | {str(self.output_shape).rjust(12)}"
 
 
 # ---------------------------------------------------------------------------
@@ -184,8 +184,13 @@ class AgentState(TypedDict):
 # ---------------------------------------------------------------------------
 
 def format_node(state: State) -> State:
-    state["trace"] = ["step  | operation       | input rows | output rows "] \
-        + ["-"*51] \
+    """
+    Deals with type issues from schema to output readable content.
+    """
+
+    traceHeader = "step  | operation       | input (r,c) | output (r,c)"
+    state["trace"] = [traceHeader] \
+        + ["-"*len(traceHeader)] \
         + [e.__str__() for e in state["trace"]]
 
     state["plan"] = {
