@@ -12,7 +12,7 @@ import csv
 import os
 import json
 from agent import agent
-from schemas import AgentState, TraceEntry
+from schemas import AgentState, TraceEntry, Plan, Step
 
 
 # ---------------------------------------------------------------------------
@@ -26,15 +26,22 @@ def run_agent(question: str, csv_path: str) -> dict:
             "question": question,
             "csv_path": csv_path,
             "dataset_description": None,
-            "plan": None,
-            "trace": [
-                TraceEntry(
-                    step_index=0,
-                    op="pivot",
-                    input_shape=(2000, 10),
-                    output_shape=(100, 10),
-                )
-            ],
+            "plan": Plan(
+                reasoning="",
+                steps=[
+                    {
+                        "op": "filter_rows",
+                        "conditions": [
+                            {
+                                "column": "A",
+                                "operator": "==",
+                                "value": 1
+                            }
+                        ]
+                    }
+                ]
+            ),
+            "trace": [],
             "final_answer": None,
             "retry_count": 0,
             "max_retries": 2,
