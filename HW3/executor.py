@@ -13,7 +13,7 @@ def execute_node(state: AgentState) -> AgentState:
         trace_entries: List[TraceEntry] = []
 
         for i, step in enumerate(state["plan"].steps):
-            error = ""
+            error = None
             before = df.shape
 
             try:

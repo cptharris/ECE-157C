@@ -4,7 +4,7 @@ from schemas import AgentState
 from describe_dataset import describe_dataset_node
 from planner import planner_node
 from executor import execute_node
-# from respond import respond_node
+from respond import respond_node
 from schemas import format_node
 
 
@@ -42,7 +42,7 @@ def build_graph():
     graph.add_node("describe_dataset", describe_dataset_node)
     graph.add_node("planner", planner_node)
     graph.add_node("execute", execute_node)
-    # graph.add_node("respond", respond_node)
+    graph.add_node("respond", respond_node)
     graph.add_node("format", format_node)
 
     graph.set_entry_point("describe_dataset")
@@ -50,11 +50,9 @@ def build_graph():
     graph.add_edge("describe_dataset", "planner")
     graph.add_edge("planner", "execute")
 
-    # graph.add_conditional_edges("execute", route_after_execute)
+    graph.add_conditional_edges("execute", route_after_execute)
 
-    graph.add_edge("execute", "format")
-
-    # graph.add_edge("respond", "format")
+    graph.add_edge("respond", "format")
     graph.add_edge("format", END)
 
     return graph.compile()

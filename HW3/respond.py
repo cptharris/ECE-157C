@@ -1,8 +1,34 @@
-def respond_node(state: dict) -> dict:
-    # Minimal responder: if final_answer present, return it; otherwise a placeholder
-    if isinstance(state, dict) and state.get("final_answer"):
-        return state
-    # Fallback: if we have a trace and final string in df, just return a generic message
-    state["final_answer"] = state.get("final_answer", "Unable to answer with current steps.")
-    state["evaluation"] = state.get("evaluation", "SUCCESS")
+"""
+respond.py
+"""
+
+from schemas import *
+import json
+from call_llm import call_llm
+
+
+SYSTEM_PROMPT = """\
+You are the Analyzer for a structured data-analysis agent.
+Your sole job is to use captured data to answer the question.
+Be clear, concise, and specific. Answer in under 150 words and do not mention code.
+"""
+
+USER_PROMPT = """\
+Question:
+{question}
+
+Captured data:
+{data}
+"""
+
+
+def respond_node(state: AgentState) -> AgentState:
+    state["final_answer"] = call_llm(
+        SYSTEM_PROMPT,
+        USER_PROMPT.format(
+            question=state["question"],
+            data=json.dumps(state["execution_result"], indent=None)[:10000],
+        ),
+    )
+
     return state
