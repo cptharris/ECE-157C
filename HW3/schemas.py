@@ -38,7 +38,7 @@ class Aggregation(BaseModel):
     source_column: str                      # source column; use "*" for count(*)
     function: Literal[
         "sum", "mean", "median", "min", "max",
-        "count", "count_distinct",
+        "count", "nunique",
         "std", "var", "first", "last",
     ]
     new_column: str                       # output column name
@@ -78,7 +78,8 @@ class DeriveColumnsStep(BaseModel):
 
 
 class GroupAggregateStep(BaseModel):
-    """GROUP BY group_by columns, then apply each aggregation."""
+    """GROUP BY group_by columns, then apply each aggregation. Reduces to one row per unique group.
+    If group_by is empty, the entire DataFrame is treated as one group, yielding a single row."""
     op: Literal["group_aggregate"] = "group_aggregate"
     group_by: list[str]
     aggregations: list[Aggregation]

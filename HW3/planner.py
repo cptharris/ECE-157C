@@ -49,7 +49,7 @@ group_aggregate    – GROUP BY then aggregate
   aggregations: list of {
       source_column: str,   ← use "*" for count(*)
       function: "sum" | "mean" | "median" | "min" | "max"
-               | "count" | "count_distinct" | "std" | "var"
+               | "count" | "nunique" | "std" | "var"
                | "first" | "last",
       new_column: str
   }

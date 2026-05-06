@@ -81,18 +81,22 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
 def _group_aggregate(df: pd.DataFrame, step: GroupAggregateStep) -> pd.DataFrame:
     by = step.group_by
     aggs = step.aggregations
-    if not by:
-        return df
-    result = df.copy()
-    for agg in aggs:
-        src = agg.source_column
-        func = agg.function
-        new_col = agg.new_column
-        if src is None or func is None or new_col is None:
-            continue
-        tmp = df.groupby(by)[src].agg(func).reset_index().rename(columns={src: new_col})
-        result = result.merge(tmp, on=by, how="left")
-    return result
+
+    agg_spec = {
+        agg.new_column: (agg.source_column, agg.function)
+        for agg in aggs
+        if agg.source_column and agg.function and agg.new_column
+    }
+
+    if not agg_spec:
+        return df[by].drop_duplicates().reset_index(drop=True) if by else df.iloc[:0]
+
+    if by:
+        return df.groupby(by, as_index=False).agg(**agg_spec)
+    else:
+        return df.agg(
+            **{col: (src, func) for col, (src, func) in agg_spec.items()}
+        ).T.reset_index(drop=True)
 
 
 def _sort_rows(df: pd.DataFrame, step: SortRowsStep) -> pd.DataFrame:
