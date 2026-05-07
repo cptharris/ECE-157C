@@ -109,6 +109,7 @@ Produce the JSON plan now.
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+
 def _extract_json(raw: str) -> str:
     """Strip accidental markdown fences, then return the first {...} block."""
     # Remove ```json ... ``` or ``` ... ``` wrappers
@@ -121,6 +122,7 @@ def _extract_json(raw: str) -> str:
 
 
 # ── node ─────────────────────────────────────────────────────────────────────
+
 
 def planner_node(state: AgentState) -> AgentState:
     raw = call_llm(

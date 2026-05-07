@@ -79,6 +79,8 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
 
 
 _STAR_COL = "*"
+
+
 def _group_aggregate(df: pd.DataFrame, step: GroupAggregateStep) -> pd.DataFrame:
     by = step.group_by
     aggs = step.aggregations
@@ -88,7 +90,10 @@ def _group_aggregate(df: pd.DataFrame, step: GroupAggregateStep) -> pd.DataFrame
         df = df.assign(**{_STAR_COL: 1})
 
     agg_spec = {
-        agg.new_column: ((_STAR_COL if agg.source_column == "*" else agg.source_column), agg.function)
+        agg.new_column: (
+            (_STAR_COL if agg.source_column == "*" else agg.source_column),
+            agg.function,
+        )
         for agg in aggs
         if agg.source_column and agg.function and agg.new_column
     }
@@ -115,7 +120,7 @@ def _sort_rows(df: pd.DataFrame, step: SortRowsStep) -> pd.DataFrame:
 
 
 def _limit_rows(df: pd.DataFrame, step: LimitRowsStep) -> pd.DataFrame:
-    return df.iloc[step.offset: step.offset + step.n]
+    return df.iloc[step.offset : step.offset + step.n]
 
 
 def _distinct_rows(df: pd.DataFrame, step: DistinctRowsStep) -> pd.DataFrame:
@@ -128,7 +133,9 @@ def _distinct_rows(df: pd.DataFrame, step: DistinctRowsStep) -> pd.DataFrame:
 def _pivot(df: pd.DataFrame, step: PivotStep) -> pd.DataFrame:
     if not step.index or not step.columns or not step.values:
         return df
-    return df.pivot_table(index=step.index, columns=step.columns, values=step.values, aggfunc=step.aggfunc).reset_index()
+    return df.pivot_table(
+        index=step.index, columns=step.columns, values=step.values, aggfunc=step.aggfunc
+    ).reset_index()
 
 
 def dispatch_op(df: pd.DataFrame, step: Step) -> pd.DataFrame:

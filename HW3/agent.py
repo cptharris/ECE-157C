@@ -62,6 +62,7 @@ def traced(fn):
     def wrapper(state):
         print(f"\n{'='*50}\n{' '*5}[NODE] {fn.__name__}\n{'='*50}")
         return fn(state)
+
     return wrapper
 
 
