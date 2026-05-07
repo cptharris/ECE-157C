@@ -78,12 +78,17 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
     return df
 
 
+_STAR_COL = "*"
 def _group_aggregate(df: pd.DataFrame, step: GroupAggregateStep) -> pd.DataFrame:
     by = step.group_by
     aggs = step.aggregations
 
+    has_star = any(agg.source_column == "*" for agg in aggs if agg.source_column)
+    if has_star:
+        df = df.assign(**{_STAR_COL: 1})
+
     agg_spec = {
-        agg.new_column: (agg.source_column, agg.function)
+        agg.new_column: ((_STAR_COL if agg.source_column == "*" else agg.source_column), agg.function)
         for agg in aggs
         if agg.source_column and agg.function and agg.new_column
     }
