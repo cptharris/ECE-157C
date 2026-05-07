@@ -1,3 +1,4 @@
+from typing import List
 import pandas as pd
 import traceback
 
@@ -7,40 +8,45 @@ from operators import dispatch_op
 
 def execute_node(state: AgentState) -> AgentState:
     state["retry_count"] += 1
+    trace_entries: List[TraceEntry] = []
 
     try:
-        csv_path = state["csv_path"]
-        df = pd.read_csv(csv_path)
-
-        trace_entries: List[TraceEntry] = []
+        df = pd.read_csv(state["csv_path"])
 
         for i, step in enumerate(state["plan"].steps):
-            error = None
             before = df.shape
 
             try:
                 df = dispatch_op(df, step)
-            except Exception as e:
-                error = str(e)
-                traceback.print_exception(e)
 
-            after = df.shape
-
-            trace_entries.append(
-                TraceEntry(
-                    step_index=i,
-                    op=step.op,
-                    input_shape=before,
-                    output_shape=after,
-                    error=error,
+                trace_entries.append(
+                    TraceEntry(
+                        step_index=i,
+                        op=step.op,
+                        input_shape=before,
+                        output_shape=df.shape,
+                        error=None,
+                    )
                 )
-            )
 
-        state["trace"] = trace_entries
+            except Exception as e:
+                traceback.print_exc()
+
+                trace_entries.append(
+                    TraceEntry(
+                        step_index=i,
+                        op=step.op,
+                        input_shape=before,
+                        output_shape=None,
+                        error=str(e),
+                    )
+                )
+
         state["execution_result"] = df.to_dict(orient="records")
-    except Exception as e:
-        state["execution_result"] = str(e)
-        state["trace"] = trace_entries
-        traceback.print_exception(e)
 
+    except Exception as e:
+        traceback.print_exc()
+        state["execution_result"] = str(e)
+
+    state["trace"] = trace_entries
     return state
