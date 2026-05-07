@@ -6,6 +6,8 @@ from operators import dispatch_op
 
 
 def execute_node(state: AgentState) -> AgentState:
+    state["retry_count"] += 1
+
     try:
         csv_path = state["csv_path"]
         df = pd.read_csv(csv_path)

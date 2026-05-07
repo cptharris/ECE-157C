@@ -24,8 +24,6 @@ def route_after_execute(state: AgentState) -> str:
     """
     if all(entry.error is None for entry in state["trace"]):
         return "respond"
-    
-    state["retry_count"] += 1
 
     if state["retry_count"] < state["max_retries"]:
         return "planner"  # re-plan with error context in state
@@ -41,23 +39,30 @@ def route_after_execute(state: AgentState) -> str:
 def build_graph():
     graph = StateGraph(state_schema=AgentState)
 
-    graph.add_node("describe_dataset", describe_dataset_node)
-    graph.add_node("planner", planner_node)
-    graph.add_node("execute", execute_node)
-    graph.add_node("respond", respond_node)
-    graph.add_node("format", format_node)
+    graph.add_node("describe_dataset", traced(describe_dataset_node))
+    graph.add_node("planner", traced(planner_node))
+    graph.add_node("execute", traced(execute_node))
+    graph.add_node("respond", traced(respond_node))
+    graph.add_node("format", traced(format_node))
 
     graph.set_entry_point("describe_dataset")
 
     graph.add_edge("describe_dataset", "planner")
     graph.add_edge("planner", "execute")
 
-    graph.add_conditional_edges("execute", route_after_execute)
+    graph.add_conditional_edges("execute", traced(route_after_execute))
 
     graph.add_edge("respond", "format")
     graph.add_edge("format", END)
 
     return graph.compile()
+
+
+def traced(fn):
+    def wrapper(state):
+        print(f"\n{'='*50}\n{' '*5}[NODE] {fn.__name__}\n{'='*50}")
+        return fn(state)
+    return wrapper
 
 
 agent = build_graph()
