@@ -18,6 +18,9 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
         print(cached)
         return cached
 
+    if "n" in input("continue? "):
+        return "TERMINATING"
+
     response = (
         client.chat.completions.create(
             model="gpt-5-mini",
