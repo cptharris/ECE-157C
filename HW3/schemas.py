@@ -175,6 +175,8 @@ class AgentState(TypedDict):
     plan: Optional[Plan]           # filled by planner_node
     trace: list[TraceEntry]        # appended to by executor_node
 
+    plan_pretty: list[dict]        # clean formatting to output to CSV
+
     retry_count: int           # tracks re-plan attempts
     max_retries: int           # set at invocation time, e.g. 2
 

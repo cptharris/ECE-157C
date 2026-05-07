@@ -142,4 +142,4 @@ def planner_node(state: AgentState) -> AgentState:
             f"Raw output:\n{raw}"
         ) from exc
 
-    return {**state, "plan": plan}
+    return {**state, "plan": plan, "plan_pretty": raw}

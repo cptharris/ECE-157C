@@ -98,20 +98,18 @@ def run_all(output_csv: str = "results.csv") -> None:
 
         print(f"\n\n{'='*45} END TASK {'='*45}\n")
 
-        print(json.dumps(result, indent=4))
+        print(json.dumps(result, indent=4, ensure_ascii=False))
 
         rows.append(
             {
-                "dataset_name": dataset_name,
                 "question": question,
-                "plan": result["plan"]["steps"],
-                "trace": result["trace"],
+                "plan": result["plan_pretty"],
                 "final_answer": result["final_answer"],
             }
         )
 
     # Write results.csv
-    fieldnames = ["dataset_name", "question", "plan", "trace", "final_answer"]
+    fieldnames = ["question", "plan", "final_answer"]
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
