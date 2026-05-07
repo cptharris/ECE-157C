@@ -139,6 +139,30 @@ class PivotStep(BaseModel):
     aggfunc: Literal["sum", "mean", "count", "min", "max"] = "sum"
 
 
+class SnapshotStep(BaseModel):
+    """Save the current DataFrame into the snapshot store under a name. Current df is unchanged."""
+
+    op: Literal["snapshot"] = "snapshot"
+    name: str
+
+
+class RestoreStep(BaseModel):
+    """Replace the current DataFrame with a previously saved snapshot."""
+
+    op: Literal["restore"] = "restore"
+    name: str
+
+
+class JoinStep(BaseModel):
+    """Merge the current DataFrame (left) with a named snapshot (right)."""
+
+    op: Literal["join"] = "join"
+    right: str
+    on: list[str]
+    how: Literal["inner", "left", "right", "outer"] = "left"
+    suffixes: tuple[str, str] = ("_x", "_y")
+
+
 # The discriminated union — Pydantic resolves the correct subclass from `op`
 Step = Annotated[
     Union[
@@ -151,6 +175,9 @@ Step = Annotated[
         LimitRowsStep,
         DistinctRowsStep,
         PivotStep,
+        SnapshotStep,
+        RestoreStep,
+        JoinStep,
     ],
     Field(discriminator="op"),
 ]

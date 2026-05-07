@@ -138,6 +138,40 @@ def _pivot(df: pd.DataFrame, step: PivotStep) -> pd.DataFrame:
     ).reset_index()
 
 
+def _snapshot(
+    df: pd.DataFrame,
+    step: SnapshotStep,
+    snapshots: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    snapshots[step.name] = df.copy()
+    return df
+
+
+def _restore(
+    df: pd.DataFrame,
+    step: RestoreStep,
+    snapshots: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    if step.name not in snapshots:
+        raise KeyError(
+            f"Snapshot '{step.name}' not found. Available: {list(snapshots)}"
+        )
+    return snapshots[step.name].copy()
+
+
+def _join(
+    df: pd.DataFrame,
+    step: JoinStep,
+    snapshots: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    if step.right not in snapshots:
+        raise KeyError(
+            f"Snapshot '{step.right}' not found. Available: {list(snapshots)}"
+        )
+    right_df = snapshots[step.right]
+    return df.merge(right_df, on=step.on, how=step.how, suffixes=step.suffixes)
+
+
 def dispatch_op(df: pd.DataFrame, step: Step) -> pd.DataFrame:
     if isinstance(step, SelectColumnsStep):
         return _select_columns(df, step)

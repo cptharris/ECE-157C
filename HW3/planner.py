@@ -18,13 +18,13 @@ deterministic, ordered list of table operations that will produce the answer.
 AVAILABLE OPERATIONS  (use exactly these op codes)
 ────────────────────────────────────────────
 
-select_columns     – keep only the listed columns (in order)
+select_columns     — keep only the listed columns (in order)
   columns: list[str]
 
-rename_columns     – rename columns by mapping {old: new}
+rename_columns     — rename columns by mapping {old: new}
   mapping: dict[str, str]
 
-filter_rows        – retain rows matching conditions (ANDed by default)
+filter_rows        — retain rows matching conditions (ANDed by default)
   conditions: list of {
       column: str,
       operator: "==" | "!=" | ">" | ">=" | "<" | "<="
@@ -36,7 +36,7 @@ filter_rows        – retain rows matching conditions (ANDed by default)
       conjunction: "AND" | "OR"   ← joins THIS condition to the NEXT one
   }
 
-derive_columns     – add/overwrite columns via arithmetic between two existing columns
+derive_columns     — add/overwrite columns via arithmetic between two existing columns
   columns: list of {
       new_column: str,
       left_source_column: str,
@@ -44,7 +44,7 @@ derive_columns     – add/overwrite columns via arithmetic between two existing
       operation: "add" | "subtract" | "multiply" | "divide"
   }
 
-group_aggregate    – GROUP BY then aggregate
+group_aggregate    — GROUP BY then aggregate
   group_by: list[str]
   aggregations: list of {
       source_column: str,   ← use "*" for count(*)
@@ -54,21 +54,33 @@ group_aggregate    – GROUP BY then aggregate
       new_column: str
   }
 
-sort_rows          – order rows (primary → secondary → …)
+sort_rows          — order rows (primary → secondary → …)
   sort_by: list of { column: str, direction: "asc" | "desc" }
 
-limit_rows         – take at most n rows, skipping the first offset rows
+limit_rows         — take at most n rows, skipping the first offset rows
   n: int (> 0)
   offset: int (≥ 0, default 0)
 
-distinct_rows      – drop duplicate rows
+distinct_rows      — drop duplicate rows
   columns: list[str] | null   ← null means consider ALL columns
 
-pivot              – wide-format reshape (like a spreadsheet pivot table)
+pivot              — wide-format reshape (like a spreadsheet pivot table)
   index: list[str]
   columns: str
   values: str
   aggfunc: "sum" | "mean" | "count" | "min" | "max"
+
+snapshot           — save the current DataFrame into the named snapshot store; current df is unchanged
+  name: str
+
+restore            — replace the current DataFrame with a previously saved snapshot
+  name: str
+
+join               — merge the current DataFrame (left) with a named snapshot (right)
+  right: str                          ← name of a previously saved snapshot
+  on: list[str]                       ← columns to join on
+  how: "inner" | "left" | "right" | "outer"   (default "left")
+  suffixes: [str, str]                ← appended to conflicting column names (default ["_x", "_y"])
 
 ────────────────────────────────────────────
 OUTPUT FORMAT  (respond with ONLY this JSON — no markdown, no prose)

@@ -5,10 +5,14 @@ import traceback
 from schemas import AgentState, TraceEntry
 from operators import dispatch_op
 
+from schemas import SnapshotStep, RestoreStep, JoinStep
+from operators import _snapshot, _restore, _join
+
 
 def execute_node(state: AgentState) -> AgentState:
     state["retry_count"] += 1
     trace_entries: List[TraceEntry] = []
+    snapshots: dict[str, pd.DataFrame] = {}
 
     try:
         df = pd.read_csv(state["csv_path"])
@@ -17,7 +21,14 @@ def execute_node(state: AgentState) -> AgentState:
             before = df.shape
 
             try:
-                df = dispatch_op(df, step)
+                if isinstance(step, (SnapshotStep, RestoreStep, JoinStep)):
+                    df = {
+                        SnapshotStep: _snapshot,
+                        RestoreStep: _restore,
+                        JoinStep: _join,
+                    }[type(step)](df, step, snapshots)
+                else:
+                    df = dispatch_op(df, step)
 
                 trace_entries.append(
                     TraceEntry(
