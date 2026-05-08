@@ -41,6 +41,7 @@ def execute_node(state: AgentState) -> AgentState:
                 )
 
             except Exception as e:
+                print(f"error at step {i}: {step.model_dump_json(indent=2, ensure_ascii=False)}")
                 traceback.print_exc()
 
                 trace_entries.append(
