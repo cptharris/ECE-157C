@@ -7,6 +7,8 @@ from openai import OpenAI
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
+WAIT_APPROVAL = True
+
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
     print(f"{'='*10} QUERY LLM {'='*10}")
@@ -18,8 +20,13 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
         print(cached)
         return cached
 
-    if "n" in input("continue? "):
-        return "TERMINATING"
+    global WAIT_APPROVAL
+    if WAIT_APPROVAL:
+        x = input("continue? ")
+        if "a" in x:
+            WAIT_APPROVAL = False
+        elif "n" in x:
+            return "TERMINATING"
 
     response = (
         client.chat.completions.create(
