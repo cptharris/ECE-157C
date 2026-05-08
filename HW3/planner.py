@@ -101,8 +101,9 @@ RULES
 1. Reference only columns that exist in the dataset description or were created by
    an earlier step in the same plan.
 2. Prefer the minimal number of steps that correctly answers the question.
-3. Place filter_rows as early as possible to reduce the working set.
+3. Place filter_rows and select_columns as early as possible to reduce the working set.
 4. When the question asks for a ranking or "top N", end with sort_rows then limit_rows.
+   a. However, if removing the non-top rows would make the answer incomplete or misleading, skip limit_rows.
 5. Never invent op codes not listed above.
 6. The "reasoning" field must explain each step you chose and why.
 """
