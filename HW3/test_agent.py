@@ -87,7 +87,7 @@ def run_all(output_csv: str = "results.csv") -> None:
     rows = []
 
     all_tasks = [(DATASET_NAME, q) for q in CUSTOM_QUESTIONS]
-    fieldnames = ["question", "final_answer", "plan"]
+    fieldnames = ["question", "final_answer", "plan", "trace"]
 
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -107,13 +107,12 @@ def run_all(output_csv: str = "results.csv") -> None:
                 {
                     "question": question,
                     "final_answer": result["final_answer"],
-                    "plan": result["plan_pretty"],
+                    "plan": json.dumps(result["plan"], indent=2, ensure_ascii=False),
+                    "trace": json.dumps(result["trace"], indent=2, ensure_ascii=False),
                 }
             )
 
-            result["plan_pretty"] = "..."
-
-            print(json.dumps(result, indent=4, ensure_ascii=False))
+            print(json.dumps(result, indent=2, ensure_ascii=False))
 
     print(f"\nTASK COMPLETE! {len(CUSTOM_QUESTIONS)} questions answered.")
 

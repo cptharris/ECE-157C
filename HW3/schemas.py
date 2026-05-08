@@ -195,9 +195,6 @@ class TraceEntry(BaseModel):
     output_shape: tuple[int, int]  # (rows, cols) after the step
     error: Optional[str] = None  # set if execution failed
 
-    def __str__(self):
-        return f"{str(self.step_index).rjust(5)} | {self.op.ljust(15)} | {str(self.input_shape).rjust(11)} | {str(self.output_shape).rjust(12)}"
-
 
 # ---------------------------------------------------------------------------
 # Plan  (what the planner node produces)
@@ -231,8 +228,6 @@ class AgentState(TypedDict):
     plan: Optional[Plan]  # filled by planner_node
     trace: list[TraceEntry]  # appended to by executor_node
 
-    plan_pretty: list[dict]  # clean formatting to output to CSV
-
     retry_count: int  # tracks re-plan attempts
     max_retries: int  # set at invocation time, e.g. 2
 
@@ -242,20 +237,17 @@ class AgentState(TypedDict):
 # ---------------------------------------------------------------------------
 
 
+import json
+
+
 def format_node(state: State) -> State:
     """
     Deals with type issues from schema to output readable content.
     """
 
-    traceHeader = "step  | operation       | input (r,c) | output (r,c)"
-    state["trace"] = (
-        [traceHeader] + ["-" * len(traceHeader)] + [e.__str__() for e in state["trace"]]
-    )
+    state["trace"] = [json.loads(trace.model_dump_json()) for trace in state["trace"]]
 
-    state["plan"] = {
-        "reasoning": state["plan"].reasoning,
-        "steps": [str(step) for step in state["plan"].steps],
-    }
+    state["plan"] = json.loads(state["plan"].model_dump_json())
 
     state["dataset_description"] = "..."
 
