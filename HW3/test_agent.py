@@ -87,35 +87,33 @@ def run_all(output_csv: str = "results.csv") -> None:
     rows = []
 
     all_tasks = [(DATASET_NAME, q) for q in CUSTOM_QUESTIONS]
+    fieldnames = ["question", "final_answer", "plan"]
 
-    for csv_path, question in all_tasks:
-        dataset_name = os.path.splitext(os.path.basename(csv_path))[0]
-        print(f"\n\n{'='*45} BEGIN TASK {'='*45}\n")
-        print(f"{'='*5}  Dataset  : {dataset_name}")
-        print(f"{'='*5}  Question : {question}\n\n")
-
-        result = run_agent(question, csv_path)
-
-        print(f"\n\n{'='*45} END TASK {'='*45}\n")
-
-        print(json.dumps(result, indent=4, ensure_ascii=False))
-
-        rows.append(
-            {
-                "question": question,
-                "plan": result["plan_pretty"],
-                "final_answer": result["final_answer"],
-            }
-        )
-
-    # Write results.csv
-    fieldnames = ["question", "plan", "final_answer"]
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
 
-    print(f"\nResults written to {output_csv}")
+        for csv_path, question in all_tasks:
+            dataset_name = os.path.splitext(os.path.basename(csv_path))[0]
+            print(f"\n\n{'='*45} BEGIN TASK {'='*45}\n")
+            print(f"{'='*5}  Dataset  : {dataset_name}")
+            print(f"{'='*5}  Question : {question}\n\n")
+
+            result = run_agent(question, csv_path)
+
+            print(f"\n\n{'='*45} END TASK {'='*45}\n")
+
+            print(json.dumps(result, indent=4, ensure_ascii=False))
+
+            writer.writerow(
+                {
+                    "question": question,
+                    "final_answer": result["final_answer"],
+                    "plan": result["plan_pretty"],
+                }
+            )
+
+    print(f"\nTASK COMPLETE! {len(CUSTOM_QUESTIONS)} questions answered.")
 
 
 if __name__ == "__main__":
