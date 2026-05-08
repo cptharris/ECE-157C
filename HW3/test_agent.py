@@ -47,10 +47,10 @@ CUSTOM_QUESTIONS = [
     "Which borough has the most listings that are available year-round (availability_365 = 365)?",
     "How many listings in Brooklyn are priced under $100 per night?",
     "What are the top 5 hosts by total number of listings across all boroughs?",
-    "What is the average number of reviews for listings that require a minimum stay of exactly 1 night?",
-    "What is the most expensive room type on average in Queens?",
-    "Which neighbourhoods in Staten Island have fewer than 10 listings?",
-    "What is the average availability (availability_365) for private room listings that have at least 1 review?",
+    # "What is the average number of reviews for listings that require a minimum stay of exactly 1 night?",
+    # "What is the most expensive room type on average in Queens?",
+    # "Which neighbourhoods in Staten Island have fewer than 10 listings?",
+    "Describe the availability for entire home/apt listings that have at least 1 review.",
 
     # INTERMEDIATE
     "Which borough has the highest average estimated annual revenue potential, defined as price times availability_365?",
@@ -64,12 +64,12 @@ CUSTOM_QUESTIONS = [
 
     # ADVANCED
     "Among entire home/apt listings in Manhattan available more than 200 days per year and priced under $300, what are the top 3 neighbourhoods by average number of reviews?",
-    "Which neighbourhood has the highest concentration of \"high-value\" listings (price > $150 AND availability_365 > 100 AND number_of_reviews > 20), among neighbourhoods with at least 30 total listings?",
+    'Which neighbourhood has the highest concentration of "high-value" listings (price > $150 AND availability_365 > 100 AND number_of_reviews > 20), among neighbourhoods with at least 30 total listings?',
     "For each borough, what is the top neighbourhood by average estimated annual revenue potential (price times availability_365), among listings with at least 50 reviews?",
     "Among private room listings that are available at least 100 days per year and have a reviews_per_month above 0.5, which 5 neighbourhoods have the lowest average price?",
     "What is the average price gap between entire home/apt and private room listings within each borough, and which borough has the largest gap?",
     "Among listings with at least 20 reviews and a minimum stay of 1—3 nights, which room type in which borough produces the best reviews-per-dollar (reviews_per_month / price)?",
-    "Which hosts operating in more than one borough have the highest average listing price, among hosts with at least 5 total listings?",
+    "Which hosts operating in more than one borough have the highest average listing price, among hosts with at least 20 total listings?",
     "For entire home/apt listings priced between $75 and $250, which borough shows the strongest correlation proxy between availability and review count — i.e., highest average (availability_365 times reviews_per_month) — and what is that value?",
 
     # "Which hosts are the busiest and why?",
@@ -103,8 +103,6 @@ def run_all(output_csv: str = "results.csv") -> None:
 
             print(f"\n\n{'='*45} END TASK {'='*45}\n")
 
-            print(json.dumps(result, indent=4, ensure_ascii=False))
-
             writer.writerow(
                 {
                     "question": question,
@@ -112,6 +110,10 @@ def run_all(output_csv: str = "results.csv") -> None:
                     "plan": result["plan_pretty"],
                 }
             )
+
+            result["plan_pretty"] = "..."
+
+            print(json.dumps(result, indent=4, ensure_ascii=False))
 
     print(f"\nTASK COMPLETE! {len(CUSTOM_QUESTIONS)} questions answered.")
 
