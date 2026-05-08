@@ -79,12 +79,21 @@ def get_cached(messages):
     if not CACHE_ENABLED:
         return None
     cache = _load_cache()
-    return cache.get(_key(messages))
+    entry = cache.get(_key(messages))
+    if entry is None:
+        return None
+
+    if isinstance(entry, list):
+        return entry[1]
+
+    # backwards compat
+    set_cached(messages, entry)
+    return entry
 
 
 def set_cached(messages, value):
     if not CACHE_ENABLED:
         return
     cache = _load_cache()
-    cache[_key(messages)] = value
+    cache[_key(messages)] = [messages, value]
     CACHE_PATH.write_text(json.dumps(cache, indent=2))
