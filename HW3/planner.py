@@ -91,7 +91,8 @@ OUTPUT FORMAT  (respond with ONLY this JSON — no markdown, no prose)
   "steps": [
     { "op": "<op_code>", <...op-specific fields...> },
     ...
-  ]
+  ],
+  "description": "<concise description of what the output means"
 }
 
 ────────────────────────────────────────────
@@ -113,6 +114,7 @@ RULES
       incomplete or misleading, skip limit_rows.
 5. Never invent op codes not listed above.
 6. The "reasoning" field must explain each step you chose and why.
+7. The "description" field must explain what the final output means.
 """
 
 PLANNER_USER_PROMPT = """\

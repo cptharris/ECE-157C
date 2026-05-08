@@ -204,6 +204,7 @@ class TraceEntry(BaseModel):
 class Plan(BaseModel):
     reasoning: str  # chain-of-thought: why these steps, in this order
     steps: list[Step]
+    description: str
 
 
 # ---------------------------------------------------------------------------

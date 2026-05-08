@@ -22,6 +22,9 @@ USER_PROMPT = """\
 Question:
 {question}
 
+Description of data:
+{description}
+
 Captured data:
 {data}
 """
@@ -32,6 +35,7 @@ def respond_node(state: AgentState) -> AgentState:
         SYSTEM_PROMPT,
         USER_PROMPT.format(
             question=state["question"],
+            description=state["plan"].description[:2000],
             data=json.dumps(state["execution_result"], indent=None)[:10000],
         ),
     )
