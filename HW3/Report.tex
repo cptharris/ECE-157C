@@ -1,0 +1,526 @@
+\documentclass[12pt, oneside]{report}
+
+\pdfcompresslevel=1
+\pdfobjcompresslevel=\pdfcompresslevel
+
+\input{../ECE 157C Packages.tex}
+
+\title{ECE 157C/272C HW 03}
+\author{Caleb Harris}
+\date{}
+
+\begin{document}
+\input{../ECE 157C Title.tex}
+
+% ============================================================
+\chap{Dataset Description}
+% ============================================================
+
+\sect{Dataset Description}
+
+\subsect{Source}
+
+The dataset used in this assignment is the \hyperlink{https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data}{\textit{New York City Airbnb Open Data}} dataset, originally compiled by Dgomonov and publicly available on Kaggle.
+The data was sourced from Inside Airbnb, an independent project that aggregates publicly available listing information from Airbnb's website. It reflects listing activity in New York City as of 2019.
+
+\subsect{Size and Structure}
+
+The dataset contains \textbf{48,895 rows} and \textbf{16 columns}. Each row represents a single Airbnb listing. The columns span a mix of categorical identifiers, geographic attributes, pricing and availability metrics, and host-level information.
+
+\subsect{Key Columns}
+
+Table~\ref{tab:columns} summarizes the columns most relevant to this assignment.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lll}
+    \hline
+    \textbf{Column} & \textbf{Type} & \textbf{Description} \\
+    \hline
+    \texttt{neighbourhood\_group} & Categorical & Borough (Manhattan, Brooklyn, etc.) \\
+    \texttt{neighbourhood}        & Categorical & Specific neighbourhood within borough \\
+    \texttt{room\_type}           & Categorical & Entire home/apt, Private room, or Shared room \\
+    \texttt{price}                & Numeric     & Nightly price in USD \\
+    \texttt{minimum\_nights}      & Numeric     & Minimum required stay in nights \\
+    \texttt{number\_of\_reviews}  & Numeric     & Total reviews received by listing \\
+    \texttt{reviews\_per\_month}  & Numeric     & Average monthly review rate \\
+    \texttt{availability\_365}    & Numeric     & Days available per year \\
+    \texttt{calculated\_host\_listings\_count} & Numeric & Total listings by the same host \\
+    \texttt{host\_name}           & Categorical & Name of the host \\
+    \hline
+  \end{tabular}
+  \caption{Key columns in the NYC Airbnb dataset.}
+  \label{tab:columns}
+\end{table}
+
+\subsect{Why This Dataset Requires Multi-Step Analysis}
+
+No meaningful question about this dataset can be answered with a single operation.
+The numeric columns -- such as \texttt{price}, \texttt{availability\_365}, and \texttt{reviews\_per\_month} -- are only interpretable in context: a high price means something different for a shared room in the Bronx than for an entire apartment in Manhattan. Extracting that context requires combining filtering, grouping, and aggregation across multiple categorical dimensions.
+
+Furthermore, several quantities of analytical interest are not directly present as columns and must be derived before they can be used.
+For example, estimated annual revenue potential must be computed as \texttt{price} $\times$ \texttt{availability\_365}, and minimum total cost requires multiplying \texttt{minimum\_nights} with \texttt{price}. These derived metrics must then feed into downstream grouping and ranking steps, making the pipeline inherently multi-stage.
+
+The combination of geographic hierarchy (borough $\rightarrow$ neighbourhood), categorical room types, multiple numeric performance signals, and host-level aggregations creates a natural space for questions that span filtering, derivation, grouping, sorting, and top-$k$ selection -- all of which are required to produce a grounded, reproducible answer.
+
+\chap{Question Design}
+
+The fifteen questions in this assignment are organized into three tiers of complexity: basic, intermediate, and advanced. All questions require at least two operations to answer; the tier classification reflects the number of steps, the presence of derived columns, and the degree of multi-condition reasoning required.
+
+% ==============================================================================
+\sect{Basic Questions}
+% ==============================================================================
+
+Basic questions combine two or three standard operations such as filtering, grouping, aggregating, sorting, or limiting. They do not require derived columns or multi-condition logic.
+
+\subsubsect{B1. What is the average nightly price for entire home/apt listings in Manhattan?}
+
+\textbf{Why multiple steps are required.}
+The dataset contains listings of all room types across all boroughs. The average price cannot be computed directly; the table must first be narrowed to the relevant subset before aggregation.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{room\_type} is
+    \texttt{"Entire home/apt"}
+  \item \texttt{filter\_rows}: retain rows where \texttt{neighbourhood\_group}
+    is \texttt{"Manhattan"}
+  \item \texttt{group\_and\_aggregate}: compute \texttt{mean(price)}
+\end{enumerate}
+
+\textbf{Classification.}
+Two sequential filters followed by a single aggregation represent the minimal multi-step pattern, placing this question firmly in the basic tier.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B2. Rank boroughs by which has the most listings that are available
+year-round.}
+
+\textbf{Why multiple steps are required.}
+Year-round availability is a property of individual listings and must be isolated
+before borough-level counts can be computed and ranked.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{availability\_365}
+    equals 365
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{count} as \texttt{listing\_count}
+  \item \texttt{sort\_rows}: sort by \texttt{listing\_count} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The question requires a filter, a grouped count, and a sort -- three operations,
+all standard, with no derived columns.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B3. How many listings in Brooklyn are priced under \$100 per night?}
+
+\textbf{Why multiple steps are required.}
+Two independent conditions must both be satisfied -- borough membership and a price
+threshold -- before a count can be produced.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{neighbourhood\_group}
+    is \texttt{"Brooklyn"}
+  \item \texttt{filter\_rows}: retain rows where \texttt{price} $< 100$
+  \item \texttt{group\_and\_aggregate}: compute \texttt{count}
+\end{enumerate}
+
+\textbf{Classification.}
+Two filters and a count; no grouping hierarchy and no derived values. This is the
+simplest possible multi-condition aggregation.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B4. What are the top 5 hosts by total number of listings across all
+boroughs?}
+
+\textbf{Why multiple steps are required.}
+Per-host listing counts are not a stored column; they must be computed by grouping
+on host identity. The result must then be ranked and truncated.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{host\_name}, compute
+    \texttt{count} as \texttt{listing\_count}
+  \item \texttt{sort\_rows}: sort by \texttt{listing\_count} descending
+  \item \texttt{limit\_rows}: keep top 5
+\end{enumerate}
+
+\textbf{Classification.}
+A group-aggregate followed by sort and limit is a standard three-step pattern
+with no filtering or derivation required.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B5. Describe the availability for listings that have at least 10
+reviews.}
+
+\textbf{Why multiple steps are required.}
+The availability summary applies only to a filtered subset of listings; the
+aggregation cannot be applied to the full table.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{number\_of\_reviews}
+    $\geq 10$
+  \item \texttt{group\_and\_aggregate}: compute \texttt{mean(availability\_365)},
+    \texttt{min(availability\_365)}, \texttt{max(availability\_365)}
+\end{enumerate}
+
+\textbf{Classification.}
+One filter and one multi-metric aggregation. The descriptive framing asks for
+summary statistics rather than a single value, but the operation count remains
+minimal.
+
+% ==============================================================================
+\sect{Intermediate Questions}
+% ==============================================================================
+
+Intermediate questions introduce at least one derived column, or combine a derived
+metric with grouping and sorting. The key distinguishing feature is that an
+important quantity must be constructed from existing columns before any
+aggregation can be performed.
+
+\subsubsect{I1. Which borough has the highest average estimated annual revenue
+potential, defined as price $\times$ availability\_365?}
+
+\textbf{Why multiple steps are required.}
+Revenue potential is not a stored column. It must be derived for each listing
+before borough-level averages can be computed.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{derive\_columns}: compute
+    \texttt{revenue\_potential = price * availability\_365}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{mean(revenue\_potential)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_revenue\_potential} descending
+  \item \texttt{limit\_rows}: keep top 1
+\end{enumerate}
+
+\textbf{Classification.}
+The derivation step is what separates this from a basic question. The rest of the
+pipeline is standard group-sort-limit.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I2. Among listings with at least 10 reviews, describe the average
+minimum total cost (price $\times$ minimum\_nights) by room type.}
+
+\textbf{Why multiple steps are required.}
+Minimum total cost must be derived, and the analysis is restricted to a filtered
+subset. Both preconditions must be satisfied before the grouped aggregation.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{number\_of\_reviews}
+    $\geq 10$
+  \item \texttt{derive\_columns}: compute
+    \texttt{min\_total\_cost = price * minimum\_nights}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{room\_type}, compute
+    \texttt{mean(min\_total\_cost)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_min\_total\_cost} descending
+\end{enumerate}
+
+\textbf{Classification.}
+Combines a filter, a derivation, and a grouped aggregation -- the canonical
+intermediate pattern.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I3. What percentage of listings in each borough are entire
+home/apt?}
+
+\textbf{Why multiple steps are required.}
+The percentage requires constructing a binary indicator column, then computing
+its mean per group -- a two-stage operation not expressible as a single aggregate.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{derive\_columns}: compute \texttt{is\_entire\_home = 1} if
+    \texttt{room\_type} is \texttt{"Entire home/apt"}, else \texttt{0}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{mean(is\_entire\_home)} as \texttt{entire\_home\_rate}
+  \item \texttt{sort\_rows}: sort by \texttt{entire\_home\_rate} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The derivation of an indicator variable to compute a group proportion is an
+intermediate technique. Without derivation, this percentage cannot be expressed
+as a standard aggregation.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I4. For listings requiring a minimum stay of at least 7 nights,
+what is the average price and average availability\_365 by room type?}
+
+\textbf{Why multiple steps are required.}
+The analysis is scoped to a filtered subset, and the result requires computing
+two separate aggregation metrics across groups.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{minimum\_nights} $\geq 7$
+  \item \texttt{group\_and\_aggregate}: group by \texttt{room\_type}, compute
+    \texttt{mean(price)} and \texttt{mean(availability\_365)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_price} descending
+\end{enumerate}
+
+\textbf{Classification.}
+While this question does not require a derived column, producing two aggregation
+metrics simultaneously in a filtered grouping context is characteristic of
+intermediate complexity.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I5. For listings with above-average monthly reviews, what is the
+average price by borough?}
+
+\textbf{Why multiple steps are required.}
+The filter threshold is not a constant -- it is the global mean of
+\texttt{reviews\_per\_month}, which must be computed before the filter can be
+applied.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{group\_and\_aggregate}: compute global
+    \texttt{mean(reviews\_per\_month)} as \texttt{avg\_rpm}
+  \item \texttt{filter\_rows}: retain rows where \texttt{reviews\_per\_month}
+    $>$ \texttt{avg\_rpm}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{mean(price)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_price} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The data-dependent filter threshold requires a preliminary aggregation step,
+making this question more complex than a standard filter-then-group pattern.
+
+% ==============================================================================
+\sect{Advanced Questions}
+% ==============================================================================
+
+Advanced questions require four or more operations, often combining multi-condition
+filters, derived columns, grouped aggregations, and top-$k$ selection. Several
+involve thresholds that are computed from the data rather than supplied as
+constants.
+
+\subsubsect{A1. Among entire home/apt listings in Manhattan available more than
+  200 days per year and priced under \$300, what are the top 3 neighbourhoods by
+average number of reviews?}
+
+\textbf{Why multiple steps are required.}
+Three independent filter conditions must all be satisfied before neighbourhood-level
+aggregation and ranking can be performed.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: \texttt{room\_type} is \texttt{"Entire home/apt"}
+  \item \texttt{filter\_rows}: \texttt{neighbourhood\_group} is
+    \texttt{"Manhattan"}
+  \item \texttt{filter\_rows}: \texttt{availability\_365} $> 200$
+  \item \texttt{filter\_rows}: \texttt{price} $< 300$
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood}, compute
+    \texttt{mean(number\_of\_reviews)} and \texttt{count}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_reviews} descending
+  \item \texttt{limit\_rows}: keep top 3
+\end{enumerate}
+
+\textbf{Classification.}
+The depth of the filter chain (four conditions) combined with grouped aggregation
+and top-$k$ selection defines this as an advanced question.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A2. Which neighbourhood has the highest concentration of
+  ``high-value'' listings -- where price, availability, and number of reviews all
+  exceed their respective dataset averages -- among neighbourhoods with at least 30
+total listings?}
+
+\textbf{Why multiple steps are required.}
+Each of the three thresholds must be computed from the data. A binary indicator
+must then be derived, grouped, and filtered by neighbourhood size before a
+concentration rate can be ranked.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{group\_and\_aggregate}: compute global means of \texttt{price},
+    \texttt{availability\_365}, and \texttt{number\_of\_reviews}
+  \item \texttt{derive\_columns}: compute \texttt{is\_high\_value = 1} if all
+    three thresholds are exceeded, else \texttt{0}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood}, compute
+    \texttt{count} as \texttt{total} and \texttt{sum(is\_high\_value)} as
+    \texttt{hv\_count}
+  \item \texttt{filter\_rows}: retain rows where \texttt{total} $\geq 30$
+  \item \texttt{derive\_columns}: compute
+    \texttt{hv\_rate = hv\_count / total}
+  \item \texttt{sort\_rows}: sort by \texttt{hv\_rate} descending
+  \item \texttt{limit\_rows}: keep top 1
+\end{enumerate}
+
+\textbf{Classification.}
+This question requires two derivation steps, two aggregation steps, and
+data-driven thresholds for all three filter conditions -- the most compositionally
+complex pattern in the set.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A3. What is the average price gap between shared room and private
+room listings within each borough, and which borough has the largest gap?}
+
+\textbf{Why multiple steps are required.}
+The price gap is not stored and cannot be computed in a single group-aggregate
+step. Per-room-type averages must first be computed, then the difference between
+two specific groups must be derived.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{room\_type} is
+    \texttt{"Shared room"} or \texttt{"Private room"}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group}
+    and \texttt{room\_type}, compute \texttt{mean(price)}
+  \item \texttt{derive\_columns}: pivot room type means into
+    \texttt{avg\_shared} and \texttt{avg\_private} per borough, then
+    compute \texttt{price\_gap = avg\_private - avg\_shared}
+  \item \texttt{sort\_rows}: sort by \texttt{price\_gap} descending
+  \item \texttt{limit\_rows}: keep top 1
+\end{enumerate}
+
+\textbf{Classification.}
+The cross-group derivation step -- computing a difference between two aggregated
+values in the same table -- requires a restructuring operation that is absent from
+basic and intermediate questions.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A4. Among listings with at least 20 reviews and a minimum stay of
+  1--3 nights, which listing in which borough has the lowest total cost (price
+$\times$ minimum\_nights)? Disregard listings with a price of \$0.}
+
+\textbf{Why multiple steps are required.}
+Four filter conditions narrow the dataset, a column must be derived, and the
+result must be sorted and limited to a single row.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{number\_of\_reviews}
+    $\geq 20$
+  \item \texttt{filter\_rows}: retain rows where \texttt{minimum\_nights}
+    $\geq 1$ and \texttt{minimum\_nights} $\leq 3$
+  \item \texttt{filter\_rows}: retain rows where \texttt{price} $> 0$
+  \item \texttt{derive\_columns}: compute
+    \texttt{total\_cost = price * minimum\_nights}
+  \item \texttt{sort\_rows}: sort by \texttt{total\_cost} ascending
+  \item \texttt{limit\_rows}: keep top 1
+  \item \texttt{select\_columns}: retain listing name, borough, and
+    \texttt{total\_cost}
+\end{enumerate}
+
+\textbf{Classification.}
+The combination of four filter conditions, a derivation, and an ascending
+top-1 selection across the full listing-level table (rather than an aggregated
+group) distinguishes this from simpler questions.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A5. Which hosts operating in all 5 boroughs have the highest
+average listing price, among hosts with at least 20 total listings?}
+
+\textbf{Why multiple steps are required.}
+The borough coverage of each host must be computed and compared to a threshold of
+5 before any price ranking can be produced. This requires counting distinct values
+within a group -- a step that must precede the final filter and sort.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where
+    \texttt{calculated\_host\_listings\_count} $\geq 20$
+  \item \texttt{group\_and\_aggregate}: group by \texttt{host\_name}, compute
+    \texttt{count\_distinct(neighbourhood\_group)} as
+    \texttt{borough\_count} and \texttt{mean(price)} as
+    \texttt{avg\_price}
+  \item \texttt{filter\_rows}: retain rows where \texttt{borough\_count}
+    equals 5
+  \item \texttt{sort\_rows}: sort by \texttt{avg\_price} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The requirement to count distinct categorical values within a group and use that
+count as a post-aggregation filter threshold is a sophisticated multi-step pattern
+that does not arise in basic or intermediate questions.
+
+% ============================================================
+\chap{System Design}
+% ============================================================
+
+\begin{figure}[ht!]
+  \centering
+  % inkscape graphics/agent_workflow_diagram.svg --export-type=png --export-dpi=200
+  \includegraphics[width=0.9\linewidth]{agent_workflow_diagram.png}
+  \caption{Agent Workflow Graph}
+\end{figure}
+
+\break
+
+The system is implemented as a modular LangGraph pipeline that converts a natural-language question into a deterministic sequence of tabular operations. The architecture separates planning, execution, and low-level dataframe manipulation into independent components, allowing the system to remain extensible and debuggable.
+
+\sect{Planner Architecture}
+
+The planner node is implemented in \texttt{planner.py}. Its responsibility is to translate a user question into a structured execution plan represented as a JSON object validated against the Pydantic schemas defined in \texttt{schemas.py}.
+
+The planner constructs a detailed system prompt that defines the available operation set, the required output format, and the constraints governing valid plans. The dataset shape and column metadata are injected into the user prompt so the language model can reason about the available schema before generating a plan.
+
+The generated response is parsed and validated using the \texttt{Plan} schema. Each operation in the plan is resolved into a strongly typed step object through Pydantic's discriminated union mechanism. Invalid plans are rejected immediately, ensuring that downstream execution only receives schema-compliant operations.
+
+\sect{Executor Architecture}
+
+The executor node is implemented in \texttt{executor.py}. It is responsible for replaying the planner-generated operations against the dataset in sequential order.
+
+At the beginning of execution, the executor loads the dataset into a Pandas dataframe using the CSV path stored in the shared agent state. Each step in the plan is then applied iteratively. Before execution, the dataframe shape is recorded; after execution, the resulting shape and any raised exception are captured in a \texttt{TraceEntry} object.
+
+Execution is isolated at the step level. If a step raises an exception, the executor records the error in the trace while allowing the remaining steps to continue. This design simplifies debugging and provides visibility into partial pipeline execution.
+
+The executor delegates all dataframe manipulation logic to the operator dispatch layer implemented in \texttt{operators.py}. Snapshot, restore, and join operations are handled separately because they require access to the shared snapshot store.
+
+\sect{Operator Implementation}
+
+All dataframe transformations are implemented in \texttt{operators.py}. Each operation is mapped to a dedicated helper function responsible for applying a single transformation to the current dataframe.
+
+The dispatch layer uses runtime type checking against the schema-defined step classes to route each step to the correct implementation. Operations such as filtering, grouping, aggregation, sorting, pivoting, and column derivation are implemented directly using Pandas primitives.
+
+The filtering operator dynamically constructs boolean masks from structured filter conditions, supporting chained logical conjunctions. Aggregation operations are translated into Pandas aggregation specifications, while derived-column operations apply arithmetic transformations between existing columns.
+
+This separation between planning schemas and execution operators creates a clean boundary between semantic reasoning and dataframe manipulation. New operations can therefore be added by extending both the schema layer and the dispatch implementation without modifying the overall execution architecture.
+
+\sect{State and Intermediate Result Management}
+
+Shared state is defined in \texttt{schemas.py} through the \texttt{AgentState} typed dictionary and the collection of strongly typed operation schemas.
+
+The system does not store intermediate dataframes directly in the shared LangGraph state because Pandas dataframes are not JSON serializable. Instead, the executor reconstructs the execution pipeline from the original CSV file on every invocation.
+
+Intermediate execution metadata is preserved through the \texttt{TraceEntry} schema, which records the operation type, dataframe dimensions before and after execution, and any associated errors.
+
+Temporary dataframe checkpoints are implemented through the snapshot system. The executor maintains an in-memory dictionary mapping snapshot names to dataframe copies. The \texttt{snapshot} operation stores the current dataframe, \texttt{restore} replaces the current dataframe with a saved copy, and \texttt{join} merges the active dataframe with a previously saved snapshot.
+
+This design keeps the LangGraph state lightweight and serializable while still enabling multi-stage analytical pipelines that require branching, restoration, or relational joins between intermediate results.
+
+% ============================================================
+\chap{Execution Analysis}
+% ============================================================
+
+% ============================================================
+\chap{Failure Analysis}
+% ============================================================
+
+% ============================================================
+\chap{Comparison with Previous Agents}
+% ============================================================
+
+% ============================================================
+\chap{Reflections}
+% ============================================================
+
+\end{document}
