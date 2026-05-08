@@ -151,7 +151,7 @@ def planner_node(state: AgentState) -> AgentState:
         plan = Plan.model_validate_json(json_str)
     except Exception as exc:
         raise RuntimeError(
-            f"Planner produced an invalid plan (retry {state['retry_count']}).\n"
+            f"Planner produced an invalid plan (run {state['run_count']}).\n"
             f"Error: {exc}\n"
             f"Raw output:\n{raw}"
         ) from exc

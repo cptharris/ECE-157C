@@ -25,12 +25,8 @@ def run_agent(question: str, csv_path: str) -> dict:
         {
             "question": question,
             "csv_path": csv_path,
-            "dataset_description": None,
-            "plan": None,
-            "trace": [],
-            "final_answer": None,
-            "retry_count": 0,
-            "max_retries": 2,
+            "run_count": 0,
+            "max_runs": 2,
         }
     )
 

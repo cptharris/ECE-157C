@@ -10,7 +10,7 @@ from operators import _snapshot, _restore, _join
 
 
 def execute_node(state: AgentState) -> AgentState:
-    state["retry_count"] += 1
+    state["run_count"] += 1
     trace_entries: List[TraceEntry] = []
     snapshots: dict[str, pd.DataFrame] = {}
 
