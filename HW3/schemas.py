@@ -257,6 +257,6 @@ def format_node(state: State) -> State:
         "steps": [str(step) for step in state["plan"].steps],
     }
 
-    state["dataset_description"]["sample"] = "..."
+    state["dataset_description"] = "..."
 
     return state
