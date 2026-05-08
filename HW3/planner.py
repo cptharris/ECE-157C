@@ -102,8 +102,15 @@ RULES
    an earlier step in the same plan.
 2. Prefer the minimal number of steps that correctly answers the question.
 3. Place filter_rows and select_columns as early as possible to reduce the working set.
-4. When the question asks for a ranking or "top N", end with sort_rows then limit_rows.
-   a. However, if removing the non-top rows would make the answer incomplete or misleading, skip limit_rows.
+4. When the question asks for a ranking or "top N", end with sort_rows.
+   a. Follow with limit_rows only when the top-N rows ARE the complete answer —
+      i.e., the question is fully resolved by seeing just those rows
+      (e.g., "which single X has the highest Y?", "what are the top 3 Z?").
+   b. Do NOT use limit_rows when the question requests a per-group aggregation
+      and then identifies the extreme group. The full aggregated result is the
+      answer; the extreme is simply visible at the top after sorting.
+   c. As a quick test: if removing the non-top rows would make the answer
+      incomplete or misleading, skip limit_rows.
 5. Never invent op codes not listed above.
 6. The "reasoning" field must explain each step you chose and why.
 """
