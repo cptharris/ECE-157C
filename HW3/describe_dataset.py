@@ -14,7 +14,7 @@ def describe_dataset_node(state: AgentState) -> AgentState:
     return state
 
 
-def describe_dataset(df: pd.DataFrame) -> dict:
+def describe_dataset(df: pd.DataFrame, number_samples: int=2) -> dict:
     columns = []
 
     for col, dtype in df.dtypes.items():
@@ -25,5 +25,5 @@ def describe_dataset(df: pd.DataFrame) -> dict:
     return {
         "shape": f"{rows} rows by {cols} columns",
         "columns": ", ".join(columns),
-        "sample": df.head(2).to_dict(orient="records"),
+        "sample": df.head(number_samples).to_dict(orient="records"),
     }
