@@ -17,7 +17,7 @@ def _filter_rows(df: pd.DataFrame, step: FilterRowsStep) -> pd.DataFrame:
     for cond in step.conditions:
         column = cond.column
         operator = cond.operator
-        value = cond.value
+        value = df[cond.value].astype(object) if (cond.value in df.columns) else cond.value
         conjunction = cond.conjunction
         ser = df[column].astype(object)
         if operator == "==":
