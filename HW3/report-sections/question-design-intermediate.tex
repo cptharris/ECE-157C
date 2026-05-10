@@ -1,0 +1,98 @@
+Intermediate questions introduce at least one derived column, or combine a derived metric with grouping and sorting. The key distinguishing feature is that an important quantity must be constructed from existing columns before any aggregation can be performed.
+
+\subsubsect{I1. Which borough has the highest average estimated annual revenue potential, defined as price \texorpdfstring{$\times$}{times} availability\_365?}
+
+\textbf{Why multiple steps are required.}
+Revenue potential is not a stored column. It must be derived for each listing before borough-level averages can be computed.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{derive\_columns}: compute
+    \texttt{revenue\_potential = price * availability\_365}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{mean(revenue\_potential)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_revenue\_potential} descending
+  \item \texttt{limit\_rows}: keep top 1
+\end{enumerate}
+
+\textbf{Classification.}
+The derivation step is what separates this from a basic question. The rest of the pipeline is standard group-sort-limit.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I2. Among listings with at least 10 reviews, describe the average minimum total cost (price \texorpdfstring{$\times$}{times} minimum\_nights) by room type.}
+
+\textbf{Why multiple steps are required.}
+Minimum total cost must be derived, and the analysis is restricted to a filtered subset. Both preconditions must be satisfied before the grouped aggregation.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{number\_of\_reviews}
+    $\geq 10$
+  \item \texttt{derive\_columns}: compute
+    \texttt{min\_total\_cost = price * minimum\_nights}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{room\_type}, compute
+    \texttt{mean(min\_total\_cost)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_min\_total\_cost} descending
+\end{enumerate}
+
+\textbf{Classification.}
+Combines a filter, a derivation, and a grouped aggregation -- the canonical intermediate pattern.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I3. What percentage of listings in each borough are entire home/apt?}
+
+\textbf{Why multiple steps are required.}
+The percentage requires constructing a binary indicator column, then computing its mean per group -- a two-stage operation not expressible as a single aggregate.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{derive\_columns}: compute \texttt{is\_entire\_home = 1} if
+    \texttt{room\_type} is \texttt{"Entire home/apt"}, else \texttt{0}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{mean(is\_entire\_home)} as \texttt{entire\_home\_rate}
+  \item \texttt{sort\_rows}: sort by \texttt{entire\_home\_rate} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The derivation of an indicator variable to compute a group proportion is an intermediate technique. Without derivation, this percentage cannot be expressed as a standard aggregation.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I4. For listings requiring a minimum stay of at least 7 nights, what is the average price and average availability\_365 by room type?}
+
+\textbf{Why multiple steps are required.}
+The analysis is scoped to a filtered subset, and the result requires computing two separate aggregation metrics across groups.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{minimum\_nights} $\geq 7$
+  \item \texttt{group\_and\_aggregate}: group by \texttt{room\_type}, compute
+    \texttt{mean(price)} and \texttt{mean(availability\_365)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_price} descending
+\end{enumerate}
+
+\textbf{Classification.}
+While this question does not require a derived column, producing two aggregation metrics simultaneously in a filtered grouping context is characteristic of intermediate complexity.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{I5. For listings with above-average monthly reviews, what is the average price by borough?}
+
+\textbf{Why multiple steps are required.}
+The filter threshold is not a constant -- it is the global mean of \texttt{reviews\_per\_month}, which must be computed before the filter can be applied.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{group\_and\_aggregate}: compute global
+    \texttt{mean(reviews\_per\_month)} as \texttt{avg\_rpm}
+  \item \texttt{filter\_rows}: retain rows where \texttt{reviews\_per\_month}
+    $>$ \texttt{avg\_rpm}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{mean(price)}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_price} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The data-dependent filter threshold requires a preliminary aggregation step, making this question more complex than a standard filter-then-group pattern.

@@ -1,0 +1,119 @@
+Advanced questions require four or more operations, often combining multi-condition filters, derived columns, grouped aggregations, and top-$k$ selection. Several involve thresholds that are computed from the data rather than supplied as constants.
+
+\subsubsect{A1. Among entire home/apt listings in Manhattan available more than 200 days per year and priced under \$300, what are the top 3 neighbourhoods by average number of reviews?}
+
+\textbf{Why multiple steps are required.}
+Three independent filter conditions must all be satisfied before neighbourhood-level aggregation and ranking can be performed.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: \texttt{room\_type} is \texttt{"Entire home/apt"}
+  \item \texttt{filter\_rows}: \texttt{neighbourhood\_group} is
+    \texttt{"Manhattan"}
+  \item \texttt{filter\_rows}: \texttt{availability\_365} $> 200$
+  \item \texttt{filter\_rows}: \texttt{price} $< 300$
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood}, compute
+    \texttt{mean(number\_of\_reviews)} and \texttt{count}
+  \item \texttt{sort\_rows}: sort by \texttt{mean\_reviews} descending
+  \item \texttt{limit\_rows}: keep top 3
+\end{enumerate}
+
+\textbf{Classification.}
+The depth of the filter chain (four conditions) combined with grouped aggregation and top-$k$ selection defines this as an advanced question.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A2. Which neighbourhood has the highest concentration of ``high-value'' listings (where price \texorpdfstring{$>$}{is greater than} average price and availability \texorpdfstring{$>$}{is greater than} average availability and number of reviews \texorpdfstring{$>$}{is greater than} average number of reviews), among neighbourhoods with at least 30 total listings?}
+
+\textbf{Why multiple steps are required.}
+Each of the three thresholds must be computed from the data. A binary indicator must then be derived, grouped, and filtered by neighbourhood size before a concentration rate can be ranked.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{group\_and\_aggregate}: compute global means of \texttt{price},
+    \texttt{availability\_365}, and \texttt{number\_of\_reviews}
+  \item \texttt{derive\_columns}: compute \texttt{is\_high\_value = 1} if all
+    three thresholds are exceeded, else \texttt{0}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood}, compute
+    \texttt{count} as \texttt{total} and \texttt{sum(is\_high\_value)} as
+    \texttt{hv\_count}
+  \item \texttt{filter\_rows}: retain rows where \texttt{total} $\geq 30$
+  \item \texttt{derive\_columns}: compute
+    \texttt{hv\_rate = hv\_count / total}
+  \item \texttt{sort\_rows}: sort by \texttt{hv\_rate} descending
+  \item \texttt{limit\_rows}: keep top 1
+\end{enumerate}
+
+\textbf{Classification.}
+This question requires two derivation steps, two aggregation steps, and data-driven thresholds for all three filter conditions -- the most compositionally complex pattern in the set.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A3. What is the average price gap between shared room and private room listings within each borough, and which borough has the largest gap?}
+
+\textbf{Why multiple steps are required.}
+The price gap is not stored and cannot be computed in a single group-aggregate step. Per-room-type averages must first be computed, then the difference between two specific groups must be derived.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{room\_type} is
+    \texttt{"Shared room"} or \texttt{"Private room"}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group}
+    and \texttt{room\_type}, compute \texttt{mean(price)}
+  \item \texttt{derive\_columns}: pivot room type means into
+    \texttt{avg\_shared} and \texttt{avg\_private} per borough, then
+    compute \texttt{price\_gap = avg\_private - avg\_shared}
+  \item \texttt{sort\_rows}: sort by \texttt{price\_gap} descending
+  \item \texttt{limit\_rows}: keep top 1
+\end{enumerate}
+
+\textbf{Classification.}
+The cross-group derivation step -- computing a difference between two aggregated values in the same table -- requires a restructuring operation that is absent from basic and intermediate questions.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A4. Among listings with at least 20 reviews and a minimum stay of 1--3 nights, which listing in which borough has the lowest total cost (price \texorpdfstring{$\times$}{times} minimum\_nights)? Disregard listings with a price of \$0.}
+
+\textbf{Why multiple steps are required.}
+Four filter conditions narrow the dataset, a column must be derived, and the result must be sorted and limited to a single row.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{number\_of\_reviews}
+    $\geq 20$
+  \item \texttt{filter\_rows}: retain rows where \texttt{minimum\_nights}
+    $\geq 1$ and \texttt{minimum\_nights} $\leq 3$
+  \item \texttt{filter\_rows}: retain rows where \texttt{price} $> 0$
+  \item \texttt{derive\_columns}: compute
+    \texttt{total\_cost = price * minimum\_nights}
+  \item \texttt{sort\_rows}: sort by \texttt{total\_cost} ascending
+  \item \texttt{limit\_rows}: keep top 1
+  \item \texttt{select\_columns}: retain listing name, borough, and
+    \texttt{total\_cost}
+\end{enumerate}
+
+\textbf{Classification.}
+The combination of four filter conditions, a derivation, and an ascending top-1 selection across the full listing-level table (rather than an aggregated group) distinguishes this from simpler questions.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{A5. Which hosts operating in all 5 boroughs have the highest average listing price, among hosts with at least 20 total listings?}
+
+\textbf{Why multiple steps are required.}
+The borough coverage of each host must be computed and compared to a threshold of 5 before any price ranking can be produced. This requires counting distinct values within a group -- a step that must precede the final filter and sort.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where
+    \texttt{calculated\_host\_listings\_count} $\geq 20$
+  \item \texttt{group\_and\_aggregate}: group by \texttt{host\_name}, compute
+    \texttt{count\_distinct(neighbourhood\_group)} as
+    \texttt{borough\_count} and \texttt{mean(price)} as
+    \texttt{avg\_price}
+  \item \texttt{filter\_rows}: retain rows where \texttt{borough\_count}
+    equals 5
+  \item \texttt{sort\_rows}: sort by \texttt{avg\_price} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The requirement to count distinct categorical values within a group and use that count as a post-aggregation filter threshold is a sophisticated multi-step pattern that does not arise in basic or intermediate questions.

@@ -1,0 +1,100 @@
+Basic questions combine two or three standard operations such as filtering, grouping, aggregating, sorting, or limiting. They do not require derived columns or multi-condition logic.
+
+\subsubsect{B1. What is the average nightly price for entire home/apt listings in Manhattan?}
+
+\textbf{Why multiple steps are required.}
+The dataset contains listings of all room types across all boroughs. The average price cannot be computed directly; the table must first be narrowed to the relevant subset before aggregation.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{room\_type} is
+    \texttt{"Entire home/apt"}
+  \item \texttt{filter\_rows}: retain rows where \texttt{neighbourhood\_group}
+    is \texttt{"Manhattan"}
+  \item \texttt{group\_and\_aggregate}: compute \texttt{mean(price)}
+\end{enumerate}
+
+\textbf{Classification.}
+Two sequential filters followed by a single aggregation represent the minimal multi-step pattern, placing this question firmly in the basic tier.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B2. Rank boroughs by which has the most listings that are available year-round.}
+
+\textbf{Why multiple steps are required.}
+Year-round availability is a property of individual listings and must be isolated before borough-level counts can be computed and ranked.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{availability\_365}
+    equals 365
+  \item \texttt{group\_and\_aggregate}: group by \texttt{neighbourhood\_group},
+    compute \texttt{count} as \texttt{listing\_count}
+  \item \texttt{sort\_rows}: sort by \texttt{listing\_count} descending
+\end{enumerate}
+
+\textbf{Classification.}
+The question requires a filter, a grouped count, and a sort -- three operations, all standard, with no derived columns.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B3. How many listings in Brooklyn are priced under \$100 per night?}
+
+\textbf{Why multiple steps are required.}
+Two independent conditions must both be satisfied -- borough membership and a price
+threshold -- before a count can be produced.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{neighbourhood\_group}
+    is \texttt{"Brooklyn"}
+  \item \texttt{filter\_rows}: retain rows where \texttt{price} $< 100$
+  \item \texttt{group\_and\_aggregate}: compute \texttt{count}
+\end{enumerate}
+
+\textbf{Classification.}
+Two filters and a count; no grouping hierarchy and no derived values. This is the
+simplest possible multi-condition aggregation.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B4. What are the top 5 hosts by total number of listings across all
+boroughs?}
+
+\textbf{Why multiple steps are required.}
+Per-host listing counts are not a stored column; they must be computed by grouping
+on host identity. The result must then be ranked and truncated.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{group\_and\_aggregate}: group by \texttt{host\_name}, compute
+    \texttt{count} as \texttt{listing\_count}
+  \item \texttt{sort\_rows}: sort by \texttt{listing\_count} descending
+  \item \texttt{limit\_rows}: keep top 5
+\end{enumerate}
+
+\textbf{Classification.}
+A group-aggregate followed by sort and limit is a standard three-step pattern
+with no filtering or derivation required.
+
+% ------------------------------------------------------------------------------
+
+\subsubsect{B5. Describe the availability for listings that have at least 10
+reviews.}
+
+\textbf{Why multiple steps are required.}
+The availability summary applies only to a filtered subset of listings; the
+aggregation cannot be applied to the full table.
+
+\textbf{Expected sequence of operations.}
+\begin{enumerate}
+  \item \texttt{filter\_rows}: retain rows where \texttt{number\_of\_reviews}
+    $\geq 10$
+  \item \texttt{group\_and\_aggregate}: compute \texttt{mean(availability\_365)},
+    \texttt{min(availability\_365)}, \texttt{max(availability\_365)}
+\end{enumerate}
+
+\textbf{Classification.}
+One filter and one multi-metric aggregation. The descriptive framing asks for
+summary statistics rather than a single value, but the operation count remains
+minimal.

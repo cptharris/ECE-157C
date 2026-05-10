@@ -1,0 +1,44 @@
+\subsect{Source}
+
+The dataset used in this assignment is the \hyperlink{https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data}{\textit{New York City Airbnb Open Data}} dataset, originally compiled by Dgomonov and publicly available on Kaggle.
+The data was sourced from Inside Airbnb, an independent project that aggregates publicly available listing information from Airbnb's website. It reflects listing activity in New York City as of 2019.
+
+\subsect{Size and Structure}
+
+The dataset contains \textbf{48,895 rows} and \textbf{16 columns}. Each row represents a single Airbnb listing. The columns span a mix of categorical identifiers, geographic attributes, pricing and availability metrics, and host-level information.
+
+\subsect{Key Columns}
+
+Table~\ref{tab:columns} summarizes the columns most relevant to this assignment.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lll}
+    \hline
+    \textbf{Column} & \textbf{Type} & \textbf{Description} \\
+    \hline
+    \texttt{neighbourhood\_group} & Categorical & Borough (Manhattan, Brooklyn, etc.) \\
+    \texttt{neighbourhood}        & Categorical & Specific neighbourhood within borough \\
+    \texttt{room\_type}           & Categorical & Entire home/apt, Private room, or Shared room \\
+    \texttt{price}                & Numeric     & Nightly price in USD \\
+    \texttt{minimum\_nights}      & Numeric     & Minimum required stay in nights \\
+    \texttt{number\_of\_reviews}  & Numeric     & Total reviews received by listing \\
+    \texttt{reviews\_per\_month}  & Numeric     & Average monthly review rate \\
+    \texttt{availability\_365}    & Numeric     & Days available per year \\
+    \texttt{calculated\_host\_listings\_count} & Numeric & Total listings by the same host \\
+    \texttt{host\_name}           & Categorical & Name of the host \\
+    \hline
+  \end{tabular}
+  \caption{Key columns in the NYC Airbnb dataset.}
+  \label{tab:columns}
+\end{table}
+
+\subsect{Why This Dataset Requires Multi-Step Analysis}
+
+No meaningful question about this dataset can be answered with a single operation.
+The numeric columns -- such as \texttt{price}, \texttt{availability\_365}, and \texttt{reviews\_per\_month} -- are only interpretable in context: a high price means something different for a shared room in the Bronx than for an entire apartment in Manhattan. Extracting that context requires combining filtering, grouping, and aggregation across multiple categorical dimensions.
+
+Furthermore, several quantities of analytical interest are not directly present as columns and must be derived before they can be used.
+For example, estimated annual revenue potential must be computed as \texttt{price} \texorpdfstring{$\times$}{times} \texttt{availability\_365}, and minimum total cost requires multiplying \texttt{minimum\_nights} with \texttt{price}. These derived metrics must then feed into downstream grouping and ranking steps, making the pipeline inherently multi-stage.
+
+The combination of geographic hierarchy (borough $\rightarrow$ neighbourhood), categorical room types, multiple numeric performance signals, and host-level aggregations creates a natural space for questions that span filtering, derivation, grouping, sorting, and top-$k$ selection -- all of which are required to produce a grounded, reproducible answer.

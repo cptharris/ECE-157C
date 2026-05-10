@@ -1,0 +1,43 @@
+\sect{Failure One: Filtering to Nothing!}
+
+\subsect{Question and Plan}
+
+\textit{A2. Which neighbourhood has the highest concentration of ``high-value'' listings (where price \texorpdfstring{$>$}{is greater than} average price and availability \texorpdfstring{$>$}{is greater than} average availability and number of reviews \texorpdfstring{$>$}{is greater than} average number of reviews), among neighbourhoods with at least 30 total listings?}
+
+\inputplan{a3c228aef908a5a44dbf74351b24a67f}
+
+\subsect{Problem}
+
+After the filter operation, the row count suddenly dropped to zero, as though no rows matched the criteria. I opened the dataset in Numbers on my computer and did the computations and filtering myself. There were matches to the filter, so I was stumped. I added debugging print outs after each step was completed, and saw clearly that the filter operation was causing the problem.
+
+I asked Claude about the issue, including my definition of \texttt{\_filter\_rows}. Claude revealed that the filter operation was actually filtering against the string values (such as ``avg\_price''). Of course there were no matches! I adjusted the operator to check if the string passed was actually a column name. This solved the problem. Of course, the next time a filter step with a list ran, I got an error about checking for the existance of a list in the list of column names, which is illegal. So, I added protections against that edge case.
+
+\textbf{This was an operator execution issue.} It was easily solved by adding some checks to the operator.
+
+\sect{Failure Two: Too Much Limitation!}
+
+\subsect{Question and Plan}
+
+\textit{A3. What is the average price gap between shared room and private room listings within each borough, and which borough has the largest gap?}
+
+\inputplan{934ab21a4ebbef798126695772daef3b-alt}
+
+\subsect{Problem}
+
+I struggled with this question for a long time because it represented an important edge case. Often, it was important to use the \texttt{limit\_rows} operator to return the top value from some filtering. Especially because the output from the execution node is fed to LLM API call in the response node, I wanted to limit the size of the output.
+
+However, this question clearly asks for the average price gap within each borough AND which borough has the largest gap. Logically, the result should include all 5 boroughs to answer the first part. Interpretation of the largest gap can be left to the LLM call (the values would be passed sorted anyways, so it would be an easy task). But the planner node consistently wrote a plan that limited the number of rows to one. The demands of the second part of the question overrode the needs of the first.
+
+To solve this issue, I added a longer definition to the rules passed as the system prompt to the planner node. Then, it reasoned correctly about when to limit rows.
+
+\begin{minted}[breaklines,autogobble]{md}
+  4. When the question asks for a ranking or "top N", end with sort_rows.
+
+    a. Follow with limit_rows only when the top-N rows ARE the complete answer - i.e., the question is fully resolved by seeing just those rows (e.g., "which single X has the highest Y?", "what are the top 3 Z?").
+
+    b. Do NOT use limit_rows when the question requests a per-group aggregation and then identifies the extreme group. The full aggregated result is the answer; the extreme is simply visible at the top after sorting.
+
+    c. As a quick test: if removing the non-top rows would make the answer incomplete or misleading, skip limit_rows.
+\end{minted}
+
+\textbf{This was a planning error}, solved by adding more clarification to the planner's instructions.

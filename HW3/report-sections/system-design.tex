@@ -1,0 +1,50 @@
+The system is implemented as a modular LangGraph pipeline that converts a natural-language question into a deterministic sequence of tabular operations. The architecture separates planning, execution, and low-level dataframe manipulation into independent components, allowing the system to remain extensible and debuggable.
+
+\begin{figure}[ht!]
+  \centering
+  % inkscape graphics/agent_workflow_diagram.svg --export-type=png --export-dpi=200
+  \includegraphics[width=0.8\linewidth]{agent_workflow_diagram.png}
+  \caption{Agent Workflow Graph}
+\end{figure}
+
+\break
+
+\sect{Planner Architecture}
+
+The planner node is implemented in \texttt{planner.py}. Its responsibility is to translate a user question into a structured execution plan represented as a JSON object validated against the Pydantic schemas defined in \texttt{schemas.py}.
+
+The planner constructs a detailed system prompt that defines the available operation set, the required output format, and the constraints governing valid plans. The dataset shape and column metadata are injected into the user prompt so the language model can reason about the available schema before generating a plan.
+
+The generated response is parsed and validated using the \texttt{Plan} schema. Each operation in the plan is resolved into a strongly typed step object through Pydantic's discriminated union mechanism. Invalid plans are rejected immediately, ensuring that downstream execution only receives schema-compliant operations.
+
+\sect{Executor Architecture}
+
+The executor node is implemented in \texttt{executor.py}. It is responsible for replaying the planner-generated operations against the dataset in sequential order.
+
+At the beginning of execution, the executor loads the dataset into a Pandas dataframe using the CSV path stored in the shared agent state. Each step in the plan is then applied iteratively. Before execution, the dataframe shape is recorded; after execution, the resulting shape and any raised exception are captured in a \texttt{TraceEntry} object.
+
+Execution is isolated at the step level. If a step raises an exception, the executor records the error in the trace while allowing the remaining steps to continue. This design simplifies debugging and provides visibility into partial pipeline execution.
+
+The executor delegates all dataframe manipulation logic to the operator dispatch layer implemented in \texttt{operators.py}. Snapshot, restore, and join operations are handled separately because they require access to the shared snapshot store.
+
+\sect{Operator Implementation}
+
+All dataframe transformations are implemented in \texttt{operators.py}. Each operation is mapped to a dedicated helper function responsible for applying a single transformation to the current dataframe.
+
+The dispatch layer uses runtime type checking against the schema-defined step classes to route each step to the correct implementation. Operations such as filtering, grouping, aggregation, sorting, pivoting, and column derivation are implemented directly using Pandas primitives.
+
+The filtering operator dynamically constructs boolean masks from structured filter conditions, supporting chained logical conjunctions. Aggregation operations are translated into Pandas aggregation specifications, while derived-column operations apply arithmetic transformations between existing columns.
+
+This separation between planning schemas and execution operators creates a clean boundary between semantic reasoning and dataframe manipulation. New operations can therefore be added by extending both the schema layer and the dispatch implementation without modifying the overall execution architecture.
+
+\sect{State and Intermediate Result Management}
+
+Shared state is defined in \texttt{schemas.py} through the \texttt{AgentState} typed dictionary and the collection of strongly typed operation schemas.
+
+The system does not store intermediate dataframes directly in the shared LangGraph state because Pandas dataframes are not JSON serializable. Instead, the executor reconstructs the execution pipeline from the original CSV file on every invocation.
+
+Intermediate execution metadata is preserved through the \texttt{TraceEntry} schema, which records the operation type, dataframe dimensions before and after execution, and any associated errors.
+
+Temporary dataframe checkpoints are implemented through the snapshot system. The executor maintains an in-memory dictionary mapping snapshot names to dataframe copies. The \texttt{snapshot} operation stores the current dataframe, \texttt{restore} replaces the current dataframe with a saved copy, and \texttt{join} merges the active dataframe with a previously saved snapshot.
+
+This design keeps the LangGraph state lightweight and serializable while still enabling multi-stage analytical pipelines that require branching, restoration, or relational joins between intermediate results.

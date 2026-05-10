@@ -1,0 +1,93 @@
+\newcommand{\generatedcontent}[1]{
+  \begin{multicols}{2}
+    \subsect{Answer}
+
+    \inputminted[breaklines]{md}{report-data/#1.md}
+
+    \vspace*{\fill}\columnbreak
+
+    \subsect{Trace}
+
+    \input{report-data/#1.tex}
+
+    \vspace*{\fill}
+  \end{multicols}
+
+  \subsect{Plan}
+
+  \inputplan{#1}
+}
+
+\sect{Example One}
+
+\textit{B2. Rank boroughs by which has the most listings that are available year-round.}
+
+\generatedcontent{cdc508e7668d8f12407ee6081c8ae44e}
+
+\subsect{Evaluation}
+
+This plan is clean, direct, and efficient. In steps 0 and 1, we reduce the columns and rows to only those necessary for the operation. A group and aggregate operation counts the number of listings (only year-round listings remain) by neighbourhood group. Then a sort operation sorts the boroughs, revealing which have the most listings available year-round.
+
+\textbf{This is a good plan that makes efficient use of the available operators.}
+
+\break
+\sect{Example Two}
+
+\textit{I2. Among listings with at least 10 reviews, describe the average minimum total cost (price \texorpdfstring{$\times$}{times} minimum\_nights) by room type.}
+
+\generatedcontent{64c34f616b5520232b4b90842a726c25}
+
+\subsect{Evaluation}
+
+Again, in steps 0 and 1, we reduce the columns and rows to only those necessary. A derived column handles the calculation of ``minimum total cost''. Then, a group and aggregate finds the average of that calculated column by room type. Rows are sorted to show room types in order from most expensive to least expensive.
+
+\textbf{This is a fairly straightfoward plan with a well-used derived column. The plan is correct.}
+
+\break
+\sect{Example Three}
+
+\textit{I5. For listings with above-average monthly reviews, what is the average price by borough?}
+
+\generatedcontent{0a4445ab147a87330886af037af3f039}
+
+\subsect{Evaluation}
+
+This plan is trickier. It starts by using the snapshot operator to save the original dataset, since we must first compute the global means of reviews per month for later comparison against listings' individual reviews per month values.
+
+To ensure we can later join the global mean to the original dataset, we create a dummy join key column with zeroes in every row. After restoring the original dataset, we compute the global average of reviews per month with no grouping (since we want a global average).
+
+We snapshot this single-value table, then restore the original dataset with join keys. We join global mean onto every row.
+
+The next two steps find the difference between the global mean and individual listings' reviews per month (derived column), and then filter to only those with a difference greater than zero. This could be done faster (in a single step instead of two) with the filter operator, using the global mean column as the value.
+
+A final group by borough and aggregation of price to average price reveals the average price by borough of those listings with above-average monthly reviews.
+
+We could also argue that the plan could have used fewer snapshots. The ``original'' snapshot is unnecessary because the join key column would be destroyed in the aggregation of reviews per month anyway.
+
+Additionally, the only necessary columns are \texttt{neighbourhood\_group}, \texttt{price}, and \texttt{reviews\_per\_month}. However, the plan does not select to only these columns, increasing the amount of data fed forward across steps.
+
+\textbf{That said, the plan does yield the correct result and the ineffeciencies are small.}
+
+\break
+\sect{Example Four}
+
+\textit{A2. Which neighbourhood has the highest concentration of ``high-value'' listings (where price \texorpdfstring{$>$}{is greater than} average price and availability \texorpdfstring{$>$}{is greater than} average availability and number of reviews \texorpdfstring{$>$}{is greater than} average number of reviews), among neighbourhoods with at least 30 total listings?}
+
+\generatedcontent{a3c228aef908a5a44dbf74351b24a67f}
+
+\subsect{Evaluation}
+
+This question is a harder version of question I5, involving several column aggregations on different grouping, followed by comparisons and filtering against those aggregated values.
+
+While it would have been nice to start by filtering to neighbourhoods with at least 30 total listings, as this would decrease the total table size early in execution, this was impractical because the other filter condition was on individual listings, not whole neighbourhoods.
+
+The plan used snapshots to compute the means of \texttt{price}, \texttt{availability\_365}, and \texttt{number\_of\_reviews} and restore these values back to every row of the original dataset. It is unclear to me what the \texttt{one} column provides: perhaps the agent did not realize that \texttt{group\_by} could be blank?
+
+The agent did realize it could filter against whole columns. It filters for ``high-value'' listings. After that, it uses snapshots and group and aggregate operations to compute the total listings and high value lastings by neighbourhood. It derives a concentration column and returns the neighbourhood with the highest concentration.
+
+\textbf{For such a complicated question, this was a well-reasoned, effective plan that yielded the correct result.}
+
+% \break
+% \sect{A3. What is the average price gap between shared room and private room listings within each borough, and which borough has the largest gap?}
+
+% \generatedcontent{934ab21a4ebbef798126695772daef3b}
