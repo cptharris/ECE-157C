@@ -1,62 +1,40 @@
 """
 sandbox.py
-
-Maintain a single namespace = {} dict that persists across calls.
-Expose one function: execute(code: str) -> dict — runs exec(code, namespace), captures stdout/stderr via io.StringIO redirect, returns {"stdout": ..., "stderr": ..., "error": None | str}.
-Keep it completely stateless as a module — the caller owns the namespace lifetime.
 """
 
 from typing import TypedDict, Optional
 
 
 class ExecutionResult(TypedDict):
-    stdout: str = ""
-    stderr: str = ""
-    error: Optional[str] = None
+    stdout: str
+    stderr: str
+    error: Optional[str]
 
 
 import sys
 from io import StringIO
 import traceback
 
-namespace = {}
 
+def execute(code: str, namespace: dict) -> ExecutionResult:
+    out_buf = StringIO()
+    err_buf = StringIO()
 
-def execute(code: str) -> ExecutionResult:
-    global namespace
-    result = None
-    capture_out_stream = StringIO()
-    capture_err_stream = StringIO()
-
-    original_stdout = sys.stdout
-    original_stderr = sys.stderr
-
-    sys.stdout = capture_out_stream
-    sys.stderr = capture_err_stream
+    orig_stdout, orig_stderr = sys.stdout, sys.stderr
+    sys.stdout, sys.stderr = out_buf, err_buf
 
     try:
-        exec(code, namespace)
-        result = ExecutionResult(
-            stdout=capture_out_stream.getvalue(), stderr=capture_err_stream.getvalue()
+        exec(code, namespace)  # updates the passed dict in-place
+        return ExecutionResult(
+            stdout=out_buf.getvalue(), stderr=err_buf.getvalue(), error=None
         )
     except Exception as e:
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
-        traceback.print_exc()
-        result = ExecutionResult(
-            stdout=capture_out_stream.getvalue(),
-            stderr=capture_err_stream.getvalue(),
-            error=str(e),
+        # write traceback into original stderr
+        traceback.print_exc(file=orig_stderr)
+        return ExecutionResult(
+            stdout=out_buf.getvalue(), stderr=err_buf.getvalue(), error=str(e)
         )
     finally:
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
-
-        capture_out_stream.close()
-        capture_err_stream.close()
-        return result
-
-
-def reset_sandbox():
-    global namespace
-    namespace = {}
+        sys.stdout, sys.stderr = orig_stdout, orig_stderr
+        out_buf.close()
+        err_buf.close()
