@@ -7,25 +7,69 @@ from openai import OpenAI
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
+API_MODEL = "gpt-5-mini"
 
-def call_llm(system_prompt: str, user_prompt: str) -> str:
+from typing import TypeVar, Type, overload, Literal
+from pydantic import BaseModel
+
+
+T = TypeVar("T", bound=BaseModel)
+
+
+@overload
+def call_llm(system_prompt: str, user_prompt: str) -> str: ...
+@overload
+def call_llm(system_prompt: str, user_prompt: str, response_model: Type[T]) -> T: ...
+
+
+def call_llm(
+    system_prompt: str,
+    user_prompt: str,
+    response_model: Type[T] | None = None,
+) -> str | T:
     cached = get_cached(user_prompt)
     if cached is not None:
+        if response_model is not None:
+            cached = response_model.model_validate_json(cached)
+        print(f"{"="*10} RESPONSE {"="*10} (cached)")
+        print(cached)
+        print(f"{"="*10} ======== {"="*10}")
         return cached
 
-    response = (
-        client.chat.completions.create(
-            model="gpt-5-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-        )
-        .choices[0]
-        .message.content.strip()
-    )
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
 
-    set_cached(user_prompt, response)
+    print(f"{"="*10} REQUEST {"="*10}")
+    print(messages)
+    print(f"{"="*10} ======= {"="*10}")
+
+    if response_model is None:
+        response = (
+            client.chat.completions.create(
+                model=API_MODEL,
+                messages=messages,
+            )
+            .choices[0]
+            .message.content.strip()
+        )
+
+        print(f"{"="*10} RESPONSE {"="*10}")
+        print(response)
+        print(f"{"="*10} ======== {"="*10}")
+
+        set_cached(user_prompt, response)
+    else:
+        response = client.responses.parse(
+            model=API_MODEL, input=messages, text_format=response_model
+        ).output_parsed
+
+        print(f"{"="*10} RESPONSE {"="*10}")
+        print(response)
+        print(f"{"="*10} ======== {"="*10}")
+
+        set_cached(user_prompt, response.model_dump_json())
 
     return response
 
