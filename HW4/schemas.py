@@ -87,8 +87,6 @@ from plan_execute.schemas import Step, TraceEntry
 MAX_ANALYTICS_STEPS: int = 12  # Hard ceiling on analytics loop iterations.
 MAX_RETRY_CYCLES: int = 2  # Hard ceiling on validation → retry cycles.
 
-AgentType = Literal["analytics", "generic"]
-
 # Key injected into the sandbox namespace before the first analytics step.
 # Analytics code captures Plotly figures by writing:
 #   _plotly["Descriptive Title"] = fig.to_dict()
@@ -147,7 +145,7 @@ class OrchestrationDecision(BaseModel):
     question requires data analytics or a generic web-search answer.
     """
 
-    agent_type: AgentType = Field(
+    agent_type: Literal["analytics", "generic"] = Field(
         description=(
             "Route to 'analytics' for questions that require inspecting or "
             "computing over the provided CSV datasets. "
@@ -481,7 +479,7 @@ class GraphState(TypedDict):
     csv_paths: list[str]
 
     # ── Orchestration ─────────────────────────────────────────────────────────
-    agent_type: Optional[AgentType]
+    agent_type: Optional[str]
 
     # ── Analytics loop ────────────────────────────────────────────────────────
     # Append-only execution memory; reducers prevent overwrite across iterations.

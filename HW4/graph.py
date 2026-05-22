@@ -34,11 +34,13 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
+from utilities.call_llm import call_llm
+from utilities.call_ddg import call_ddg
+
 from schemas import (
     MAX_ANALYTICS_STEPS,
     MAX_RETRY_CYCLES,
     PLOTLY_NAMESPACE_KEY,
-    AgentType,
     AnalyticsAction,
     AnalyticsFinalAnswer,
     AnalyticsResult,
@@ -86,28 +88,11 @@ from schemas import (
 # ---------------------------------------------------------------------------
 
 
-def call_llm_structured(prompt: str, schema: type[Any]) -> Any:
-    """
-    Stub for structured LLM generation.
-
-    Replace with:
-        llm.with_structured_output(schema).invoke(messages)
-    """
-    raise NotImplementedError
-
-
 def execute(code: str, namespace: dict[str, Any]) -> dict[str, Any]:
     """
     Stub for sandboxed Python execution.
 
     Must return ExecutionResult-compatible dict.
-    """
-    raise NotImplementedError
-
-
-def call_ddg(query: str) -> str:
-    """
-    Stub for DuckDuckGo / search integration.
     """
     raise NotImplementedError
 
@@ -168,10 +153,7 @@ CSV paths:
 {state["csv_paths"]}
 """
 
-    decision = cast(
-        OrchestrationDecision,
-        call_llm_structured(prompt, OrchestrationDecision),
-    )
+    decision: OrchestrationDecision = call_llm("", prompt, OrchestrationDecision)
 
     return {
         "agent_type": decision.agent_type,
@@ -181,7 +163,7 @@ CSV paths:
 def route_agent(
     state: GraphState,
 ) -> Literal["analytics", "generic"]:
-    return cast(AgentType, state["agent_type"])
+    return cast(Literal["analytics", "generic"], state["agent_type"])
 
 
 # ---------------------------------------------------------------------------
@@ -233,10 +215,7 @@ Prior steps:
 {state["steps"]}
 """
 
-    action = cast(
-        AnalyticsAction,
-        call_llm_structured(prompt, AnalyticsAction),
-    )
+    action: AnalyticsAction = call_llm("", prompt, AnalyticsAction)
 
     execution_result = execute(
         action.code,
@@ -286,10 +265,7 @@ Full step history:
 {state["steps"]}
 """
 
-    answer = cast(
-        AnalyticsFinalAnswer,
-        call_llm_structured(prompt, AnalyticsFinalAnswer),
-    )
+    answer: AnalyticsFinalAnswer = call_llm("", prompt, AnalyticsFinalAnswer)
 
     result = AnalyticsResult(
         final_answer=answer.final_answer,
@@ -319,10 +295,7 @@ CSV paths:
 {state["csv_paths"]}
 """
 
-    plan = cast(
-        PlanToExecute,
-        call_llm_structured(prompt, PlanToExecute),
-    )
+    plan: PlanToExecute = call_llm("", prompt, PlanToExecute)
 
     partial: PlanExecuteResult = {
         "plan": plan,
@@ -372,10 +345,7 @@ Execution result:
 {result["execution_result"]}
 """
 
-    answer = cast(
-        PlanExecuteFinalAnswer,
-        call_llm_structured(prompt, PlanExecuteFinalAnswer),
-    )
+    answer: PlanExecuteFinalAnswer = call_llm("", prompt, PlanExecuteFinalAnswer)
 
     updated: PlanExecuteResult = {
         **result,
@@ -410,10 +380,7 @@ Plan-execute answer:
 {plan_execute}
 """
 
-    decision = cast(
-        ValidationDecision,
-        call_llm_structured(prompt, ValidationDecision),
-    )
+    decision: ValidationDecision = call_llm("", prompt, ValidationDecision)
 
     result = ValidationResult(
         decision=decision,
@@ -495,10 +462,7 @@ Search results:
 {generic_result["search_result"]["raw_text"]}
 """
 
-    response = cast(
-        GenericResponse,
-        call_llm_structured(prompt, GenericResponse),
-    )
+    response: GenericResponse = call_llm("", prompt, GenericResponse)
 
     updated: GenericResult = {
         **generic_result,
@@ -610,7 +574,7 @@ builder = StateGraph(GraphState, input_schema=GraphInput, output_schema=GraphOut
 
 # Main nodes
 builder.add_node("orchestrate", orchestrate_node)
-builder.add_node("dataset", dataset_node)
+builder.add_node("dataset_fan", dataset_node)
 builder.add_node("analytics", analytics_subgraph)
 builder.add_node("plan_execute", plan_execute_subgraph)
 builder.add_node("validate", validation_node)
@@ -628,13 +592,13 @@ builder.add_conditional_edges(
     route_agent,
     {
         "generic": "generic",
-        "dataset": "dataset",
+        "analytics": "dataset_fan",
     },
 )
 
 # Dataset node fans out into both analytics subgraphs
-builder.add_edge("dataset", "analytics")
-builder.add_edge("dataset", "plan_execute")
+builder.add_edge("dataset_fan", "analytics")
+builder.add_edge("dataset_fan", "plan_execute")
 
 # Validation waits for both branches to complete
 builder.add_edge("analytics", "validate")
@@ -663,7 +627,7 @@ builder.add_edge("finalize", END)
 
 # In-memory checkpointing for local development.
 # Replace with Redis/Postgres/etc in production.
-checkpointer = MemorySaver()
+# checkpointer = MemorySaver()
 
 # ---------------------------------------------------------------------------
 # Compile graph
@@ -679,16 +643,16 @@ graph = builder.compile(
 
 # Save graph visualization:
 #
-with open("graph_mermaid.md", "w") as f:
-    f.write("```mermaid\n")
-    f.write(graph.get_graph(xray=True).draw_mermaid())
-    f.write("```")
+# with open("graph_mermaid.md", "w") as f:
+#     f.write("```mermaid\n")
+#     f.write(graph.get_graph(xray=True).draw_mermaid())
+#     f.write("```")
 #
 # Or:
 #
-png_bytes = graph.get_graph(xray=True).draw_mermaid_png()
-with open("graph.png", "wb") as f:
-    f.write(png_bytes)
+# png_bytes = graph.get_graph(xray=True).draw_mermaid_png()
+# with open("graph.png", "wb") as f:
+#     f.write(png_bytes)
 
 # ---------------------------------------------------------------------------
 # Example invocation
@@ -697,9 +661,9 @@ with open("graph.png", "wb") as f:
 if __name__ == "__main__":
     result = graph.invoke(
         GraphInput(
-            question="Which region had the highest average revenue?",
+            question="What is RAG?",
             csv_paths=[
-                "datasets/sales.csv",
+                # "datasets/sales.csv",
             ],
         ),
         config=RunnableConfig(
