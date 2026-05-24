@@ -42,7 +42,7 @@ def call_llm(
     ]
 
     print(f"{"="*10} REQUEST {"="*10}")
-    print(messages)
+    print(user_prompt)
     print(f"{"="*10} ======= {"="*10}")
 
     if response_model is None:

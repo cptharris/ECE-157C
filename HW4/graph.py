@@ -34,23 +34,14 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
-from utilities.call_llm import call_llm
-from utilities.call_ddg import call_ddg
+from utilities import call_llm, call_ddg, execute
 
 from schemas import (
     MAX_ANALYTICS_STEPS,
     MAX_RETRY_CYCLES,
-    PLOTLY_NAMESPACE_KEY,
-    AnalyticsAction,
-    AnalyticsFinalAnswer,
-    AnalyticsResult,
-    AnalyticsStep,
-    GenericResponse,
-    GenericResult,
     GraphInput,
     GraphOutput,
     GraphState,
-    OrchestrationDecision,
     PlanExecuteFinalAnswer,
     PlanExecuteResult,
     PlanToExecute,
@@ -58,6 +49,18 @@ from schemas import (
     SearchResult,
     ValidationDecision,
     ValidationResult,
+)
+
+from orchestrator import orchestrate_node
+from analytics_agent import (
+    analytics_init_node,
+    analytics_step_node,
+    analytics_continue_router,
+    analytics_answer_node,
+)
+from generic_search import (
+    generic_search_node,
+    generic_respond_node,
 )
 
 # ---------------------------------------------------------------------------
@@ -88,15 +91,6 @@ from schemas import (
 # ---------------------------------------------------------------------------
 
 
-def execute(code: str, namespace: dict[str, Any]) -> dict[str, Any]:
-    """
-    Stub for sandboxed Python execution.
-
-    Must return ExecutionResult-compatible dict.
-    """
-    raise NotImplementedError
-
-
 def execute_plan_steps(steps: list[Any]) -> tuple[list[Any], str]:
     """
     Stub for deterministic Step dispatcher.
@@ -111,53 +105,6 @@ def execute_plan_steps(steps: list[Any]) -> tuple[list[Any], str]:
 # ---------------------------------------------------------------------------
 # Utility helpers
 # ---------------------------------------------------------------------------
-
-
-def _empty_plotly_namespace() -> dict[str, Any]:
-    return {PLOTLY_NAMESPACE_KEY: {}}
-
-
-def _harvest_plots(namespace: dict[str, Any]) -> list[Plot]:
-    plots_dict = namespace.get(PLOTLY_NAMESPACE_KEY, {})
-
-    harvested: list[Plot] = []
-
-    for title, fig_json in plots_dict.items():
-        harvested.append(
-            Plot(
-                title=title,
-                figure_json=copy.deepcopy(fig_json),
-            )
-        )
-
-    # Clear after harvest to avoid duplicate accumulation
-    namespace[PLOTLY_NAMESPACE_KEY] = {}
-
-    return harvested
-
-
-# ---------------------------------------------------------------------------
-# Orchestration node
-# ---------------------------------------------------------------------------
-
-
-def orchestrate_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    prompt = f"""
-Question:
-{state["question"]}
-
-CSV paths:
-{state["csv_paths"]}
-"""
-
-    decision: OrchestrationDecision = call_llm("", prompt, OrchestrationDecision)
-
-    return {
-        "agent_type": decision.agent_type,
-    }
 
 
 def route_agent(
@@ -187,95 +134,6 @@ def dataset_node(
 # ---------------------------------------------------------------------------
 # Analytics subgraph
 # ---------------------------------------------------------------------------
-
-
-def analytics_init_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    return {
-        "namespace": _empty_plotly_namespace(),
-        "current_step_index": 0,
-        "is_complete": False,
-    }
-
-
-def analytics_step_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    prompt = f"""
-Question:
-{state["question"]}
-
-Retry feedback:
-{state.get("validation_feedback")}
-
-Prior steps:
-{state["steps"]}
-"""
-
-    action: AnalyticsAction = call_llm("", prompt, AnalyticsAction)
-
-    execution_result = execute(
-        action.code,
-        state["namespace"],
-    )
-
-    harvested_plots = _harvest_plots(state["namespace"])
-
-    step = AnalyticsStep(
-        step_index=state["current_step_index"],
-        reasoning=action.reasoning,
-        code=action.code,
-        execution=execution_result,
-        plots_captured=[p["title"] for p in harvested_plots],
-    )
-
-    return {
-        "steps": [step],
-        "plots": harvested_plots,
-        "namespace": state["namespace"],
-        "current_step_index": state["current_step_index"] + 1,
-        "is_complete": action.is_final_step,
-    }
-
-
-def analytics_continue_router(
-    state: GraphState,
-) -> Literal["continue", "answer"]:
-    if state["is_complete"]:
-        return "answer"
-
-    if state["current_step_index"] >= MAX_ANALYTICS_STEPS:
-        return "answer"
-
-    return "continue"
-
-
-def analytics_answer_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    prompt = f"""
-Question:
-{state["question"]}
-
-Full step history:
-{state["steps"]}
-"""
-
-    answer: AnalyticsFinalAnswer = call_llm("", prompt, AnalyticsFinalAnswer)
-
-    result = AnalyticsResult(
-        final_answer=answer.final_answer,
-        plots=state["plots"],
-        steps=state["steps"],
-    )
-
-    return {
-        "analytics_result": result,
-    }
 
 
 # ---------------------------------------------------------------------------
@@ -423,58 +281,6 @@ def retry_node(
 
 
 # ---------------------------------------------------------------------------
-# Generic subgraph
-# ---------------------------------------------------------------------------
-
-
-def generic_search_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    raw_text = call_ddg(state["question"])
-
-    search_result = SearchResult(
-        query=state["question"],
-        raw_text=raw_text,
-    )
-
-    partial: GenericResult = {
-        "search_result": search_result,
-        "response": "",
-    }
-
-    return {
-        "generic_result": partial,
-    }
-
-
-def generic_respond_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    generic_result = cast(GenericResult, state["generic_result"])
-
-    prompt = f"""
-Question:
-{state["question"]}
-
-Search results:
-{generic_result["search_result"]["raw_text"]}
-"""
-
-    response: GenericResponse = call_llm("", prompt, GenericResponse)
-
-    updated: GenericResult = {
-        **generic_result,
-        "response": response.response,
-    }
-
-    return {
-        "generic_result": updated,
-    }
-
-
-# ---------------------------------------------------------------------------
 # Finalize node
 # ---------------------------------------------------------------------------
 
@@ -598,7 +404,7 @@ builder.add_conditional_edges(
 
 # Dataset node fans out into both analytics subgraphs
 builder.add_edge("dataset_fan", "analytics")
-builder.add_edge("dataset_fan", "plan_execute")
+# builder.add_edge("dataset_fan", "plan_execute") # TODO is implement this
 
 # Validation waits for both branches to complete
 builder.add_edge("analytics", "validate")
@@ -661,9 +467,9 @@ graph = builder.compile(
 if __name__ == "__main__":
     result = graph.invoke(
         GraphInput(
-            question="What is RAG?",
+            question="Find undervalued technology companies from the dataset.",
             csv_paths=[
-                # "datasets/sales.csv",
+                "2018_Financial_Data.csv",
             ],
         ),
         config=RunnableConfig(
