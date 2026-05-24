@@ -5,7 +5,7 @@ respond.py
 from langchain_core.runnables import RunnableConfig
 from typing import Any
 
-from schemas import GraphState
+from schemas import GraphState, PlanExecuteFinalAnswer
 import json
 from utilities import call_llm
 
@@ -43,8 +43,8 @@ def plan_respond_node(
         SYSTEM_PROMPT,
         USER_PROMPT.format(
             question=state["question"],
-            description=state["plan"].description,
-            data=json.dumps(state["execution_result"], indent=None),
+            description=result["plan"].description,
+            data=json.dumps(result["execution_result"], indent=None),
         ),
         PlanExecuteFinalAnswer,
     )

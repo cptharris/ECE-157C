@@ -5,7 +5,7 @@ import traceback
 
 from schemas import GraphState
 
-from plan_schemas import TraceEntry
+from plan_schemas import TraceEntry, DatasetEntry
 from plan_operators import dispatch_op
 
 from plan_schemas import SnapshotStep, RestoreStep, JoinStep, LoadDatasetStep
@@ -22,14 +22,14 @@ def plan_execute_node(
 
     dataset_registry = {}
     for csv_path in state["csv_paths"]:
-        dataset_registry[csv_path.replace(".csv", "")] = DatasetEntry(
+        dataset_registry[csv_path] = DatasetEntry(
             csv_path=csv_path, valid=False, dataframe=None
         )
 
     try:
         df = _load_dataset(dataset_registry, state["csv_paths"][0])
 
-        for i, step in enumerate(state["plan"].steps):
+        for i, step in enumerate(state["plan_execute_result"]["plan"].steps):
             before = df.shape
 
             try:
@@ -39,7 +39,7 @@ def plan_execute_node(
                         RestoreStep: _restore,
                         JoinStep: _join,
                     }[type(step)](df, step, snapshots)
-                elif isinstance(step, SelectDatasetStep):
+                elif isinstance(step, LoadDatasetStep):
                     df = _load_dataset(dataset_registry, step.dataset_name)
                 else:
                     df = dispatch_op(df, step)

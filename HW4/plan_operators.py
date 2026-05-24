@@ -183,12 +183,12 @@ def _load_dataset(
     if dataset_name not in dataset_registry:
         raise KeyError(f"Dataset '{dataset_name}' not found.")
     
-    if dataset_registry[dataset_name].dataframe is not None:
-        return dataset_registry[dataset_name].dataframe
+    if dataset_registry[dataset_name]["dataframe"] is not None:
+        return dataset_registry[dataset_name]["dataframe"]
     
-    dataset_registry[dataset_name].dataframe = pd.load_csv("dataframe/" + dataset_registry[dataset_name].csv_path)
+    dataset_registry[dataset_name]["dataframe"] = pd.read_csv("datasets/" + dataset_registry[dataset_name]["csv_path"])
 
-    return dataset_registry[dataset_name].dataframe
+    return dataset_registry[dataset_name]["dataframe"]
 
 
 def dispatch_op(df: pd.DataFrame, step: Step) -> pd.DataFrame:

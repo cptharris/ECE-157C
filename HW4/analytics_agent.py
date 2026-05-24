@@ -28,8 +28,7 @@ def analytics_init_node(
     dataset_schema = {}
 
     for csv_path, entry in state["dataset_schema"].items():
-        dataset_name = csv_path.replace(".csv", "")
-        dataset_schema[dataset_name] = {"access": f"""dfs["{dataset_name}"]""", **entry}
+        dataset_schema[csv_path] = {"access": f"""dfs["{csv_path}"]""", **entry}
 
     state["namespace"] = {PLOTLY_NAMESPACE_KEY: {}}
 
@@ -38,7 +37,7 @@ def analytics_init_node(
 import pandas as pd
 dfs = {{}}
 for csv_path in {state["csv_paths"]}:
-    dfs[csv_path.replace(".csv","")] = pd.read_csv("datasets/" + csv_path)
+    dfs[csv_path] = pd.read_csv("datasets/" + csv_path)
     """,
         state["namespace"],
     )

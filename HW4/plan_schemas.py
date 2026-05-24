@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union, TypedDict
 from pydantic import BaseModel, Field
+import pandas as pd
 
 
 # ---------------------------------------------------------------------------
@@ -272,8 +273,10 @@ class JoinStep(BaseModel):
     how: Literal["inner", "left", "right", "outer"] = Field(
         default="left", description="Join strategy controlling row retention semantics."
     )
-    suffixes: tuple[str, str] = Field(
-        default=("_x", "_y"),
+    suffixes: list[str] = Field(
+        default_factory=lambda: ["_x", "_y"],
+        min_length=2,
+        max_length=2,
         description="Suffixes appended to overlapping non-key columns after the join.",
     )
 
@@ -282,7 +285,8 @@ class LoadDatasetStep(BaseModel):
     """Load a dataset from the available dataset registry."""
 
     op: Literal["load_dataset"] = Field(
-        default="join", description="Operation identifier for loading a dataset."
+        default="load_dataset",
+        description="Operation identifier for loading a dataset.",
     )
     dataset_name: str = Field(
         description="Name of dataset to load from the dataset registry."
@@ -309,6 +313,7 @@ Step = Annotated[
         SnapshotStep,
         RestoreStep,
         JoinStep,
+        LoadDatasetStep,
     ],
     Field(discriminator="op"),
 ]
@@ -332,6 +337,6 @@ class TraceEntry(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class DatasetEntry(BaseModel):
+class DatasetEntry(TypedDict):
     csv_path: str
     dataframe: Optional[pd.DataFrame] = None
