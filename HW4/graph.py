@@ -40,6 +40,7 @@ from utilities import call_llm
 
 from schemas import (
     MAX_RETRY_CYCLES,
+    MAX_ANALYTICS_STEPS,
     GraphInput,
     GraphOutput,
     GraphState,
@@ -468,8 +469,9 @@ graph = builder.compile(
 if __name__ == "__main__":
     result = graph.invoke(
         GraphInput(
-            question="Find undervalued technology companies from the dataset.",
+            question="Which individual stocks had the top 10 highest and lowest price returns in each year?",
             csv_paths=[
+                "2017_Financial_Data.csv",
                 "2018_Financial_Data.csv",
             ],
         ),
