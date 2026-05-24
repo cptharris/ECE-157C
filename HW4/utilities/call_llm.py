@@ -93,6 +93,7 @@ def _load_cache():
                 _cache = {}
         else:
             _cache = {}
+            os.makedirs(CACHE_PATH.parent, exist_ok=True)
     return _cache
 
 
@@ -116,4 +117,5 @@ def set_cached(messages, value):
         return
     cache = _load_cache()
     cache[_key(messages)] = [messages, value]
+    os.makedirs(CACHE_PATH.parent, exist_ok=True)
     CACHE_PATH.write_text(json.dumps(cache, indent=2))
