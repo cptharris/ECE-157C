@@ -25,19 +25,20 @@ Notes
 - Reducer fields (steps, plots) are append-only accumulators.
 """
 
-from __future__ import annotations
-
-import copy
 from typing import Any, Literal, cast
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
-from utilities import call_llm, call_ddg, execute
+from utilities import call_llm
+
+# ---------------------------------------------------------------------------
+# Schemas and Nodes
+# ---------------------------------------------------------------------------
+
 
 from schemas import (
-    MAX_ANALYTICS_STEPS,
     MAX_RETRY_CYCLES,
     GraphInput,
     GraphOutput,
@@ -45,23 +46,10 @@ from schemas import (
     PlanExecuteFinalAnswer,
     PlanExecuteResult,
     PlanToExecute,
-    Plot,
-    SearchResult,
     ValidationDecision,
     ValidationResult,
 )
 
-from orchestrator import orchestrate_node
-from analytics_agent import (
-    analytics_init_node,
-    analytics_step_node,
-    analytics_continue_router,
-    analytics_answer_node,
-)
-from generic_search import (
-    generic_search_node,
-    generic_respond_node,
-)
 
 # ---------------------------------------------------------------------------
 # LangSmith configuration
@@ -103,14 +91,26 @@ def execute_plan_steps(steps: list[Any]) -> tuple[list[Any], str]:
 
 
 # ---------------------------------------------------------------------------
-# Utility helpers
+# Routing Helpers
 # ---------------------------------------------------------------------------
 
 
-def route_agent(
+def agent_task_router(
     state: GraphState,
 ) -> Literal["analytics", "generic"]:
     return cast(Literal["analytics", "generic"], state["agent_type"])
+
+
+def analytics_continue_router(
+    state: GraphState,
+) -> Literal["continue", "answer"]:
+    if state["is_complete"]:
+        return "answer"
+
+    if state["current_step_index"] >= MAX_ANALYTICS_STEPS:
+        return "answer"
+
+    return "continue"
 
 
 # ---------------------------------------------------------------------------
@@ -129,11 +129,6 @@ def dataset_node(
     branching into the analytics and plan-execute subgraphs.
     """
     return {}
-
-
-# ---------------------------------------------------------------------------
-# Analytics subgraph
-# ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
@@ -281,37 +276,15 @@ def retry_node(
 
 
 # ---------------------------------------------------------------------------
-# Finalize node
-# ---------------------------------------------------------------------------
-
-
-def finalize_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> GraphOutput:
-    if state["agent_type"] == "generic":
-        generic_result = cast(GenericResult, state["generic_result"])
-
-        return GraphOutput(
-            answer=generic_result["response"],
-            final_plots=[],
-        )
-
-    analytics_result = cast(
-        AnalyticsResult,
-        state["analytics_result"],
-    )
-
-    return GraphOutput(
-        answer=analytics_result["final_answer"],
-        final_plots=analytics_result["plots"],
-    )
-
-
-# ---------------------------------------------------------------------------
 # Build analytics subgraph
 # ---------------------------------------------------------------------------
 
+
+from analytics_agent import (
+    analytics_init_node,
+    analytics_step_node,
+    analytics_answer_node,
+)
 
 analytics_builder = StateGraph(GraphState)
 
@@ -354,10 +327,16 @@ plan_execute_builder.add_edge("plan_answer", END)
 
 plan_execute_subgraph = plan_execute_builder.compile()
 
+
 # ---------------------------------------------------------------------------
 # Build generic subgraph
 # ---------------------------------------------------------------------------
 
+
+from generic_search import (
+    generic_search_node,
+    generic_respond_node,
+)
 
 generic_builder = StateGraph(GraphState)
 
@@ -375,6 +354,9 @@ generic_subgraph = generic_builder.compile()
 # Build main graph
 # ---------------------------------------------------------------------------
 
+
+from orchestrator import orchestrate_node
+from finalize import finalize_node
 
 builder = StateGraph(GraphState, input_schema=GraphInput, output_schema=GraphOutput)
 
@@ -395,7 +377,7 @@ builder.add_edge(START, "orchestrate")
 # Analytics requests enter the dataset fan-out node
 builder.add_conditional_edges(
     "orchestrate",
-    route_agent,
+    agent_task_router,
     {
         "generic": "generic",
         "analytics": "dataset_fan",

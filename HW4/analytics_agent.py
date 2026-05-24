@@ -6,15 +6,14 @@ from langchain_core.runnables import RunnableConfig
 from typing import Any, Literal
 
 from schemas import (
-    GraphState,
-    OrchestrationDecision,
     PLOTLY_NAMESPACE_KEY,
+    MAX_ANALYTICS_STEPS,
+    GraphState,
     Plot,
     AnalyticsStep,
     AnalyticsAction,
-    AnalyticsFinalAnswer,
     AnalyticsResult,
-    MAX_ANALYTICS_STEPS,
+    AnalyticsFinalAnswer,
 )
 from utilities import call_llm, execute
 
@@ -102,18 +101,6 @@ Prior steps:
         "current_step_index": state["current_step_index"] + 1,
         "is_complete": action.is_final_step,
     }
-
-
-def analytics_continue_router(
-    state: GraphState,
-) -> Literal["continue", "answer"]:
-    if state["is_complete"]:
-        return "answer"
-
-    if state["current_step_index"] >= MAX_ANALYTICS_STEPS:
-        return "answer"
-
-    return "continue"
 
 
 def analytics_answer_node(

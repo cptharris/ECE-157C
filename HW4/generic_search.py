@@ -34,7 +34,7 @@ def generic_respond_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    generic_result = cast(GenericResult, state["generic_result"])
+    generic_result: GenericResult = state["generic_result"]
 
     prompt = f"""
 Question:
