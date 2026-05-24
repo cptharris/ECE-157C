@@ -293,6 +293,18 @@ class LoadDatasetStep(BaseModel):
     )
 
 
+class DisplayStep(BaseModel):
+    """Append the active dataframe to the execution result output."""
+
+    op: Literal["display"] = Field(
+        default="display",
+        description="Operation identifier for displaying a dataframe."
+    )
+    orient: Literal["dict", "list", "series", "split", "records", "index"] = Field(
+        default="records",
+        description="The orientation direction to display with."
+    )
+
 # ---------------------------------------------------------------------------
 # Step union  (the unified classes defining deterministic execution steps)
 # ---------------------------------------------------------------------------
@@ -314,6 +326,7 @@ Step = Annotated[
         RestoreStep,
         JoinStep,
         LoadDatasetStep,
+        DisplayStep,
     ],
     Field(discriminator="op"),
 ]

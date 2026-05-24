@@ -2,13 +2,20 @@ from langchain_core.runnables import RunnableConfig
 from typing import List, Any
 import pandas as pd
 import traceback
+import json
 
 from schemas import GraphState
 
 from plan_schemas import TraceEntry, DatasetEntry
 from plan_operators import dispatch_op
 
-from plan_schemas import SnapshotStep, RestoreStep, JoinStep, LoadDatasetStep
+from plan_schemas import (
+    SnapshotStep,
+    RestoreStep,
+    JoinStep,
+    LoadDatasetStep,
+    DisplayStep,
+)
 from plan_operators import _snapshot, _restore, _join, _load_dataset
 
 
@@ -16,7 +23,7 @@ def plan_execute_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    execution_result = None
+    execution_result = ""
     trace_entries: List[TraceEntry] = []
     snapshots: dict[str, pd.DataFrame] = {}
 
@@ -41,6 +48,8 @@ def plan_execute_node(
                     }[type(step)](df, step, snapshots)
                 elif isinstance(step, LoadDatasetStep):
                     df = _load_dataset(dataset_registry, step.dataset_name)
+                elif isinstance(step, DisplayStep):
+                    execution_result += str(df.to_dict(step.orient))
                 else:
                     df = dispatch_op(df, step)
 
@@ -69,8 +78,6 @@ def plan_execute_node(
                         error=str(e),
                     )
                 )
-
-        execution_result = df.to_dict(orient="records")
 
     except Exception as e:
         traceback.print_exc()

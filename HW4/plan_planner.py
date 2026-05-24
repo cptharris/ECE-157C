@@ -168,6 +168,13 @@ RULE:
   suffixes: list[str] (exactly two elements, e.g. ["_x", "_y"])
 
 ────────────────────────────────────────────
+
+14. display
+  Prints the current dataframe to the execution result.
+
+  orient: "dict" | "list" | "series" | "split" | "records" | "index" (default "records")
+
+────────────────────────────────────────────
 GLOBAL PLANNING RULES
 ────────────────────────────────────────────
 
