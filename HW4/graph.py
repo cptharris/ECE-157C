@@ -98,7 +98,7 @@ def execute_plan_steps(steps: list[Any]) -> tuple[list[Any], str]:
 def agent_task_router(
     state: GraphState,
 ) -> Literal["analytics", "generic"]:
-    return cast(Literal["analytics", "generic"], state["agent_type"])
+    return cast(Literal["analytics", "generic"], state["orchestration_decision"].agent_type)
 
 
 def analytics_continue_router(

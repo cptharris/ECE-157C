@@ -8,17 +8,22 @@ def finalize_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> GraphOutput:
-    if state["agent_type"] == "generic":
+    if state["orchestration_decision"].agent_type == "generic":
         generic_result: GenericResult = state["generic_result"]
 
         return GraphOutput(
             answer=generic_result["response"],
             final_plots=[],
         )
+    elif state["orchestration_decision"].agent_type == "analytics":
+        analytics_result: AnalyticsResult = state["analytics_result"]
 
-    analytics_result: AnalyticsResult = state["analytics_result"]
+        return GraphOutput(
+            answer=analytics_result["final_answer"],
+            final_plots=analytics_result["plots"],
+        )
 
     return GraphOutput(
-        answer=analytics_result["final_answer"],
-        final_plots=analytics_result["plots"],
+        answer="Agent Type Error!",
+        final_plots=[],
     )

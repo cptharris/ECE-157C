@@ -17,5 +17,5 @@ Question:
     decision: OrchestrationDecision = call_llm("", prompt, OrchestrationDecision)
 
     return {
-        "agent_type": decision.agent_type,
+        "orchestration_decision": decision,
     }

@@ -46,7 +46,7 @@ State field lifecycle
   Node / subgraph                  Fields written
   ──────────────────────────────── ─────────────────────────────────────────
   [input]                          question, csv_paths
-  orchestrate_node                 agent_type
+  orchestrate_node                 orchestration_decision
   analytics: init_node             namespace, current_step_index, is_complete
   analytics: step_node             steps (+append), plots (+append),
                                    namespace (updated), current_step_index,
@@ -461,7 +461,7 @@ class GraphState(TypedDict):
     Field lifecycle  (see module docstring for the full node-by-node table)
     ───────────────────────────────────────────────────────────────────────
     [input]             : question, csv_paths
-    orchestrate_node    : agent_type
+    orchestrate_node    : orchestration_decision
     analytics init      : namespace, current_step_index, is_complete
     analytics step loop : steps (+append), plots (+append), namespace,
                           current_step_index, is_complete
@@ -479,7 +479,7 @@ class GraphState(TypedDict):
     csv_paths: list[str]
 
     # ── Orchestration ─────────────────────────────────────────────────────────
-    agent_type: Optional[str]
+    orchestration_decision: Optional[OrchestrationDecision]
 
     # ── Analytics loop ────────────────────────────────────────────────────────
     # Append-only execution memory; reducers prevent overwrite across iterations.
