@@ -44,8 +44,6 @@ from schemas import (
     GraphInput,
     GraphOutput,
     GraphState,
-    ValidationDecision,
-    ValidationResult,
 )
 
 
@@ -98,6 +96,18 @@ def analytics_continue_router(
     return "continue"
 
 
+def validation_router(
+    state: GraphState,
+) -> Literal["approved", "retry"]:
+    if state["validation_result"].verdict == "approved":
+        return "approved"
+
+    if state["retry_count"] >= MAX_RETRY_CYCLES:
+        return "approved"
+
+    return "retry"
+
+
 # ---------------------------------------------------------------------------
 # Dataset fan-out node
 # ---------------------------------------------------------------------------
@@ -136,71 +146,6 @@ Dataset Specifications:
     summary_result = json.loads(summary_result)
 
     return {"dataset_schema": summary_result}
-
-
-# ---------------------------------------------------------------------------
-# Validation node
-# ---------------------------------------------------------------------------
-
-
-def validation_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    analytics = state["analytics_result"]
-    plan_execute = state["plan_execute_result"]
-
-    prompt = f"""
-Question:
-{state["question"]}
-
-Analytics answer:
-{analytics}
-
-Plan-execute answer:
-{plan_execute}
-"""
-
-    decision: ValidationDecision = call_llm("", prompt, ValidationDecision)
-
-    result = ValidationResult(
-        decision=decision,
-    )
-
-    return {
-        "validation_result": result,
-    }
-
-
-def validation_router(
-    state: GraphState,
-) -> Literal["approved", "retry"]:
-    decision = state["validation_result"]["decision"]
-
-    if decision.verdict == "approved":
-        return "approved"
-
-    if state["retry_count"] >= MAX_RETRY_CYCLES:
-        return "approved"
-
-    return "retry"
-
-
-def retry_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    decision = state["validation_result"]["decision"]
-
-    return {
-        "retry_count": state["retry_count"] + 1,
-        "validation_feedback": decision.feedback,
-        "analytics_result": None,
-        # Preserve the deterministic validator baseline across retries.
-        "plan_execute_result": state["plan_execute_result"],
-        "current_step_index": 0,
-        "is_complete": False,
-    }
 
 
 # /------------------------------------------------------------------------------------------------------------\
@@ -306,6 +251,7 @@ generic_subgraph = generic_builder.compile()
 
 
 from orchestrator import orchestrate_node
+from validator import validation_node, retry_node
 from finalize import finalize_node
 
 builder = StateGraph(GraphState, input_schema=GraphInput, output_schema=GraphOutput)

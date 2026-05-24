@@ -393,17 +393,6 @@ class PlanExecuteResult(TypedDict):
     final_answer: str  # LLM-synthesised answer based on execution_result.
 
 
-class ValidationResult(TypedDict):
-    """
-    Output of the validation_node.
-
-    The validation_node reads analytics_result and plan_execute_result from
-    state, compares them, and writes this bundle back to state.
-    """
-
-    decision: ValidationDecision  # Verdict + reasoning + optional feedback.
-
-
 class SearchResult(TypedDict):
     """
     Output of the generic subgraph's search_node.
@@ -504,7 +493,7 @@ class GraphState(TypedDict):
     plan_execute_result: Optional[PlanExecuteResult]
 
     # ── Validation output ─────────────────────────────────────────────────────
-    validation_result: Optional[ValidationResult]
+    validation_result: Optional[ValidationDecision]
 
     # ── Retry control ─────────────────────────────────────────────────────────
     retry_count: int  # Checked against MAX_RETRY_CYCLES before each retry.
