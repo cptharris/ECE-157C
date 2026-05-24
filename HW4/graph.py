@@ -44,9 +44,6 @@ from schemas import (
     GraphInput,
     GraphOutput,
     GraphState,
-    PlanExecuteFinalAnswer,
-    PlanExecuteResult,
-    PlanToExecute,
     ValidationDecision,
     ValidationResult,
 )
@@ -75,21 +72,6 @@ from schemas import (
 #     )
 # )
 
-# ---------------------------------------------------------------------------
-# Stubbed external dependencies
-# ---------------------------------------------------------------------------
-
-
-def execute_plan_steps(steps: list[Any]) -> tuple[list[Any], str]:
-    """
-    Stub for deterministic Step dispatcher.
-
-    Returns:
-        trace,
-        execution_result
-    """
-    raise NotImplementedError
-
 
 # ---------------------------------------------------------------------------
 # Routing Helpers
@@ -99,7 +81,9 @@ def execute_plan_steps(steps: list[Any]) -> tuple[list[Any], str]:
 def agent_task_router(
     state: GraphState,
 ) -> Literal["analytics", "generic"]:
-    return cast(Literal["analytics", "generic"], state["orchestration_decision"].agent_type)
+    return cast(
+        Literal["analytics", "generic"], state["orchestration_decision"].agent_type
+    )
 
 
 def analytics_continue_router(
@@ -123,92 +107,35 @@ def dataset_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    """
-    Dummy synchronization / fan-out node.
+    import pandas as pd
+    import json
 
-    Exists solely to make the top-level graph structure cleaner before
-    branching into the analytics and plan-execute subgraphs.
-    """
-    return {}
+    dataset_schema = {}
+    for csv_path in state["csv_paths"]:
+        df = pd.read_csv("datasets/" + csv_path)
+        dataset_schema[csv_path] = {
+            "shape": df.shape,
+            "columns": df.columns.tolist(),
+        }
 
-
-# ---------------------------------------------------------------------------
-# Plan-execute subgraph
-# ---------------------------------------------------------------------------
-
-
-def plan_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    prompt = f"""
+    summary_result = call_llm(
+        system_prompt="""\
+You are a summary node. Look at the user question and dataset specifications.
+For each dataset, look at the "columns" key. Remove columns unnecessary for answering the question.
+Return schemas in the same form. ONLY return these schemas—no additional reasoning or commentary.
+    """,
+        user_prompt=f"""
 Question:
 {state["question"]}
 
-CSV paths:
-{state["csv_paths"]}
-"""
+Dataset Specifications:
+{json.dumps(dataset_schema, indent=None)}
+    """,
+    )
 
-    plan: PlanToExecute = call_llm("", prompt, PlanToExecute)
+    summary_result = json.loads(summary_result)
 
-    partial: PlanExecuteResult = {
-        "plan": plan,
-        "trace": [],
-        "execution_result": "",
-        "final_answer": "",
-    }
-
-    return {
-        "plan_execute_result": partial,
-    }
-
-
-def execute_plan_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    result = cast(PlanExecuteResult, state["plan_execute_result"])
-
-    trace, execution_result = execute_plan_steps(result["plan"].steps)
-
-    updated: PlanExecuteResult = {
-        **result,
-        "trace": trace,
-        "execution_result": execution_result,
-    }
-
-    return {
-        "plan_execute_result": updated,
-    }
-
-
-def plan_answer_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    result = cast(PlanExecuteResult, state["plan_execute_result"])
-
-    prompt = f"""
-Question:
-{state["question"]}
-
-Plan description:
-{result["plan"].description}
-
-Execution result:
-{result["execution_result"]}
-"""
-
-    answer: PlanExecuteFinalAnswer = call_llm("", prompt, PlanExecuteFinalAnswer)
-
-    updated: PlanExecuteResult = {
-        **result,
-        "final_answer": answer.final_answer,
-    }
-
-    return {
-        "plan_execute_result": updated,
-    }
+    return {"dataset_schema": summary_result}
 
 
 # ---------------------------------------------------------------------------
@@ -324,17 +251,20 @@ analytics_subgraph = analytics_builder.compile()
 # Build plan-execute subgraph
 # ---------------------------------------------------------------------------
 
+from plan_planner import plan_node
+from plan_executor import plan_execute_node
+from plan_respond import plan_respond_node
 
 plan_execute_builder = StateGraph(GraphState)
 
 plan_execute_builder.add_node("plan", plan_node)
-plan_execute_builder.add_node("execute_plan", execute_plan_node)
-plan_execute_builder.add_node("plan_answer", plan_answer_node)
+plan_execute_builder.add_node("plan_execute", plan_execute_node)
+plan_execute_builder.add_node("plan_respond", plan_respond_node)
 
 plan_execute_builder.add_edge(START, "plan")
-plan_execute_builder.add_edge("plan", "execute_plan")
-plan_execute_builder.add_edge("execute_plan", "plan_answer")
-plan_execute_builder.add_edge("plan_answer", END)
+plan_execute_builder.add_edge("plan", "plan_execute")
+plan_execute_builder.add_edge("plan_execute", "plan_respond")
+plan_execute_builder.add_edge("plan_respond", END)
 
 plan_execute_subgraph = plan_execute_builder.compile()
 
@@ -406,10 +336,10 @@ builder.add_conditional_edges(
 
 # Dataset node fans out into both analytics subgraphs
 builder.add_edge("dataset_fan", "analytics")
-# builder.add_edge("dataset_fan", "plan_execute") # TODO is implement this
+# builder.add_edge("dataset_fan", "plan_execute")
 
 # Validation waits for both branches to complete
-builder.add_edge("analytics", "validate")
+builder.add_edge("analytics", "plan_execute")
 builder.add_edge("plan_execute", "validate")
 
 builder.add_conditional_edges(

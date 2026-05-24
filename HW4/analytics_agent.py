@@ -23,52 +23,31 @@ def analytics_init_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
+    import json
 
-    code = """\
-import pandas as pd
-import json
+    dataset_schema = {}
 
-dataset_schemas = {{}}
-dfs = {{}}
-for csv_path in {csv_paths}:
-    dfs[csv_path] = pd.read_csv("datasets/" + csv_path)
-
-    dataset_schemas[csv_path] = {{
-        "access": f"dfs['{{csv_path}}']",
-        "shape": dfs[csv_path].shape,
-        "columns": dfs[csv_path].columns.tolist(),
-    }}
-print(json.dumps(dataset_schemas, indent=0))
-    """.format(
-        csv_paths=state["csv_paths"]
-    )
+    for csv_path, entry in state["dataset_schema"].items():
+        dataset_name = csv_path.replace(".csv", "")
+        dataset_schema[dataset_name] = {"access": f"""dfs["{dataset_name}"]""", **entry}
 
     state["namespace"] = {PLOTLY_NAMESPACE_KEY: {}}
 
-    execution_result = execute(code, state["namespace"])
-
-    summary_result = call_llm(
-        system_prompt="""\
-You are a summary node. Look at the user question and dataset specifications.
-For each dataset, look at the "columns" key. Remove columns unnecessary for answering the question.
-Return schemas in the same form. ONLY return these schemas—no additional reasoning or commentary.
+    execute(
+        f"""\
+import pandas as pd
+dfs = {{}}
+for csv_path in {state["csv_paths"]}:
+    dfs[csv_path.replace(".csv","")] = pd.read_csv("datasets/" + csv_path)
     """,
-        user_prompt=f"""
-Question:
-{state["question"]}
-
-Dataset Specifications:
-{json.dumps(json.loads(execution_result["stdout"]), indent=None)}
-    """,
+        state["namespace"],
     )
-
-    summary_result = json.dumps(json.loads(summary_result), indent=None)
 
     step = AnalyticsStep(
         step_index=0,
         reasoning="Reveal the shape and schema of each dataset.",
         code="",
-        execution=summary_result,
+        execution=json.dumps(dataset_schema, indent=None),
         plots_captured=[],
     )
 

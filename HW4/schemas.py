@@ -78,7 +78,7 @@ from typing import Annotated, Any, Literal, Optional
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 
-from plan_execute.schemas import Step, TraceEntry
+from plan_schemas import Step, TraceEntry
 
 # ---------------------------------------------------------------------------
 # Runtime constants
@@ -185,7 +185,7 @@ class AnalyticsAction(BaseModel):
     code: str = Field(
         description=(
             "Autonomous Python code to execute in the next sandbox step. "
-            "Capture scalar/tabular outputs via print(). "
+            "Capture scalar/tabular outputs via print(). Use json.dumps with indent=None for compact outputs."
             "Capture Plotly figures via _plotly['Descriptive Title'] = fig.to_dict()."
         )
     )
@@ -480,6 +480,9 @@ class GraphState(TypedDict):
 
     # ── Orchestration ─────────────────────────────────────────────────────────
     orchestration_decision: Optional[OrchestrationDecision]
+
+    # ── Dataset Node ──────────────────────────────────────────────────────────
+    dataset_schema: Optional[dict[str, Any]]
 
     # ── Analytics loop ────────────────────────────────────────────────────────
     # Append-only execution memory; reducers prevent overwrite across iterations.
