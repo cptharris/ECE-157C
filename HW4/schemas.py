@@ -184,7 +184,7 @@ class AnalyticsAction(BaseModel):
     )
     code: str = Field(
         description=(
-            "Python code to execute in the next sandbox step. "
+            "Autonomous Python code to execute in the next sandbox step. "
             "Capture scalar/tabular outputs via print(). "
             "Capture Plotly figures via _plotly['Descriptive Title'] = fig.to_dict()."
         )
