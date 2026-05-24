@@ -54,4 +54,6 @@ def plan_respond_node(
         "final_answer": answer.final_answer,
     }
 
-    return state
+    return {
+        "plan_execute_result": updated
+    }
