@@ -12,9 +12,6 @@ def orchestrate_node(
     prompt = f"""
 Question:
 {state["question"]}
-
-CSV paths:
-{state["csv_paths"]}
 """
 
     decision: OrchestrationDecision = call_llm("", prompt, OrchestrationDecision)
