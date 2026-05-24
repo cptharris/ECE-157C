@@ -4,6 +4,7 @@ analytics_agent.py
 
 from langchain_core.runnables import RunnableConfig
 from typing import Any, Literal
+import json
 
 from schemas import (
     PLOTLY_NAMESPACE_KEY,
@@ -46,11 +47,28 @@ print(json.dumps(dataset_schemas, indent=0))
 
     execution_result = execute(code, state["namespace"])
 
+    summary_result = call_llm(
+        system_prompt="""\
+You are a summary node. Look at the user question and dataset specifications.
+For each dataset, look at the "columns" key. Remove columns unnecessary for answering the question.
+Return schemas in the same form. ONLY return these schemas—no additional reasoning or commentary.
+    """,
+        user_prompt=f"""
+Question:
+{state["question"]}
+
+Dataset Specifications:
+{json.dumps(json.loads(execution_result["stdout"]), indent=None)}
+    """,
+    )
+
+    summary_result = json.dumps(json.loads(summary_result), indent=None)
+
     step = AnalyticsStep(
         step_index=0,
         reasoning="Reveal the shape and schema of each dataset.",
         code="",
-        execution=execution_result,
+        execution=summary_result,
         plots_captured=[],
     )
 
