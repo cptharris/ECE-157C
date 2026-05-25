@@ -16,7 +16,10 @@ Question:
 
     decision: OrchestrationDecision = call_llm("", prompt, OrchestrationDecision)
 
+    state["csv_paths"].sort()
+
     return {
+        "csv_paths": state["csv_paths"],
         "orchestration_decision": decision,
         "retry_count": 0,
     }
