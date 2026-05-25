@@ -247,7 +247,10 @@ Question:
 {state["question"]}
 
 Dataset Specifications:
-{state["dataset_schema"]}
+{state["dataset_thoughts"].schemas}
+
+Natural-language plan:
+{state["analytics_result"]["overall_plan"]}
     """,
     )
 

@@ -158,6 +158,20 @@ class OrchestrationDecision(BaseModel):
     )
 
 
+class DatasetThoughts(BaseModel):
+    reasoning: str = Field(
+        description="Three- to five-sentence justification for the columns chosen and the overall plan made."
+    )
+    schemas: dict[str, Any] = Field(
+        description=(
+            "A dict of csv file names (including .csv) "
+            "for each file. Look at the 'columns' key. "
+            "Remove columns unnecessary for answering the question. Do NOT make up columns."
+            "Return the schemas in the same form."
+        )
+    )
+
+
 class AnalyticsAction(BaseModel):
     """
     Output of the analytics subgraph's step_node LLM call.
@@ -179,14 +193,14 @@ class AnalyticsAction(BaseModel):
         description=(
             "Explicit step-by-step reasoning about what to explore or compute "
             "next, informed by the question and all prior execution results. "
-            "Reason about whether to generate Plotly figures."
+            "Decide whether to generate Plotly figures in this step."
         )
     )
     code: str = Field(
         description=(
             "Autonomous Python code to execute in the next sandbox step. "
             "Capture scalar/tabular outputs via print(). "
-            "Use json.dumps with indent=None for compact outputs. "
+            "Use json.dumps(..., indent=None). "
             "Capture Plotly figures via _plotly['Descriptive Title'] = fig.to_dict()."
         )
     )
@@ -213,6 +227,12 @@ class AnalyticsFinalAnswer(BaseModel):
             "Thorough, natural-language answer to the user's question grounded "
             "in the analysis results. Reference specific numbers, trends, or "
             "findings from stdout. Do not include raw code or DataFrames."
+        )
+    )
+    overall_plan: str = Field(
+        description=(
+            "In natural-language, concisely describe a reproducible plan to "
+            "produce the execution result."
         )
     )
 
@@ -370,6 +390,7 @@ class AnalyticsResult(TypedDict):
     """
 
     final_answer: str  # Synthesised natural-language answer.
+    overall_plan: str
     plots: list[Plot]  # All plots captured across all iterations.
     steps: list[AnalyticsStep]  # Full iteration history.
 
@@ -473,7 +494,7 @@ class GraphState(TypedDict):
     orchestration_decision: Optional[OrchestrationDecision]
 
     # ── Dataset Node ──────────────────────────────────────────────────────────
-    dataset_schema: Optional[dict[str, Any]]
+    dataset_thoughts: Optional[DatasetThoughts]
 
     # ── Analytics loop ────────────────────────────────────────────────────────
     # Append-only execution memory; reducers prevent overwrite across iterations.

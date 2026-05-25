@@ -108,46 +108,6 @@ def validation_router(
     return "retry"
 
 
-# ---------------------------------------------------------------------------
-# Dataset fan-out node
-# ---------------------------------------------------------------------------
-
-
-def dataset_node(
-    state: GraphState,
-    config: RunnableConfig,
-) -> dict[str, Any]:
-    import pandas as pd
-    import json
-
-    dataset_schema = {}
-    for csv_path in state["csv_paths"]:
-        df = pd.read_csv("datasets/" + csv_path)
-        dataset_schema[csv_path] = {
-            "shape": df.shape,
-            "columns": df.dtypes.apply(lambda x: x.name).to_dict(),
-        }
-
-    summary_result = call_llm(
-        system_prompt="""\
-You are a summary node. Look at the user question and dataset specifications.
-For each dataset, look at the "columns" key. Remove columns unnecessary for answering the question.
-Return schemas in the same form. ONLY return these schemas—no additional reasoning or commentary.
-    """,
-        user_prompt=f"""
-Question:
-{state["question"]}
-
-Dataset Specifications:
-{json.dumps(dataset_schema, indent=None)}
-    """,
-    )
-
-    summary_result = json.loads(summary_result)
-
-    return {"dataset_schema": summary_result}
-
-
 # /------------------------------------------------------------------------------------------------------------\
 # |   ____  _    _ _____ _      _____      _____ _    _ ____   _____ _____       __     _____  _    _  _____   |
 # |  |  _ \| |  | |_   _| |    |  __ \    / ____| |  | |  _ \ / ____|  __ \     /  \   |  __ \| |  | |/ ____|  |
@@ -251,6 +211,7 @@ generic_subgraph = generic_builder.compile()
 
 
 from orchestrator import orchestrate_node
+from dataset_node import dataset_node
 from validator import validation_node, retry_node
 from finalize import finalize_node
 

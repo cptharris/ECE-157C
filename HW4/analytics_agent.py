@@ -27,7 +27,7 @@ def analytics_init_node(
 
     dataset_schema = {}
 
-    for csv_path, entry in state["dataset_schema"].items():
+    for csv_path, entry in state["dataset_thoughts"].schemas.items():
         dataset_schema[csv_path] = {"access": f"""dfs["{csv_path}"]""", **entry}
 
     state["namespace"] = {PLOTLY_NAMESPACE_KEY: {}}
@@ -44,7 +44,7 @@ for csv_path in {state["csv_paths"]}:
 
     step = AnalyticsStep(
         step_index=0,
-        reasoning="Reveal the shape and schema of each dataset.",
+        reasoning="Reveal the shape and schema of each dataset. 'dfs' is a dict of pandas DataFrames.",
         code="",
         execution=json.dumps(dataset_schema, indent=None),
         plots_captured=[],
@@ -62,16 +62,12 @@ def analytics_step_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    prompt = f"""\
-Question:
-{state["question"]}
+    prompt = f"\nQuestion:\n{state["question"]}"
 
-Retry feedback:
-{state.get("validation_feedback")}
+    if "validation_feedback" in state:
+        prompt += "\n\nRetry feedback:\n" + state.get("validation_feedback")
 
-Prior steps:
-{state["steps"]}
-"""
+    prompt += "\n\nPrior steps:\n" + str(state["steps"]) + "\n"
 
     action: AnalyticsAction = call_llm("", prompt, AnalyticsAction)
 
@@ -115,6 +111,7 @@ Full step history:
 
     result = AnalyticsResult(
         final_answer=answer.final_answer,
+        overall_plan=answer.overall_plan,
         plots=state["plots"],
         steps=state["steps"],
     )
