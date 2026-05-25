@@ -179,13 +179,14 @@ class AnalyticsAction(BaseModel):
         description=(
             "Explicit step-by-step reasoning about what to explore or compute "
             "next, informed by the question and all prior execution results. "
-            "Stored in state and visible to every future step."
+            "Reason about whether to generate Plotly figures."
         )
     )
     code: str = Field(
         description=(
             "Autonomous Python code to execute in the next sandbox step. "
-            "Capture scalar/tabular outputs via print(). Use json.dumps with indent=None for compact outputs."
+            "Capture scalar/tabular outputs via print(). "
+            "Use json.dumps with indent=None for compact outputs. "
             "Capture Plotly figures via _plotly['Descriptive Title'] = fig.to_dict()."
         )
     )
@@ -326,15 +327,16 @@ class ValidationDecision(BaseModel):
         description=(
             "Evidence-based reasoning comparing the analytics agent's findings "
             "against the plan-execute agent's independent computations. "
-            "Cite specific numbers, column names, or chart observations from both."
+            "Cite specific numbers, column names, or chart observations from both. "
+            "Findings do not need to exactly agree. Perform a simple check."
         )
     )
     feedback: Optional[str] = Field(
         default=None,
         description=(
-            "Actionable instructions for the analytics agent when verdict is not "
-            "'approved'. Specify exactly what to fix, add, recompute, or redo. "
-            "Must be None when verdict is 'approved'."
+            "Actionable instructions to align the analytics agent when "
+            "verdict is not 'approved'. Be clear and specific about what to fix, "
+            "add, recompute, or redo."
         ),
     )
 

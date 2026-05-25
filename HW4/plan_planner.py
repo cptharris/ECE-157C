@@ -203,7 +203,7 @@ GLOBAL PLANNING RULES
 
 8. Ensure all column names exist in the dataset schema or are created earlier in the plan.
 
-9. Be deterministic: identical input must produce identical output.
+9. Consider all datasets available. Use all the information available.
 
 ────────────────────────────────────────────
 SELF-CHECK BEFORE RESPONDING

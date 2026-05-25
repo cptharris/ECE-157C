@@ -18,4 +18,5 @@ Question:
 
     return {
         "orchestration_decision": decision,
+        "retry_count": 0,
     }

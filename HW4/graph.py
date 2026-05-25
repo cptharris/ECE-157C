@@ -125,7 +125,7 @@ def dataset_node(
         df = pd.read_csv("datasets/" + csv_path)
         dataset_schema[csv_path] = {
             "shape": df.shape,
-            "columns": df.columns.tolist(),
+            "columns": df.dtypes.apply(lambda x: x.name).to_dict(),
         }
 
     summary_result = call_llm(
@@ -345,7 +345,8 @@ graph = builder.compile(
 if __name__ == "__main__":
     result = graph.invoke(
         GraphInput(
-            question="Which individual stocks had the top 10 highest and lowest price returns in each year?",
+            question="Find undervalued technology companies from the dataset.",
+            # question="Which individual stocks had the top 10 highest and lowest price returns in each year?",
             csv_paths=[
                 "2017_Financial_Data.csv",
                 "2018_Financial_Data.csv",
