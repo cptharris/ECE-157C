@@ -69,25 +69,6 @@ def _filter_rows(df: pd.DataFrame, step: FilterRowsStep) -> pd.DataFrame:
 def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
     for c in step.columns:
         new_col = c.new_column
-        left = c.left_source_column
-        right = c.right_source_column
-        op = c.operation
-        if op == "add":
-            df[new_col] = df[left] + df[right]
-        elif op == "subtract":
-            df[new_col] = df[left] - df[right]
-        elif op == "multiply":
-            df[new_col] = df[left] * df[right]
-        elif op == "divide":
-            df[new_col] = df[left] / df[right]
-    return df
-
-
-def _conditional_columns(
-    df: pd.DataFrame,
-    step: ConditionalColumnsStep,
-) -> pd.DataFrame:
-    for c in step.columns:
         left = df[c.left_source_column]
 
         if isinstance(c.right_source, str) and c.right_source in df.columns:
@@ -95,22 +76,28 @@ def _conditional_columns(
         else:
             right = c.right_source
 
-        if c.operator == "==":
-            pred = left == right
-        elif c.operator == "!=":
-            pred = left != right
-        elif c.operator == ">":
-            pred = left > right
-        elif c.operator == ">=":
-            pred = left >= right
-        elif c.operator == "<":
-            pred = left < right
-        elif c.operator == "<=":
-            pred = left <= right
-        else:
-            raise ValueError(f"Unsupported conditional operator: {c.operator}")
+        op = c.operation
 
-        df[c.new_column] = np.where(pred, c.true_value, c.false_value)
+        if op == "add":
+            df[new_col] = left + right
+        elif op == "subtract":
+            df[new_col] = left - right
+        elif op == "multiply":
+            df[new_col] = left * right
+        elif op == "divide":
+            df[new_col] = left / right
+        elif op == "==":
+            df[new_col] = np.where(left == right, c.true_value, c.false_value)
+        elif op == "!=":
+            df[new_col] = np.where(left != right, c.true_value, c.false_value)
+        elif op == ">":
+            df[new_col] = np.where(left > right, c.true_value, c.false_value)
+        elif op == ">=":
+            df[new_col] = np.where(left >= right, c.true_value, c.false_value)
+        elif op == "<":
+            df[new_col] = np.where(left < right, c.true_value, c.false_value)
+        elif op == "<=":
+            df[new_col] = np.where(left <= right, c.true_value, c.false_value)
 
     return df
 
@@ -233,8 +220,6 @@ def dispatch_op(df: pd.DataFrame, step: Step) -> pd.DataFrame:
         return _filter_rows(df, step)
     if isinstance(step, DeriveColumnsStep):
         return _derive_columns(df, step)
-    if isinstance(step, ConditionalColumnsStep):
-        return _conditional_columns(df, step)
     if isinstance(step, GroupAggregateStep):
         return _group_aggregate(df, step)
     if isinstance(step, SortRowsStep):

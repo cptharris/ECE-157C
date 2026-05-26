@@ -59,36 +59,32 @@ class DerivedColumn(BaseModel):
         description="Name of the derived output column to create or overwrite."
     )
     left_source_column: str = Field(
-        description="Left-hand input column used in the arithmetic operation."
-    )
-    right_source_column: str = Field(
-        description="Right-hand input column used in the arithmetic operation."
-    )
-    operation: Literal["add", "subtract", "multiply", "divide"] = Field(
-        description="Arithmetic operation applied between the two source columns."
-    )
-
-
-class ConditionalColumn(BaseModel):
-    new_column: str = Field(
-        description="Name of the boolean/indicator column to create or overwrite."
-    )
-    left_source_column: str = Field(
-        description="Left-hand column used in the comparison."
+        description="Left-hand input column used in the operation."
     )
     right_source: Union[str, int, float, bool] = Field(
-        description="Right-hand comparison value or column name."
+        description="Right-hand input column name or scalar literal used in the operation."
     )
-    operator: Literal["==", "!=", ">", ">=", "<", "<="] = Field(
-        description="Comparison operator applied between left and right values."
+    operation: Literal[
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "==",
+        "!=",
+        ">",
+        ">=",
+        "<",
+        "<=",
+    ] = Field(
+        description="Arithmetic or comparison operation applied between the left and right inputs."
     )
     true_value: Union[int, float, bool, str] = Field(
         default=1,
-        description="Value assigned when the predicate evaluates to true."
+        description="Value assigned when a comparison operation evaluates to true."
     )
     false_value: Union[int, float, bool, str] = Field(
         default=0,
-        description="Value assigned when the predicate evaluates to false."
+        description="Value assigned when a comparison operation evaluates to false."
     )
 
 
@@ -172,19 +168,6 @@ class DeriveColumnsStep(BaseModel):
     )
     columns: list[DerivedColumn] = Field(
         min_length=1, description="Definitions of all derived columns to compute."
-    )
-
-
-class ConditionalColumnsStep(BaseModel):
-    """Create columns from row-wise conditional predicates."""
-
-    op: Literal["conditional_columns"] = Field(
-        default="conditional_columns",
-        description="Operation identifier for conditional-column creation.",
-    )
-    columns: list[ConditionalColumn] = Field(
-        min_length=1,
-        description="Definitions of conditional columns to compute.",
     )
 
 
@@ -353,7 +336,6 @@ Step = Annotated[
         RenameColumnsStep,
         FilterRowsStep,
         DeriveColumnsStep,
-        ConditionalColumnsStep,
         GroupAggregateStep,
         SortRowsStep,
         LimitRowsStep,

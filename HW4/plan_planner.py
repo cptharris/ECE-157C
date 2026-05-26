@@ -80,43 +80,28 @@ RULE:
     conjunction: "AND" | "OR"
   }
 
+  Note: value may be a column name (string)
+
 ────────────────────────────────────────────
 
 5. derive_columns
-  Creates new columns from arithmetic on existing columns.
-
-  columns: list of {
-    new_column: str,
-    left_source_column: str,
-    right_source_column: str,
-    operation: "add" | "subtract" | "multiply" | "divide"
-  }
-
-────────────────────────────────────────────
-
-5b. conditional_columns
-  Creates row-wise conditional or indicator columns.
+  Creates new columns from algebra or conditions on existing columns.
 
   columns: list of {
     new_column: str,
     left_source_column: str,
     right_source: string | number | boolean,
-    operator: one of [
+    operation: one of [
+      "add", "subtract", "multiply", "divide",
       "==", "!=", ">", ">=", "<", "<="
     ],
     true_value: any,
     false_value: any
   }
 
-EXAMPLE:
-- Create an undervaluation indicator:
-  PE_ratio < sector_median_PE -> 1 else 0
-
-This operation should be used whenever the plan requires:
-- row-wise conditional logic
-- boolean indicator creation
-- metric threshold flags
-- count-of-metrics-satisfying-condition workflows
+  Note:
+  - For arithmetic operations, true_value and false_value are ignored.
+  - right_source may be a column name (string)
 
 ────────────────────────────────────────────
 
