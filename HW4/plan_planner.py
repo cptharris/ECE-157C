@@ -94,6 +94,32 @@ RULE:
 
 ────────────────────────────────────────────
 
+5b. conditional_columns
+  Creates row-wise conditional or indicator columns.
+
+  columns: list of {
+    new_column: str,
+    left_source_column: str,
+    right_source: string | number | boolean,
+    operator: one of [
+      "==", "!=", ">", ">=", "<", "<="
+    ],
+    true_value: any,
+    false_value: any
+  }
+
+EXAMPLE:
+- Create an undervaluation indicator:
+  PE_ratio < sector_median_PE -> 1 else 0
+
+This operation should be used whenever the plan requires:
+- row-wise conditional logic
+- boolean indicator creation
+- metric threshold flags
+- count-of-metrics-satisfying-condition workflows
+
+────────────────────────────────────────────
+
 6. group_aggregate
   Performs grouped aggregation.
 

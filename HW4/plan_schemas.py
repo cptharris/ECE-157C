@@ -69,6 +69,29 @@ class DerivedColumn(BaseModel):
     )
 
 
+class ConditionalColumn(BaseModel):
+    new_column: str = Field(
+        description="Name of the boolean/indicator column to create or overwrite."
+    )
+    left_source_column: str = Field(
+        description="Left-hand column used in the comparison."
+    )
+    right_source: Union[str, int, float, bool] = Field(
+        description="Right-hand comparison value or column name."
+    )
+    operator: Literal["==", "!=", ">", ">=", "<", "<="] = Field(
+        description="Comparison operator applied between left and right values."
+    )
+    true_value: Union[int, float, bool, str] = Field(
+        default=1,
+        description="Value assigned when the predicate evaluates to true."
+    )
+    false_value: Union[int, float, bool, str] = Field(
+        default=0,
+        description="Value assigned when the predicate evaluates to false."
+    )
+
+
 class Aggregation(BaseModel):
     source_column: str = Field(
         description=("Column to aggregate. Use '*' to represent count(*).")
@@ -149,6 +172,19 @@ class DeriveColumnsStep(BaseModel):
     )
     columns: list[DerivedColumn] = Field(
         min_length=1, description="Definitions of all derived columns to compute."
+    )
+
+
+class ConditionalColumnsStep(BaseModel):
+    """Create columns from row-wise conditional predicates."""
+
+    op: Literal["conditional_columns"] = Field(
+        default="conditional_columns",
+        description="Operation identifier for conditional-column creation.",
+    )
+    columns: list[ConditionalColumn] = Field(
+        min_length=1,
+        description="Definitions of conditional columns to compute.",
     )
 
 
@@ -317,6 +353,7 @@ Step = Annotated[
         RenameColumnsStep,
         FilterRowsStep,
         DeriveColumnsStep,
+        ConditionalColumnsStep,
         GroupAggregateStep,
         SortRowsStep,
         LimitRowsStep,

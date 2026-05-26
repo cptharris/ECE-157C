@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from typing import Any, Dict, List
 from plan_schemas import *
 
@@ -79,6 +80,38 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
             df[new_col] = df[left] * df[right]
         elif op == "divide":
             df[new_col] = df[left] / df[right]
+    return df
+
+
+def _conditional_columns(
+    df: pd.DataFrame,
+    step: ConditionalColumnsStep,
+) -> pd.DataFrame:
+    for c in step.columns:
+        left = df[c.left_source_column]
+
+        if isinstance(c.right_source, str) and c.right_source in df.columns:
+            right = df[c.right_source]
+        else:
+            right = c.right_source
+
+        if c.operator == "==":
+            pred = left == right
+        elif c.operator == "!=":
+            pred = left != right
+        elif c.operator == ">":
+            pred = left > right
+        elif c.operator == ">=":
+            pred = left >= right
+        elif c.operator == "<":
+            pred = left < right
+        elif c.operator == "<=":
+            pred = left <= right
+        else:
+            raise ValueError(f"Unsupported conditional operator: {c.operator}")
+
+        df[c.new_column] = np.where(pred, c.true_value, c.false_value)
+
     return df
 
 
@@ -200,6 +233,8 @@ def dispatch_op(df: pd.DataFrame, step: Step) -> pd.DataFrame:
         return _filter_rows(df, step)
     if isinstance(step, DeriveColumnsStep):
         return _derive_columns(df, step)
+    if isinstance(step, ConditionalColumnsStep):
+        return _conditional_columns(df, step)
     if isinstance(step, GroupAggregateStep):
         return _group_aggregate(df, step)
     if isinstance(step, SortRowsStep):
