@@ -89,7 +89,7 @@ MAX_RETRY_CYCLES: int = 2  # Hard ceiling on validation → retry cycles.
 
 # Key injected into the sandbox namespace before the first analytics step.
 # Analytics code captures Plotly figures by writing:
-#   _plotly["Descriptive Title"] = fig.to_dict()
+#   _plotly["Descriptive Title"] = fig.to_json()
 # The step_node harvests this dict into list[Plot] after each execution.
 PLOTLY_NAMESPACE_KEY: str = "_plotly"
 
@@ -185,7 +185,7 @@ class AnalyticsAction(BaseModel):
     - The namespace is persistent: variables and imports from earlier steps
       are available without redefinition.
     - Use print() for all scalar and tabular results you want captured.
-    - Capture Plotly figures via:  _plotly["Title"] = fig.to_dict()
+    - Capture Plotly figures via:  _plotly["Title"] = fig.to_json()
     - Do not call fig.show().
     """
 
@@ -201,7 +201,7 @@ class AnalyticsAction(BaseModel):
             "Autonomous Python code to execute in the next sandbox step. "
             "Capture scalar/tabular outputs via print(). "
             "Use json.dumps(..., indent=None). "
-            "Capture Plotly figures via _plotly['Descriptive Title'] = fig.to_dict()."
+            "Capture Plotly figures via _plotly['Descriptive Title'] = fig.to_json()."
         )
     )
     is_final_step: bool = Field(
@@ -498,8 +498,8 @@ class GraphState(TypedDict):
 
     # ── Analytics loop ────────────────────────────────────────────────────────
     # Append-only execution memory; reducers prevent overwrite across iterations.
-    steps: Annotated[list[AnalyticsStep], operator.add]
-    plots: Annotated[list[Plot], operator.add]
+    steps: list[AnalyticsStep]
+    plots: list[Plot]
 
     # Live sandbox environment; pre-seeded with {"_plotly": {}} by init_node.
     namespace: dict[str, Any]

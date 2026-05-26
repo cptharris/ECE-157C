@@ -5,6 +5,7 @@ analytics_agent.py
 from langchain_core.runnables import RunnableConfig
 from typing import Any, Literal
 import json
+import copy
 
 from schemas import (
     PLOTLY_NAMESPACE_KEY,
@@ -44,7 +45,7 @@ for csv_path in {state["csv_paths"]}:
 
     step = AnalyticsStep(
         step_index=0,
-        reasoning="Reveal the shape and schema of each dataset. 'dfs' is a dict of pandas DataFrames.",
+        reasoning="Reveal the shape and available columns of each dataset. 'dfs' is a dict of pandas DataFrames.",
         code="",
         execution=json.dumps(dataset_schema, indent=None),
         plots_captured=[],
@@ -65,7 +66,7 @@ def analytics_step_node(
     prompt = f"\nQuestion:\n{state["question"]}"
 
     if "validation_feedback" in state:
-        prompt += "\n\nRetry feedback:\n" + state.get("validation_feedback")
+        prompt += "\n\nRetry feedback:\n" + state.get("plan_execute_result")["plan"].reasoning
 
     prompt += "\n\nPrior steps:\n" + str(state["steps"]) + "\n"
 
@@ -86,8 +87,13 @@ def analytics_step_node(
         plots_captured=[p["title"] for p in harvested_plots],
     )
 
+    state["steps"].append(step)
+    if "plots" not in state:
+        state["plots"] = []
+    state["plots"].append(harvested_plots)
+
     return {
-        "steps": [step],
+        "steps": state["steps"],
         "plots": harvested_plots,
         "namespace": state["namespace"],
         "current_step_index": state["current_step_index"] + 1,
@@ -135,9 +141,10 @@ def _harvest_plots(namespace: dict[str, Any]) -> list[Plot]:
         harvested.append(
             Plot(
                 title=title,
-                figure_json=copy.deepcopy(fig_json),
+                figure_json=copy.deepcopy(json.loads(fig_json)),
             )
         )
+        print(json.loads(fig_json))
 
     # Clear after harvest to avoid duplicate accumulation
     namespace[PLOTLY_NAMESPACE_KEY] = {}

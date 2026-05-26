@@ -143,10 +143,11 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                 output = data.get("output", {}) or {}
 
                 # Emit plots as soon as they appear in state.
-                for plot in output.get("plots", []):
-                    yield _emit(
-                        "plot", title=plot["title"], figure_json=plot["figure_json"]
-                    )
+                # for plot in output.get("plots", []):
+                #     print(plot)
+                #     yield _emit(
+                #         "plot", title=plot["title"], figure_json=plot["figure_json"]
+                #     )
 
                 # Emit validation verdict.
                 if name == "validate":
