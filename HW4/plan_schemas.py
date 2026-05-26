@@ -78,11 +78,11 @@ class DerivedColumn(BaseModel):
     ] = Field(
         description="Arithmetic or comparison operation applied between the left and right inputs."
     )
-    true_value: Union[int, float, bool, str] = Field(
+    true_value: Union[int, float, bool, str, None] = Field(
         default=1,
         description="Value assigned when a comparison operation evaluates to true."
     )
-    false_value: Union[int, float, bool, str] = Field(
+    false_value: Union[int, float, bool, str, None] = Field(
         default=0,
         description="Value assigned when a comparison operation evaluates to false."
     )
