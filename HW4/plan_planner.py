@@ -25,7 +25,7 @@ EXECUTION MODEL
 ────────────────────────────────────────────
 
 A plan consists of:
-- reasoning: explanation of the computation strategy
+- reasoning: explanation of the computation strategy, optional complaints about the DSL
 - steps: ordered list of operations
 - description: description of final output
 
@@ -260,8 +260,10 @@ Question:
 Dataset Specifications:
 {state["dataset_thoughts"].schemas}
 
-Natural-language plan:
+Script to verify:
+```python
 {state["analytics_result"]["overall_plan"]}
+```
     """,
     )
 

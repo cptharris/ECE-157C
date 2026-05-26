@@ -13,6 +13,7 @@ Keep it as a pure function — no side effects, no state. The orchestrator decid
 
 from langchain_core.runnables import RunnableConfig
 from typing import Any
+import copy
 
 from schemas import GraphState, ValidationDecision
 from utilities import call_llm
@@ -22,9 +23,11 @@ def validation_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    analytics = state["analytics_result"]
-    plan_execute = state["plan_execute_result"]
+    analytics = copy.deepcopy(state["analytics_result"])
+    plan_execute = copy.deepcopy(state["plan_execute_result"])
 
+    analytics.pop("overall_plan")
+    analytics.pop("plots")
     plan_execute.pop("trace")
 
     prompt = f"""
@@ -32,10 +35,10 @@ Question:
 {state["question"]}
 
 Analytics answer:
-{analytics}
+{analytics["final_answer"]}
 
 Plan-execute answer:
-{plan_execute}
+{plan_execute["final_answer"]}
 """
 
     decision: ValidationDecision = call_llm("", prompt, ValidationDecision)
@@ -49,11 +52,9 @@ def retry_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    decision = state["validation_result"]
-
     return {
         "retry_count": state["retry_count"] + 1,
-        "validation_feedback": decision.feedback,
+        "validation_feedback": state["validation_result"].feedback,
         "analytics_result": None,
         # Preserve the deterministic validator baseline across retries.
         "plan_execute_result": state["plan_execute_result"],

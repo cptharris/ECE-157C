@@ -231,8 +231,9 @@ class AnalyticsFinalAnswer(BaseModel):
     )
     overall_plan: str = Field(
         description=(
-            "In natural-language, concisely describe a reproducible plan to "
-            "produce the execution result."
+            "Produce a concise Python script (ONLY Python) that generates the execution result."
+            # "In natural-language, concisely describe a reproducible plan to "
+            # "produce the execution result."
         )
     )
 
@@ -338,17 +339,20 @@ class ValidationDecision(BaseModel):
 
     verdict: Literal[
         "approved",
-        "needs_more_analysis",
-        "inconsistent_results",
-        "missing_analysis",
+        # "needs_more_analysis",
+        # "inconsistent_results",
+        # "missing_analysis",
         "retry",
     ] = Field(description="Outcome of the validation check.")
     reasoning: str = Field(
         description=(
-            "Evidence-based reasoning comparing the analytics agent's findings "
-            "against the plan-execute agent's independent computations. "
-            "Cite specific numbers, column names, or chart observations from both. "
-            "Findings do not need to exactly agree. Perform a simple check."
+            "Compare the analytics agent's findings to the plan-and-execute agent's "
+            "computations. The plan-and-execute agent is limited. Findings should "
+            "roughly agree to pass validation."
+            # "Evidence-based reasoning comparing the analytics agent's findings "
+            # "against the plan-execute agent's independent computations. "
+            # "Cite specific numbers, column names, or chart observations from both. "
+            # "Findings do not need to exactly agree. Perform a simple check."
         )
     )
     feedback: Optional[str] = Field(
