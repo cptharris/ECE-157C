@@ -13,10 +13,11 @@ from plan_schemas import (
     SnapshotStep,
     RestoreStep,
     JoinStep,
+    ConcatStep,
     LoadDatasetStep,
     DisplayStep,
 )
-from plan_operators import _snapshot, _restore, _join, _load_dataset
+from plan_operators import _snapshot, _restore, _join, _concat, _load_dataset
 
 
 def plan_execute_node(
@@ -40,11 +41,12 @@ def plan_execute_node(
             before = df.shape
 
             try:
-                if isinstance(step, (SnapshotStep, RestoreStep, JoinStep)):
+                if isinstance(step, (SnapshotStep, RestoreStep, JoinStep, ConcatStep)):
                     df = {
                         SnapshotStep: _snapshot,
                         RestoreStep: _restore,
                         JoinStep: _join,
+                        ConcatStep: _concat,
                     }[type(step)](df, step, snapshots)
                 elif isinstance(step, LoadDatasetStep):
                     df = _load_dataset(dataset_registry, step.dataset_name)

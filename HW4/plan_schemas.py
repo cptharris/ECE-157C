@@ -370,6 +370,31 @@ class JoinStep(BaseModel):
     )
 
 
+# -------------------- NEW ConcatStep class --------------------
+class ConcatStep(BaseModel):
+    """Concatenate the current DataFrame with one or more saved snapshots."""
+
+    op: Literal["concat"] = Field(
+        default="concat",
+        description="Operation identifier for dataframe concatenation.",
+    )
+
+    snapshots: list[str] = Field(
+        min_length=1,
+        description="Ordered list of snapshot names to concatenate with the current DataFrame.",
+    )
+
+    axis: Literal[0, 1] = Field(
+        default=0,
+        description="Concatenation axis: 0 appends rows, 1 appends columns.",
+    )
+
+    ignore_index: bool = Field(
+        default=True,
+        description="Whether to reset the index in the concatenated result.",
+    )
+
+
 class LoadDatasetStep(BaseModel):
     """Load a dataset from the available dataset registry."""
 
@@ -416,6 +441,7 @@ Step = Annotated[
         SnapshotStep,
         RestoreStep,
         JoinStep,
+        ConcatStep,
         LoadDatasetStep,
         DisplayStep,
     ],

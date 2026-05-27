@@ -284,6 +284,27 @@ def _join(
     return df.merge(right_df, on=step.on, how=step.how, suffixes=step.suffixes)
 
 
+def _concat(
+    df: pd.DataFrame,
+    step: ConcatStep,
+    snapshots: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    frames = [df]
+
+    for name in step.snapshots:
+        if name not in snapshots:
+            raise KeyError(
+                f"Snapshot '{name}' not found. Available: {list(snapshots)}"
+            )
+        frames.append(snapshots[name])
+
+    return pd.concat(
+        frames,
+        axis=step.axis,
+        ignore_index=step.ignore_index,
+    )
+
+
 def _load_dataset(
     dataset_registry: dict[str, DatasetEntry],
     dataset_name: str,

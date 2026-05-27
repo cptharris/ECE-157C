@@ -215,7 +215,16 @@ Use this for z-score standardization instead of manually aggregating means/stds.
 
 ────────────────────────────────────────────
 
-14. display
+14. concat
+  Concatenates the current DataFrame with one or more saved snapshots using pandas concat.
+
+  snapshots: list[str],
+  axis: 0 (rows) | 1 (cols),
+  ignore_index: boolean (usually true for row concat)
+
+────────────────────────────────────────────
+
+15. display
   Prints the current dataframe to the execution result.
 
   orient: "dict" | "list" | "series" | "split" | "records" | "index" (default "records")
