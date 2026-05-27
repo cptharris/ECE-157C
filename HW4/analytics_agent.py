@@ -75,7 +75,7 @@ def analytics_step_node(
     action: AnalyticsAction = call_llm(
         system_prompt="",
         user_prompt=prompt,
-        who="analytics_agent",
+        who="analytics_step",
         response_model=AnalyticsAction,
     )
 
@@ -123,7 +123,7 @@ Full step history:
     answer: AnalyticsFinalAnswer = call_llm(
         system_prompt="",
         user_prompt=prompt,
-        who="analytics_step",
+        who="analytics_answer",
         response_model=AnalyticsFinalAnswer,
     )
 
