@@ -92,7 +92,7 @@ RULE:
     left_source_column: str,
     right_source: string | number | boolean,
     operation: one of [
-      "add", "subtract", "multiply", "divide",
+      "add", "subtract", "multiply", "divide", "safe_divide",
       "==", "!=", ">", ">=", "<", "<=",
       "mean", "sum", "min", "max"
     ],
@@ -104,6 +104,39 @@ RULE:
   Note:
   - For arithmetic operations, true_value and false_value are ignored.
   - right_source may be a column name (string)
+
+────────────────────────────────────────────
+
+5b. reduce_columns
+  Performs row-wise reduction across multiple columns.
+
+  new_column: str,
+  columns: list[str],
+  function: one of [
+    "sum", "mean", "min", "max", "std", "count_nonnull"
+  ],
+  skipna: boolean
+
+Use this instead of chaining repeated derive_columns additions.
+
+────────────────────────────────────────────
+
+5c. normalize_columns
+  Applies statistical normalization transforms.
+
+  columns: list[str],
+  method: one of ["zscore"],
+  suffix: str,
+  invert: boolean,
+  skipna: boolean
+
+This operation automatically:
+- computes dataset-wide statistics
+- handles divide-by-zero std safely
+- replaces infinities with nulls
+- creates normalized output columns
+
+Use this for z-score standardization instead of manually aggregating means/stds.
 
 ────────────────────────────────────────────
 

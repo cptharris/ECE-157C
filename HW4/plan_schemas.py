@@ -69,6 +69,7 @@ class DerivedColumn(BaseModel):
         "subtract",
         "multiply",
         "divide",
+        "safe_divide",
         "==",
         "!=",
         ">",
@@ -176,6 +177,67 @@ class DeriveColumnsStep(BaseModel):
     )
     columns: list[DerivedColumn] = Field(
         min_length=1, description="Definitions of all derived columns to compute."
+    )
+
+
+class ReduceColumnsStep(BaseModel):
+    """Reduce multiple columns row-wise into a single derived column."""
+
+    op: Literal["reduce_columns"] = Field(
+        default="reduce_columns",
+        description="Operation identifier for row-wise column reduction.",
+    )
+
+    new_column: str = Field(
+        description="Name of the output column created from the row-wise reduction."
+    )
+
+    columns: list[str] = Field(
+        min_length=1,
+        description="Input columns participating in the row-wise reduction.",
+    )
+
+    function: Literal["sum", "mean", "min", "max", "std", "count_nonnull"] = Field(
+        description="Row-wise reduction function applied across the specified columns."
+    )
+
+    skipna: bool = Field(
+        default=True,
+        description="Whether missing values should be ignored during reduction."
+    )
+
+
+class NormalizeColumnsStep(BaseModel):
+    """Normalize numeric columns using common statistical transforms."""
+
+    op: Literal["normalize_columns"] = Field(
+        default="normalize_columns",
+        description="Operation identifier for statistical normalization.",
+    )
+
+    columns: list[str] = Field(
+        min_length=1,
+        description="Numeric columns to normalize.",
+    )
+
+    method: Literal["zscore"] = Field(
+        default="zscore",
+        description="Normalization strategy applied to each column.",
+    )
+
+    suffix: str = Field(
+        default="_z",
+        description="Suffix appended to normalized output columns.",
+    )
+
+    invert: bool = Field(
+        default=False,
+        description="Whether to multiply normalized values by -1 after normalization."
+    )
+
+    skipna: bool = Field(
+        default=True,
+        description="Whether missing values should be ignored in normalization statistics."
     )
 
 
@@ -344,6 +406,8 @@ Step = Annotated[
         RenameColumnsStep,
         FilterRowsStep,
         DeriveColumnsStep,
+        ReduceColumnsStep,
+        NormalizeColumnsStep,
         GroupAggregateStep,
         SortRowsStep,
         LimitRowsStep,

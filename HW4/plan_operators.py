@@ -91,6 +91,14 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
         elif op == "divide":
             df[new_col] = left / right
 
+        elif op == "safe_divide":
+            if right_is_column:
+                denom = right.replace(0, np.nan)
+            else:
+                denom = np.nan if right == 0 else right
+            df[new_col] = left / denom
+            df[new_col] = df[new_col].replace([np.inf, -np.inf], np.nan)
+
         elif op == "mean":
             cols = [left]
             if right_is_column:
@@ -135,6 +143,49 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
             df[new_col] = np.where(left < right, c.true_value, c.false_value)
         elif op == "<=":
             df[new_col] = np.where(left <= right, c.true_value, c.false_value)
+
+    return df
+
+
+def _reduce_columns(df: pd.DataFrame, step: ReduceColumnsStep) -> pd.DataFrame:
+    cols = step.columns
+
+    if step.function == "sum":
+        df[step.new_column] = df[cols].sum(axis=1, skipna=step.skipna)
+    elif step.function == "mean":
+        df[step.new_column] = df[cols].mean(axis=1, skipna=step.skipna)
+    elif step.function == "min":
+        df[step.new_column] = df[cols].min(axis=1, skipna=step.skipna)
+    elif step.function == "max":
+        df[step.new_column] = df[cols].max(axis=1, skipna=step.skipna)
+    elif step.function == "std":
+        df[step.new_column] = df[cols].std(axis=1, skipna=step.skipna)
+    elif step.function == "count_nonnull":
+        df[step.new_column] = df[cols].count(axis=1)
+
+    return df
+
+
+
+def _normalize_columns(df: pd.DataFrame, step: NormalizeColumnsStep) -> pd.DataFrame:
+    for col in step.columns:
+        s = pd.to_numeric(df[col], errors="coerce")
+
+        if step.method == "zscore":
+            mean = s.mean(skipna=step.skipna)
+            std = s.std(skipna=step.skipna)
+
+            if pd.isna(std) or std == 0:
+                z = pd.Series(np.nan, index=s.index)
+            else:
+                z = (s - mean) / std
+
+            if step.invert:
+                z = -z
+
+            z = z.replace([np.inf, -np.inf], np.nan)
+
+            df[col + step.suffix] = z
 
     return df
 
@@ -257,6 +308,10 @@ def dispatch_op(df: pd.DataFrame, step: Step) -> pd.DataFrame:
         return _filter_rows(df, step)
     if isinstance(step, DeriveColumnsStep):
         return _derive_columns(df, step)
+    if isinstance(step, ReduceColumnsStep):
+        return _reduce_columns(df, step)
+    if isinstance(step, NormalizeColumnsStep):
+        return _normalize_columns(df, step)
     if isinstance(step, GroupAggregateStep):
         return _group_aggregate(df, step)
     if isinstance(step, SortRowsStep):
