@@ -41,7 +41,12 @@ Plan-execute answer:
 {plan_execute["final_answer"]}
 """
 
-    decision: ValidationDecision = call_llm("", prompt, ValidationDecision)
+    decision: ValidationDecision = call_llm(
+        system_prompt="",
+        user_prompt=prompt,
+        who="validation",
+        response_model=ValidationDecision,
+    )
 
     return {
         "validation_result": decision,
