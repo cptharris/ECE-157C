@@ -34,7 +34,7 @@
             --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
             --font-ui: 'Syne', sans-serif;
 
-            --sidebar-w: 280px;
+            --sidebar-w: 260px;
             --radius: 6px;
         }
 
@@ -58,13 +58,12 @@
             background: var(--bg);
             color: var(--fg);
             display: flex;
-            position: relative;
         }
 
         /* ── Scrollbar ──────────────────────────────────────────────────────────── */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
         }
 
         ::-webkit-scrollbar-track {
@@ -93,13 +92,13 @@
         }
 
         #logo {
-            padding: 24px 20px 20px;
+            padding: 20px 18px 16px;
             border-bottom: 1px solid var(--border);
         }
 
         #logo .logo-mark {
             font-family: var(--font-ui);
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 800;
             letter-spacing: -0.5px;
             line-height: 1;
@@ -110,11 +109,10 @@
         }
 
         #logo .logo-mark .dot {
-            width: 10px;
-            height: 10px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
             background: var(--purple);
-            box-shadow: 0 0 8px var(--purple);
             flex-shrink: 0;
         }
 
@@ -123,45 +121,41 @@
             color: var(--comment);
             letter-spacing: 0.15em;
             text-transform: uppercase;
-            margin-top: 6px;
-            padding-left: 18px;
+            margin-top: 5px;
+            padding-left: 17px;
         }
 
-        /* file panel */
         #file-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: 16px;
-            gap: 12px;
+            padding: 14px;
+            gap: 10px;
         }
 
         #file-panel h3 {
             font-family: var(--font-ui);
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--comment);
         }
 
-
-
-        /* file list */
         #file-list {
             flex: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
 
         .file-item {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 10px;
+            padding: 7px 9px;
             border-radius: var(--radius);
             background: var(--elevated);
             border: 1px solid transparent;
@@ -180,12 +174,11 @@
         }
 
         .file-item .fi-check {
-            width: 14px;
-            height: 14px;
+            width: 13px;
+            height: 13px;
             border-radius: 3px;
             border: 1px solid var(--border);
             flex-shrink: 0;
-            transition: background 0.15s, border-color 0.15s;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -198,7 +191,7 @@
 
         .file-item.selected .fi-check::after {
             content: '✓';
-            font-size: 9px;
+            font-size: 8px;
             color: var(--bg);
             font-weight: 700;
         }
@@ -212,12 +205,11 @@
             white-space: nowrap;
         }
 
-
         .no-files {
             font-size: 11px;
             color: var(--comment);
             text-align: center;
-            padding: 16px 0;
+            padding: 14px 0;
         }
 
         /* ── Main ───────────────────────────────────────────────────────────────── */
@@ -229,197 +221,53 @@
             overflow: hidden;
         }
 
-        /* header bar */
-        #top-bar {
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-shrink: 0;
-        }
-
-        /* node pipeline display */
-        #pipeline {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        /* ── Output ─────────────────────────────────────────────────────────────── */
+        #output-area {
             flex: 1;
-            overflow: hidden;
-        }
-
-        .pipe-node {
-            font-size: 10px;
-            letter-spacing: 0.08em;
-            padding: 3px 10px;
-            border-radius: 999px;
-            border: 1px solid var(--border);
-            color: var(--comment);
-            white-space: nowrap;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-
-        .pipe-node.active {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(139, 233, 253, 0.08);
-            box-shadow: 0 0 8px rgba(139, 233, 253, 0.2);
-        }
-
-        .pipe-node.done {
-            border-color: var(--green);
-            color: var(--green);
-            background: rgba(80, 250, 123, 0.06);
-        }
-
-        .pipe-node.error {
-            border-color: var(--red);
-            color: var(--red);
-        }
-
-        .pipe-arrow {
-            color: var(--border);
-            font-size: 10px;
-            flex-shrink: 0;
-        }
-
-        /* status dot */
-        #status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--comment);
-            flex-shrink: 0;
-            transition: background 0.3s;
-        }
-
-        #status-dot.running {
-            background: var(--cyan);
-            box-shadow: 0 0 6px var(--cyan);
-            animation: pulse 1.2s ease-in-out infinite;
-        }
-
-        #status-dot.done {
-            background: var(--green);
-            box-shadow: 0 0 6px var(--green);
-        }
-
-        #status-dot.error {
-            background: var(--red);
-            box-shadow: 0 0 6px var(--red);
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.4;
-            }
-        }
-
-        /* ── Question area ──────────────────────────────────────────────────────── */
-        #question-area {
-            padding: 20px 24px;
-            border-top: 1px solid var(--border);
-            flex-shrink: 0;
+            overflow-y: auto;
+            padding: 20px 24px 12px;
             display: flex;
-            gap: 12px;
-            align-items: flex-end;
-            background: rgba(40, 42, 54, 0.5);
+            flex-direction: column;
+            gap: 20px;
         }
 
-        #question {
+        #empty-state {
             flex: 1;
-            background: var(--elevated);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--fg);
-            font-family: var(--font-mono);
-            font-size: 13px;
-            padding: 12px 16px;
-            resize: none;
-            min-height: 46px;
-            max-height: 140px;
-            line-height: 1.5;
-            transition: border-color 0.2s;
-            outline: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            opacity: 0.35;
         }
 
-        #question::placeholder {
-            color: var(--comment);
+        #empty-state .es-glyph {
+            font-size: 36px;
+            line-height: 1;
         }
 
-        #question:focus {
-            border-color: var(--purple);
-        }
-
-        #run-btn {
-            background: var(--purple);
-            color: var(--bg);
-            border: none;
-            border-radius: var(--radius);
-            font-family: var(--font-ui);
-            font-weight: 700;
-            font-size: 13px;
-            padding: 12px 22px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-            letter-spacing: 0.04em;
-        }
-
-        #run-btn:hover {
-            background: var(--pink);
-            box-shadow: 0 0 14px rgba(255, 121, 198, 0.3);
-        }
-
-        #run-btn:active {
-            transform: scale(0.97);
-        }
-
-        #run-btn:disabled {
-            background: var(--comment);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        #clear-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--comment);
-            border-radius: var(--radius);
-            font-family: var(--font-mono);
+        #empty-state p {
             font-size: 12px;
-            padding: 12px 14px;
-            cursor: pointer;
-            transition: color 0.2s, border-color 0.2s;
-        }
-
-        #clear-btn:hover {
-            color: var(--red);
-            border-color: var(--red);
+            color: var(--comment);
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.6;
         }
 
         /* ── Chat turns ─────────────────────────────────────────────────────────── */
         .chat-turn {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .chat-bubble.user {
             align-self: flex-end;
-            max-width: 72%;
+            max-width: 70%;
             background: rgba(189, 147, 249, 0.12);
             border: 1px solid rgba(189, 147, 249, 0.35);
-            border-radius: 16px 16px 4px 16px;
-            padding: 10px 16px;
+            border-radius: 14px 14px 3px 14px;
+            padding: 9px 14px;
             font-size: 13px;
             line-height: 1.6;
             color: var(--fg);
@@ -433,66 +281,13 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-        }
-
-        /* thinking dots */
-        .thinking-dots {
-            font-size: 15px;
-            color: var(--comment);
-            letter-spacing: 0.2em;
-            padding: 4px 2px;
-            min-height: 24px;
-            animation: slide-in 0.2s ease;
-        }
-
-
-        #output-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        /* empty state */
-        #empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            opacity: 0.4;
-        }
-
-        #empty-state .es-glyph {
-            font-size: 40px;
-            line-height: 1;
-        }
-
-        #empty-state p {
-            font-size: 13px;
-            color: var(--comment);
-            text-align: center;
-            max-width: 300px;
-            line-height: 1.6;
-        }
-
-        /* output blocks */
-        .out-block {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: scroll;
-            animation: slide-in 0.25s ease;
+            gap: 8px;
         }
 
         @keyframes slide-in {
             from {
                 opacity: 0;
-                transform: translateY(8px);
+                transform: translateY(6px);
             }
 
             to {
@@ -501,11 +296,106 @@
             }
         }
 
+        /* ── Node log (inline activity feed) ────────────────────────────────────── */
+        .node-log {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            padding: 8px 12px;
+            background: rgba(40, 42, 54, 0.6);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            animation: slide-in 0.2s ease;
+        }
+
+        .node-log:empty {
+            display: none;
+        }
+
+        .nl-item {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 11px;
+            transition: opacity 0.4s;
+        }
+
+        .nl-item.done {
+            opacity: 0.38;
+        }
+
+        .nl-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 1px;
+            position: relative;
+            top: 1px;
+        }
+
+        .nl-dot.running {
+            background: var(--cyan);
+            animation: pulse-dot 1.2s ease-in-out infinite;
+        }
+
+        .nl-dot.done {
+            background: var(--green);
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 4px var(--cyan);
+            }
+
+            50% {
+                opacity: 0.4;
+                box-shadow: none;
+            }
+        }
+
+        .nl-node {
+            font-weight: 600;
+            color: var(--cyan);
+            letter-spacing: 0.04em;
+            min-width: 110px;
+        }
+
+        .nl-item.done .nl-node {
+            color: var(--comment);
+            font-weight: 400;
+        }
+
+        .nl-desc {
+            color: var(--comment);
+            flex: 1;
+        }
+
+        .nl-item.done .nl-desc {
+            color: transparent;
+            font-size: 0;
+        }
+
+        /* collapse desc when done */
+
+        /* ── Output blocks ───────────────────────────────────────────────────────── */
+        .out-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            animation: slide-in 0.22s ease;
+            overflow: hidden;
+        }
+
         .out-block .block-header {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 14px;
+            padding: 7px 12px;
             background: var(--elevated);
             border-bottom: 1px solid var(--border);
             font-size: 10px;
@@ -533,8 +423,8 @@
             display: none;
         }
 
-        .block-header .bh-tag {
-            padding: 2px 8px;
+        .bh-tag {
+            padding: 2px 7px;
             border-radius: 999px;
             font-size: 9px;
             font-weight: 600;
@@ -576,60 +466,60 @@
         }
 
         .block-body {
-            padding: 14px;
+            padding: 12px 14px;
         }
 
-        /* code block */
+        /* ── Code and output — scrollable, height-capped ────────────────────────── */
         .code-block {
             background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 4px;
-            padding: 12px 14px;
+            padding: 10px 13px;
             font-size: 12px;
             line-height: 1.6;
-            overflow-x: auto;
             white-space: pre;
             color: var(--fg);
-            margin-bottom: 10px;
+            max-height: 40vh;
+            overflow: auto;
+            margin-bottom: 8px;
         }
 
         .code-block:last-child {
             margin-bottom: 0;
         }
 
-        /* labels within blocks */
         .block-label {
             font-size: 10px;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--comment);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
-        /* reasoning text */
         .reasoning-text {
             font-size: 12px;
             line-height: 1.7;
             color: var(--orange);
-            margin-bottom: 10px;
-            padding: 10px 12px;
-            border-left: 2px solid var(--orange);
+            margin-bottom: 8px;
+            padding: 9px 12px;
+            border-left: 2px solid rgba(255, 184, 108, 0.6);
             background: rgba(255, 184, 108, 0.05);
             border-radius: 0 4px 4px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
-        /* stdout */
         .stdout-block {
             background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 4px;
-            padding: 10px 14px;
+            padding: 9px 13px;
             font-size: 11.5px;
             line-height: 1.6;
             color: var(--green);
             white-space: pre-wrap;
             word-break: break-word;
-            max-height: 300px;
+            max-height: 40vh;
             overflow-y: auto;
         }
 
@@ -642,23 +532,9 @@
             color: var(--red);
         }
 
-        /* streaming answer */
-        #answer-block .block-body {
-            font-size: 14px;
-            line-height: 1.8;
-            color: var(--fg);
-        }
-
-        #answer-block .block-body p {
-            margin-bottom: 10px;
-        }
-
-        #answer-block .block-body p:last-child {
-            margin-bottom: 0;
-        }
-
+        /* ── Streaming tokens ───────────────────────────────────────────────────── */
         #streaming-tokens {
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.8;
             color: var(--fg);
             white-space: pre-wrap;
@@ -687,14 +563,14 @@
             }
         }
 
-        /* validation block */
+        /* ── Validation block ───────────────────────────────────────────────────── */
         .verdict-badge {
             display: inline-block;
-            padding: 3px 12px;
+            padding: 2px 10px;
             border-radius: 999px;
             font-size: 11px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }
@@ -734,18 +610,20 @@
             line-height: 1.7;
             color: var(--fg);
             white-space: pre-wrap;
+            max-height: 40vh;
+            overflow-y: auto;
         }
 
-        /* plot container */
+        /* ── Plot container ─────────────────────────────────────────────────────── */
         .plot-container {
             width: 100%;
             border-radius: 4px;
             overflow: hidden;
         }
 
-        /* final answer — rendered markdown */
+        /* ── Final answer ───────────────────────────────────────────────────────── */
         .final-answer-text {
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.8;
             color: var(--fg);
         }
@@ -757,16 +635,16 @@
             font-family: var(--font-ui);
             font-weight: 700;
             color: var(--purple);
-            margin: 1.1em 0 0.4em;
+            margin: 1em 0 0.35em;
             line-height: 1.3;
         }
 
         .final-answer-text h1 {
-            font-size: 18px;
+            font-size: 17px;
         }
 
         .final-answer-text h2 {
-            font-size: 15px;
+            font-size: 14px;
         }
 
         .final-answer-text h3 {
@@ -775,7 +653,7 @@
         }
 
         .final-answer-text p {
-            margin: 0 0 0.8em;
+            margin: 0 0 0.7em;
         }
 
         .final-answer-text p:last-child {
@@ -803,17 +681,17 @@
 
         .final-answer-text ul,
         .final-answer-text ol {
-            padding-left: 1.4em;
-            margin: 0 0 0.8em;
+            padding-left: 1.3em;
+            margin: 0 0 0.7em;
         }
 
         .final-answer-text li {
-            margin-bottom: 0.3em;
+            margin-bottom: 0.25em;
         }
 
         .final-answer-text code {
             font-family: var(--font-mono);
-            font-size: 12px;
+            font-size: 11.5px;
             background: var(--elevated);
             border: 1px solid var(--border);
             border-radius: 3px;
@@ -825,9 +703,10 @@
             background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 4px;
-            padding: 12px 14px;
+            padding: 10px 13px;
             overflow-x: auto;
-            margin: 0 0 0.8em;
+            margin: 0 0 0.7em;
+            max-height: 40vh;
         }
 
         .final-answer-text pre code {
@@ -839,9 +718,9 @@
         }
 
         .final-answer-text blockquote {
-            border-left: 3px solid var(--purple);
-            margin: 0 0 0.8em;
-            padding: 4px 12px;
+            border-left: 2px solid var(--purple);
+            margin: 0 0 0.7em;
+            padding: 3px 12px;
             color: var(--comment);
             background: rgba(189, 147, 249, 0.05);
             border-radius: 0 4px 4px 0;
@@ -851,12 +730,12 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
-            margin-bottom: 0.8em;
+            margin-bottom: 0.7em;
         }
 
         .final-answer-text th,
         .final-answer-text td {
-            padding: 6px 12px;
+            padding: 5px 10px;
             border: 1px solid var(--border);
             text-align: left;
         }
@@ -875,20 +754,93 @@
         .final-answer-text hr {
             border: none;
             border-top: 1px solid var(--border);
-            margin: 1em 0;
+            margin: 0.9em 0;
         }
 
-
-
-        /* ── Misc helpers ───────────────────────────────────────────────────────── */
-        .flex-row {
+        /* ── Question area ──────────────────────────────────────────────────────── */
+        #question-area {
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
             display: flex;
-            align-items: center;
             gap: 8px;
+            align-items: flex-end;
+            background: rgba(40, 42, 54, 0.6);
         }
 
-        .mt-8 {
-            margin-top: 8px;
+        #question {
+            flex: 1;
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--fg);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 8px 12px;
+            resize: none;
+            min-height: 36px;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        #question::placeholder {
+            color: var(--comment);
+        }
+
+        #question:focus {
+            border-color: var(--purple);
+        }
+
+        #run-btn {
+            background: var(--purple);
+            color: var(--bg);
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-ui);
+            font-weight: 700;
+            font-size: 12px;
+            padding: 8px 18px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s, transform 0.1s;
+            letter-spacing: 0.04em;
+        }
+
+        #run-btn:hover {
+            background: var(--pink);
+        }
+
+        #run-btn:active {
+            transform: scale(0.97);
+        }
+
+        #run-btn:disabled {
+            background: var(--comment);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #clear-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--comment);
+            border-radius: var(--radius);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            padding: 8px 11px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        #clear-btn:hover {
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        .mt-6 {
+            margin-top: 6px;
         }
     </style>
 </head>
@@ -907,7 +859,6 @@
 
         <div id="file-panel">
             <h3>Datasets</h3>
-
             <div id="file-list">
                 <div class="no-files" id="no-files-msg">No CSV files found in datasets/.</div>
             </div>
@@ -917,27 +868,6 @@
     <!-- ═══════════════════════════════ MAIN ═════════════════════════════════ -->
     <main id="main">
 
-        <!-- pipeline progress bar -->
-        <div id="top-bar">
-            <div id="status-dot"></div>
-            <div id="pipeline">
-                <span class="pipe-node" id="pipe-orchestrate">orchestrate</span>
-                <span class="pipe-arrow" id="pipe-arrow-generic" style="display:none">→</span>
-                <span class="pipe-node" id="pipe-generic" style="display:none">generic</span>
-                <span class="pipe-arrow">→</span>
-                <span class="pipe-node" id="pipe-dataset_fan">dataset</span>
-                <span class="pipe-arrow">→</span>
-                <span class="pipe-node" id="pipe-analytics">analytics</span>
-                <span class="pipe-arrow">→</span>
-                <span class="pipe-node" id="pipe-plan_execute">plan·exec</span>
-                <span class="pipe-arrow">→</span>
-                <span class="pipe-node" id="pipe-validate">validate</span>
-                <span class="pipe-arrow">→</span>
-                <span class="pipe-node" id="pipe-finalize">finalize</span>
-            </div>
-        </div>
-
-        <!-- output -->
         <div id="output-area">
             <div id="empty-state">
                 <div class="es-glyph">◈</div>
@@ -945,11 +875,9 @@
             </div>
         </div>
 
-        <!-- question input -->
         <div id="question-area">
-            <textarea id="question"
-                placeholder="Ask a question about your datasets… (Enter to send, Shift+Enter for newline)"
-                rows="2"></textarea>
+            <textarea id="question" placeholder="Ask a question… (Enter to send, Shift+Enter for newline)"
+                rows="1"></textarea>
             <button id="clear-btn" title="Clear output">✕</button>
             <button id="run-btn">Run ▶</button>
         </div>
@@ -958,18 +886,59 @@
 
     <script>
         /* ═══════════════════════════════════════════════════════════════════════
+           CONSTANTS
+        ═══════════════════════════════════════════════════════════════════════ */
+        const NODE_LABELS = {
+            orchestrate: 'orchestrate',
+            dataset_fan: 'dataset·fan',
+            analytics: 'analytics',
+            analytics_init: 'analytics·init',
+            analytics_step: 'analytics·step',
+            analytics_answer: 'analytics·answer',
+            plan: 'plan·plan',
+            plan_execute: 'plan·execute',
+            plan_respond: 'plan·respond',
+            validate: 'validate',
+            retry: 'retry',
+            generic: 'generic',
+            generic_search: 'generic·search',
+            generic_respond: 'generic·respond',
+            finalize: 'finalize',
+        };
+
+        const NODE_DESCS = {
+            orchestrate: 'Routing the question…',
+            dataset_fan: 'Reading and profiling datasets…',
+            analytics: 'Crunching the data…',
+            analytics_init: 'Setting up the analysis workspace…',
+            analytics_step: 'Running an analysis step…',
+            analytics_answer: 'Synthesizing findings…',
+            plan: 'Building an independent validation plan…',
+            plan_execute: 'Executing validation steps…',
+            plan_respond: 'Summarizing validation results…',
+            validate: 'Cross-checking both analysis paths…',
+            retry: 'Retrying with validator feedback…',
+            generic: 'Handling a non-dataset question…',
+            generic_search: 'Searching for relevant sources…',
+            generic_respond: 'Drafting response from sources…',
+            finalize: 'Preparing final answer and plots…',
+        };
+
+        /* ═══════════════════════════════════════════════════════════════════════
            STATE
         ═══════════════════════════════════════════════════════════════════════ */
         const state = {
             files: [],
             selected: new Set(),
             running: false,
-            evtSource: null,
+            currentTurnId: null,
         };
 
         let currentAgentContainer = null;
-        let thinkingEl = null;
-        let thinkingInterval = null;
+        let currentNodeLog = null;
+        let tokenTarget = null;
+        let stepBlocks = {};
+        let plotlyCounter = 0;
 
         /* ═══════════════════════════════════════════════════════════════════════
            ELEMENTS
@@ -982,9 +951,6 @@
         const clearBtn = $('clear-btn');
         const outputArea = $('output-area');
         const emptyState = $('empty-state');
-        const statusDot = $('status-dot');
-        const pipeGeneric = $('pipe-generic');
-        const pipeArrowGen = $('pipe-arrow-generic');
 
         /* ═══════════════════════════════════════════════════════════════════════
            FILE MANAGEMENT
@@ -995,9 +961,7 @@
                 const d = await r.json();
                 state.files = d.files || [];
                 renderFileList();
-            } catch (e) {
-                console.error('fetchFiles:', e);
-            }
+            } catch (e) { console.error('fetchFiles:', e); }
         }
 
         function renderFileList() {
@@ -1008,20 +972,16 @@
                 return;
             }
             noFilesMsg.style.display = 'none';
-
             state.files.forEach(name => {
                 const item = document.createElement('div');
                 item.className = 'file-item' + (state.selected.has(name) ? ' selected' : '');
                 item.dataset.name = name;
-
                 const check = document.createElement('div');
                 check.className = 'fi-check';
-
                 const label = document.createElement('span');
                 label.className = 'fi-name';
                 label.textContent = name;
                 label.title = name;
-
                 item.appendChild(check);
                 item.appendChild(label);
                 item.addEventListener('click', () => toggleSelect(name));
@@ -1030,46 +990,50 @@
         }
 
         function toggleSelect(name) {
-            if (state.selected.has(name)) {
-                state.selected.delete(name);
-            } else {
-                state.selected.add(name);
-            }
+            state.selected.has(name) ? state.selected.delete(name) : state.selected.add(name);
             renderFileList();
         }
 
         /* ═══════════════════════════════════════════════════════════════════════
-           PIPELINE DISPLAY
+           NODE LOG (inline activity feed per turn)
         ═══════════════════════════════════════════════════════════════════════ */
-        const nodeStates = {}; // node → 'active' | 'done' | 'error'
+        function onNodeStart(node) {
+            if (!currentNodeLog) return;
+            const item = document.createElement('div');
+            item.className = 'nl-item';
+            item.id = `nli-${state.currentTurnId}-${node}`;
 
-        function resetPipeline() {
-            for (const key of Object.keys(nodeStates)) delete nodeStates[key];
-            document.querySelectorAll('.pipe-node').forEach(el => {
-                el.className = 'pipe-node';
-            });
-            pipeGeneric.style.display = 'none';
-            pipeArrowGen.style.display = 'none';
-            statusDot.className = '';
+            const dot = document.createElement('span');
+            dot.className = 'nl-dot running';
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'nl-node';
+            nameEl.textContent = NODE_LABELS[node] || node;
+
+            const descEl = document.createElement('span');
+            descEl.className = 'nl-desc';
+            descEl.textContent = NODE_DESCS[node] || '';
+
+            item.appendChild(dot);
+            item.appendChild(nameEl);
+            item.appendChild(descEl);
+            currentNodeLog.appendChild(item);
+            scrollBottom();
         }
 
-        function setNodeState(node, st) {
-            nodeStates[node] = st;
-            // Show generic node if it's activated.
-            if (node === 'generic') {
-                pipeGeneric.style.display = '';
-                pipeArrowGen.style.display = '';
-            }
-            const el = $(`pipe-${node}`);
-            if (el) el.className = `pipe-node ${st}`;
+        function onNodeEnd(node) {
+            const item = $(`nli-${state.currentTurnId}-${node}`);
+            if (!item) return;
+            item.querySelector('.nl-dot').className = 'nl-dot done';
+            item.classList.add('done');
         }
 
         /* ═══════════════════════════════════════════════════════════════════════
            OUTPUT RENDERING
         ═══════════════════════════════════════════════════════════════════════ */
-        let stepBlocks = {}; // step index → DOM element
-        let tokenTarget = null; // span receiving streamed tokens
-        let plotlyCounter = 0;
+        function scrollBottom() {
+            outputArea.scrollTop = outputArea.scrollHeight;
+        }
 
         function clearOutput() {
             outputArea.querySelectorAll('.chat-turn').forEach(el => el.remove());
@@ -1077,52 +1041,43 @@
             tokenTarget = null;
             plotlyCounter = 0;
             currentAgentContainer = null;
-            stopThinking();
+            currentNodeLog = null;
         }
 
         function hideEmpty() {
             emptyState.style.display = 'none';
         }
 
-        function startThinking() {
-            if (thinkingEl) return;
-            thinkingEl = document.createElement('div');
-            thinkingEl.className = 'thinking-dots';
-            thinkingEl.textContent = '.';
-            currentAgentContainer.appendChild(thinkingEl);
-
-            let step = 0;
-            const frames = ['.&nbsp;&nbsp;', '..&nbsp;', '...'];
-            thinkingInterval = setInterval(() => {
-                step = (step + 1) % frames.length;
-                if (thinkingEl) thinkingEl.innerHTML = frames[step];
-            }, 500);
-        }
-
-        function stopThinking() {
-            if (thinkingInterval) { clearInterval(thinkingInterval); thinkingInterval = null; }
-            if (thinkingEl) { thinkingEl.remove(); thinkingEl = null; }
-        }
-
         function renderUserBubble(question) {
+            const turnId = `t${Date.now()}`;
+            state.currentTurnId = turnId;
+
             const turn = document.createElement('div');
             turn.className = 'chat-turn';
+            turn.id = turnId;
 
             const bubble = document.createElement('div');
             bubble.className = 'chat-bubble user';
             bubble.textContent = question;
             turn.appendChild(bubble);
 
-            // Agent container lives inside the same turn.
             const agent = document.createElement('div');
             agent.className = 'chat-bubble agent';
             turn.appendChild(agent);
 
+            /* node log lives at the top of the agent area */
+            const nodeLog = document.createElement('div');
+            nodeLog.className = 'node-log';
+            nodeLog.id = `nl-${turnId}`;
+            agent.appendChild(nodeLog);
+
             outputArea.appendChild(turn);
             currentAgentContainer = agent;
-            outputArea.scrollTop = outputArea.scrollHeight;
+            currentNodeLog = nodeLog;
+            scrollBottom();
         }
 
+        /* Helpers ─────────────────────────────────────────────────────────── */
         function makeBlock(id, headerLabel, tag, tagClass, collapsible = true) {
             const block = document.createElement('div');
             block.className = 'out-block';
@@ -1155,90 +1110,85 @@
 
             block.appendChild(header);
             block.appendChild(body);
-            outputArea.appendChild(block);
+
             const target = currentAgentContainer || outputArea;
             target.appendChild(block);
-            outputArea.scrollTop = outputArea.scrollHeight;
+            scrollBottom();
             return { block, body };
         }
 
+        function makeLabel(text) {
+            const el = document.createElement('div');
+            el.className = 'block-label';
+            el.textContent = text;
+            return el;
+        }
+
+        /* Step ─────────────────────────────────────────────────────────────── */
         function renderStep(ev) {
             const idx = ev.index;
             const key = `step-${idx}`;
+            if (stepBlocks[key]) return;
 
-            if (stepBlocks[key]) {
-                // Already rendered step header — update body if needed.
-                return;
-            }
-
-            const { block, body } = makeBlock(null, `Step ${idx + 1}`, 'step', 'tag-step');
+            const { block, body } = makeBlock(null, `Step ${idx}`, 'step', 'tag-step');
             stepBlocks[key] = body;
 
             if (ev.reasoning) {
-                const rl = document.createElement('div');
-                rl.className = 'block-label';
-                rl.textContent = 'Reasoning';
+                body.appendChild(makeLabel('Reasoning'));
                 const rt = document.createElement('div');
                 rt.className = 'reasoning-text';
                 rt.textContent = ev.reasoning;
-                body.appendChild(rl);
                 body.appendChild(rt);
             }
 
             if (ev.code) {
-                const cl = document.createElement('div');
-                cl.className = 'block-label';
-                cl.textContent = 'Code';
+                body.appendChild(makeLabel('Code'));
                 const cb = document.createElement('pre');
                 cb.className = 'code-block';
                 cb.textContent = ev.code;
-                body.appendChild(cl);
                 body.appendChild(cb);
             }
         }
 
         function renderStepResult(ev) {
-            const key = `step-${ev.index}`;
-            const body = stepBlocks[key];
+            const body = stepBlocks[`step-${ev.index}`];
             if (!body) return;
 
-            const sl = document.createElement('div');
-            sl.className = 'block-label mt-8';
-            sl.textContent = ev.error ? 'Error' : 'Output';
+            const hasError = !!ev.error;
+            const lbl = makeLabel(hasError ? 'Error' : 'Output');
+            lbl.classList.add('mt-6');
 
             const sb = document.createElement('pre');
-            sb.className = 'stdout-block' + (ev.error ? ' error-text' : '');
-            sb.textContent = ev.error
-                ? ev.error
-                : (ev.stdout || '(no output)');
-            if (!ev.stdout && !ev.error) sb.classList.add('stdout-empty');
+            sb.className = 'stdout-block' + (hasError ? ' error-text' : '');
+            if (!ev.stdout && !hasError) sb.classList.add('stdout-empty');
+            sb.textContent = hasError ? ev.error : (ev.stdout || '(no output)');
 
-            body.appendChild(sl);
+            body.appendChild(lbl);
             body.appendChild(sb);
+            scrollBottom();
         }
 
+        /* Plot ─────────────────────────────────────────────────────────────── */
         function renderPlot(ev) {
             const ctr = ++plotlyCounter;
-            const { block, body } = makeBlock(null, ev.title || `Plot ${ctr}`, 'plot', 'tag-plot', false);
+            const { body } = makeBlock(null, ev.title || `Plot ${ctr}`, 'plot', 'tag-plot', false);
 
             const plotDiv = document.createElement('div');
             plotDiv.className = 'plot-container';
-            plotDiv.id = `plotly-${ctr}`;
+            plotDiv.id = `${state.currentTurnId}-plotly-${ctr}`;
             body.appendChild(plotDiv);
 
-            // Apply Dracula-compatible Plotly layout overrides.
             const fig = ev.figure_json || {};
             const layout = Object.assign({
                 paper_bgcolor: 'rgba(0,0,0,0)',
                 plot_bgcolor: 'rgba(0,0,0,0)',
-                font: { family: "'JetBrains Mono', monospace", color: '#f8f8f2', size: 12 },
+                font: { family: "'JetBrains Mono', monospace", color: '#f8f8f2', size: 11 },
                 xaxis: { gridcolor: '#44475a', linecolor: '#44475a', zerolinecolor: '#44475a' },
                 yaxis: { gridcolor: '#44475a', linecolor: '#44475a', zerolinecolor: '#44475a' },
-                margin: { t: 40, r: 20, b: 60, l: 60 },
+                margin: { t: 36, r: 16, b: 52, l: 52 },
                 legend: { bgcolor: 'rgba(0,0,0,0)', font: { color: '#f8f8f2' } },
             }, fig.layout || {});
 
-            // Remap default trace colors to Dracula palette.
             const draculaColors = ['#bd93f9', '#8be9fd', '#50fa7b', '#ffb86c', '#ff79c6', '#ff5555', '#f1fa8c'];
             const data = (fig.data || []).map((trace, i) => {
                 const t = { ...trace };
@@ -1250,15 +1200,14 @@
             });
 
             Plotly.newPlot(plotDiv.id, data, layout, {
-                responsive: true,
-                displayModeBar: true,
-                modeBarButtonsToRemove: ['toImage'],
-                displaylogo: false,
+                responsive: true, displayModeBar: true,
+                modeBarButtonsToRemove: ['toImage'], displaylogo: false,
             });
         }
 
+        /* Validation ───────────────────────────────────────────────────────── */
         function renderValidation(ev) {
-            const { block, body } = makeBlock(null, 'Validation', 'validate', 'tag-valid');
+            const { body } = makeBlock(null, 'Validation', 'validate', 'tag-valid');
 
             const badge = document.createElement('span');
             badge.className = `verdict-badge verdict-${ev.verdict}`;
@@ -1272,15 +1221,17 @@
             body.appendChild(text);
         }
 
+        /* Final answer ─────────────────────────────────────────────────────── */
         function renderFinalAnswer(ev) {
-            const { block, body } = makeBlock('answer-block', 'Answer', 'answer', 'tag-answer', false);
-
+            finaliseTokenBlock();
+            const { body } = makeBlock('answer-block', 'Answer', 'answer', 'tag-answer', false);
             const text = document.createElement('div');
             text.className = 'final-answer-text';
             text.innerHTML = marked.parse(ev.answer, { breaks: true, gfm: true });
             body.appendChild(text);
         }
 
+        /* Streaming tokens ─────────────────────────────────────────────────── */
         function ensureTokenBlock() {
             if (tokenTarget) return;
             const { block, body } = makeBlock(null, 'Generating…', 'answer', 'tag-generic', false);
@@ -1291,9 +1242,6 @@
             body.appendChild(span);
             body.appendChild(cursor);
             tokenTarget = span;
-
-            // Update header label to "Response" when done.
-            block._headerLabel = block.querySelector('.bh-label');
             block._cursor = cursor;
             tokenTarget._block = block;
         }
@@ -1301,6 +1249,7 @@
         function appendToken(text) {
             ensureTokenBlock();
             tokenTarget.textContent += text;
+            scrollBottom();
         }
 
         function finaliseTokenBlock() {
@@ -1309,10 +1258,63 @@
             if (block) {
                 const lbl = block.querySelector('.bh-label');
                 if (lbl) lbl.textContent = 'Response';
-                const cur = block._cursor;
-                if (cur) cur.remove();
+                if (block._cursor) block._cursor.remove();
             }
             tokenTarget = null;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           EVENT HANDLER
+        ═══════════════════════════════════════════════════════════════════════ */
+        function handleEvent(ev) {
+            console.log(ev);
+            switch (ev.type) {
+                case 'node_start':
+                    onNodeStart(ev.node);
+                    break;
+
+                case 'node_end':
+                    onNodeEnd(ev.node);
+                    break;
+
+                case 'token':
+                    appendToken(ev.text);
+                    break;
+
+                case 'step':
+                    finaliseTokenBlock();
+                    renderStep(ev);
+                    break;
+
+                case 'step_result':
+                    renderStepResult(ev);
+                    break;
+
+                case 'plot':
+                    renderPlot(ev);
+                    break;
+
+                case 'validation':
+                    renderValidation(ev);
+                    break;
+
+                case 'final_answer':
+                    renderFinalAnswer(ev);
+                    break;
+
+                case 'done':
+                    break;
+
+                case 'error': {
+                    finaliseTokenBlock();
+                    const { body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
+                    const msg = document.createElement('pre');
+                    msg.className = 'stdout-block error-text';
+                    msg.textContent = ev.message + (ev.traceback ? '\n\n' + ev.traceback : '');
+                    body.appendChild(msg);
+                    break;
+                }
+            }
         }
 
         /* ═══════════════════════════════════════════════════════════════════════
@@ -1324,27 +1326,18 @@
             const question = questionEl.value.trim();
             if (!question) { questionEl.focus(); return; }
             const selectedFiles = [...state.selected];
-            // if (selectedFiles.length === 0) {
-            //   alert('Select at least one CSV dataset from the sidebar.');
-            //   return;
-            // }
 
-            // Clear input immediately and hide empty state.
             questionEl.value = '';
             questionEl.style.height = 'auto';
             hideEmpty();
-
-            // Render user bubble + empty agent container, then start thinking dots.
             renderUserBubble(question);
-            startThinking();
 
             state.running = true;
             runBtn.disabled = true;
             runBtn.textContent = 'Running…';
-            resetPipeline();
-            statusDot.className = 'running';
-
-            let firstContent = false;
+            stepBlocks = {};
+            tokenTarget = null;
+            plotlyCounter = 0;
 
             try {
                 const resp = await fetch('/api/stream', {
@@ -1375,92 +1368,29 @@
                         if (!line.startsWith('data: ')) continue;
                         let ev;
                         try { ev = JSON.parse(line.slice(6)); } catch { continue; }
-
-                        // Remove thinking dots on first real content event.
-                        if (!firstContent && ['step', 'plot', 'token', 'final_answer', 'error'].includes(ev.type)) {
-                            stopThinking();
-                            firstContent = true;
-                        }
-
                         handleEvent(ev);
                     }
                 }
 
             } catch (err) {
-                stopThinking();
-                statusDot.className = 'error';
-                const { block, body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
+                const { body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
                 const msg = document.createElement('pre');
                 msg.className = 'stdout-block error-text';
                 msg.textContent = err.message;
                 body.appendChild(msg);
             } finally {
-                stopThinking();
+                $(`nl-${state.currentTurnId}`).remove();
                 finaliseTokenBlock();
                 state.running = false;
                 runBtn.disabled = false;
                 runBtn.textContent = 'Run ▶';
-                if (statusDot.className === 'running') statusDot.className = 'done';
-                outputArea.scrollTop = outputArea.scrollHeight;
+                scrollBottom();
                 questionEl.focus();
             }
         }
 
-        /* ── Event dispatcher ── */
-        function handleEvent(ev) {
-            switch (ev.type) {
-                case 'node_start':
-                    setNodeState(ev.node, 'active');
-                    break;
-
-                case 'node_end':
-                    setNodeState(ev.node, 'done');
-                    break;
-
-                case 'token':
-                    appendToken(ev.text);
-                    break;
-
-                case 'step':
-                    finaliseTokenBlock(); // close any open generic block
-                    renderStep(ev);
-                    break;
-
-                case 'step_result':
-                    renderStepResult(ev);
-                    break;
-
-                case 'plot':
-                    renderPlot(ev);
-                    break;
-
-                case 'validation':
-                    renderValidation(ev);
-                    break;
-
-                case 'final_answer':
-                    finaliseTokenBlock();
-                    renderFinalAnswer(ev);
-                    break;
-
-                case 'done':
-                    statusDot.className = 'done';
-                    break;
-
-                case 'error':
-                    statusDot.className = 'error';
-                    finaliseTokenBlock();
-                    const { block, body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
-                    const msg = document.createElement('pre');
-                    msg.className = 'stdout-block error-text';
-                    msg.textContent = ev.message + (ev.traceback ? '\n\n' + ev.traceback : '');
-                    body.appendChild(msg);
-                    break;
-            }
-        }
-
         /* ═══════════════════════════════════════════════════════════════════════
-           BUTTON HANDLERS
+           CONTROLS
         ═══════════════════════════════════════════════════════════════════════ */
         runBtn.addEventListener('click', runAgent);
 
@@ -1471,20 +1401,17 @@
             }
         });
 
+        questionEl.addEventListener('input', () => {
+            questionEl.style.height = 'auto';
+            questionEl.style.height = Math.min(questionEl.scrollHeight, 120) + 'px';
+        });
+
         clearBtn.addEventListener('click', () => {
             clearOutput();
-            resetPipeline();
-            statusDot.className = '';
             emptyState.style.display = '';
             stepBlocks = {};
             tokenTarget = null;
             plotlyCounter = 0;
-        });
-
-        /* auto-resize textarea */
-        questionEl.addEventListener('input', () => {
-            questionEl.style.height = 'auto';
-            questionEl.style.height = Math.min(questionEl.scrollHeight, 140) + 'px';
         });
 
         /* ═══════════════════════════════════════════════════════════════════════

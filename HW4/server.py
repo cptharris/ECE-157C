@@ -97,11 +97,18 @@ def _emit(event_type: str, **data) -> str:
 TRACKED_NODES = {
     "orchestrate",
     "dataset_fan",
-    "analytics",
+    # "analytics",
+    "analytics_init",
+    "analytics_step",
+    "analytics_answer",
+    "plan",
     "plan_execute",
+    "plan_respond",
     "validate",
     "retry",
-    "generic",
+    # "generic",
+    "generic_search",
+    "generic_respond",
     "finalize",
 }
 
@@ -163,6 +170,24 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                             verdict=vr.get("verdict", ""),
                             reasoning=vr.get("reasoning", ""),
                         )
+                
+                if name == "analytics_step":
+                    steps: list = output.get("steps", [])
+                    if steps:
+                        latest = steps[-1]
+                        yield _emit(
+                            "step",
+                            index=latest.get("step_index", 0),
+                            reasoning=latest.get("reasoning", ""),
+                            code=latest.get("code", ""),
+                        )
+                        ex = latest.get("execution", {})
+                        yield _emit(
+                            "step_result",
+                            index=latest.get("step_index", 0),
+                            stdout=ex.get("stdout", ""),
+                            error=ex.get("error"),
+                        )
 
                 # Emit final answer + final plots from finalize_node.
                 if name == "finalize":
@@ -173,26 +198,6 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                         yield _emit(
                             "plot", title=plot["title"], figure_json=plot["figure_json"]
                         )
-
-            # ── Analytics step details ────────────────────────────────────
-            elif kind == "on_chain_end" and name == "analytics_step":
-                output = data.get("output", {}) or {}
-                steps: list = output.get("steps", [])
-                if steps:
-                    latest = steps[-1]
-                    yield _emit(
-                        "step",
-                        index=latest.get("step_index", 0),
-                        reasoning=latest.get("reasoning", ""),
-                        code=latest.get("code", ""),
-                    )
-                    ex = latest.get("execution", {})
-                    yield _emit(
-                        "step_result",
-                        index=latest.get("step_index", 0),
-                        stdout=ex.get("stdout", ""),
-                        error=ex.get("error"),
-                    )
 
             # ── LLM token streaming ───────────────────────────────────────
             elif kind == "on_chat_model_stream":
