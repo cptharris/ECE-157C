@@ -66,11 +66,18 @@ def analytics_step_node(
     prompt = f"\nQuestion:\n{state["question"]}"
 
     if "validation_feedback" in state:
-        prompt += "\n\nRetry feedback:\n" + state.get("plan_execute_result")["plan"].reasoning
+        prompt += (
+            "\n\nRetry feedback:\n" + state.get("plan_execute_result")["plan"].reasoning
+        )
 
     prompt += "\n\nPrior steps:\n" + str(state["steps"]) + "\n"
 
-    action: AnalyticsAction = call_llm("", prompt, AnalyticsAction)
+    action: AnalyticsAction = call_llm(
+        system_prompt="",
+        user_prompt=prompt,
+        who="analytics_agent",
+        response_model=AnalyticsAction,
+    )
 
     execution_result = execute(
         action.code,
@@ -113,7 +120,12 @@ Full step history:
 {state["steps"]}
 """
 
-    answer: AnalyticsFinalAnswer = call_llm("", prompt, AnalyticsFinalAnswer)
+    answer: AnalyticsFinalAnswer = call_llm(
+        system_prompt="",
+        user_prompt=prompt,
+        who="analytics_step",
+        response_model=AnalyticsFinalAnswer,
+    )
 
     result = AnalyticsResult(
         final_answer=answer.final_answer,

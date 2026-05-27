@@ -44,7 +44,12 @@ Search results:
 {generic_result["search_result"]["raw_text"]}
 """
 
-    response: GenericResponse = call_llm("", prompt, GenericResponse)
+    response: GenericResponse = call_llm(
+        system_prompt="",
+        user_prompt=prompt,
+        who="generic_respond",
+        response_model=GenericResponse,
+    )
 
     updated: GenericResult = {
         **generic_result,

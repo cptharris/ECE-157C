@@ -40,13 +40,14 @@ def plan_respond_node(
     result: PlanExecuteResult = state["plan_execute_result"]
 
     answer: PlanExecuteFinalAnswer = call_llm(
-        SYSTEM_PROMPT,
-        USER_PROMPT.format(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=USER_PROMPT.format(
             question=state["question"],
             description=result["plan"].description,
             data=json.dumps(result["execution_result"], indent=None),
         ),
-        PlanExecuteFinalAnswer,
+        who="plan_respond",
+        response_model=PlanExecuteFinalAnswer,
     )
 
     updated: PlanExecuteResult = {
@@ -54,6 +55,4 @@ def plan_respond_node(
         "final_answer": answer.final_answer,
     }
 
-    return {
-        "plan_execute_result": updated
-    }
+    return {"plan_execute_result": updated}

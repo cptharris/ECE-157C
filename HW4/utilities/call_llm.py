@@ -3,31 +3,34 @@ import json
 import hashlib
 from pathlib import Path
 from openai import OpenAI
-
+from typing import TypeVar, Type, overload, Literal
+from pydantic import BaseModel
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 API_MODEL = "gpt-5-mini"
 
-from typing import TypeVar, Type, overload, Literal
-from pydantic import BaseModel
-
-
 T = TypeVar("T", bound=BaseModel)
 
 
 @overload
-def call_llm(system_prompt: str, user_prompt: str) -> str: ...
+def call_llm(system_prompt: str, user_prompt: str, who: str = ...) -> str: ...
 @overload
-def call_llm(system_prompt: str, user_prompt: str, response_model: Type[T]) -> T: ...
+def call_llm(
+    system_prompt: str,
+    user_prompt: str,
+    who: str,
+    response_model: Type[T],
+) -> T: ...
 
 
 def call_llm(
     system_prompt: str,
     user_prompt: str,
+    who: str = "general",
     response_model: Type[T] | None = None,
 ) -> str | T:
-    cached = get_cached(user_prompt)
+    cached = get_cached(who, user_prompt)
     if cached is not None:
         if response_model is not None:
             cached = response_model.model_validate_json(cached)
@@ -45,6 +48,9 @@ def call_llm(
     print(user_prompt)
     print(f"{"="*10} ======= {"="*10}")
 
+    if input("continue? ") != "y":
+        exit(1)
+
     if response_model is None:
         response = (
             client.chat.completions.create(
@@ -55,21 +61,21 @@ def call_llm(
             .message.content.strip()
         )
 
-        print(f"{"="*10} RESPONSE {"="*10}")
+        print("=" * 10 + " RESPONSE " + "=" * 10)
         print(response)
-        print(f"{"="*10} ======== {"="*10}")
+        print("=" * 10 + " ========" + "=" * 10)
 
-        set_cached(user_prompt, response)
+        set_cached(who, user_prompt, response)
     else:
         response = client.responses.parse(
             model=API_MODEL, input=messages, text_format=response_model
         ).output_parsed
 
-        print(f"{"="*10} RESPONSE {"="*10}")
+        print("=" * 10 + " RESPONSE " + "=" * 10)
         print(response)
-        print(f"{"="*10} ======== {"="*10}")
+        print("=" * 10 + " ======== " + "=" * 10)
 
-        set_cached(user_prompt, response.model_dump_json())
+        set_cached(who, user_prompt, response.model_dump_json())
 
     return response
 
@@ -78,44 +84,50 @@ def call_llm(
 
 
 CACHE_ENABLED = os.environ.get("LLM_CACHE", "1") == "1"
-CACHE_PATH = Path(os.environ.get("LLM_CACHE_PATH", ".cache/llm.json"))
-
-_cache = None
-
-
-def _load_cache():
-    global _cache
-    if _cache is None:
-        if CACHE_PATH.exists():
-            try:
-                _cache = json.loads(CACHE_PATH.read_text())
-            except Exception:
-                _cache = {}
-        else:
-            _cache = {}
-            os.makedirs(CACHE_PATH.parent, exist_ok=True)
-    return _cache
+# default directory for cache files
+CACHE_DIR = Path(os.environ.get("LLM_CACHE_PATH", ".cache/"))
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _key(messages):
+def _cache_file_for_who(who: str) -> Path:
+    safe = "".join(c for c in str(who) if c.isalnum() or c in "-_").strip() or "general"
+    return CACHE_DIR / f"llm-{safe}.json"
+
+
+def _load_cache(who: str) -> dict:
+    path = _cache_file_for_who(who)
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return {}
+
+
+def _save_cache(who: str, cache: dict) -> None:
+    path = _cache_file_for_who(who)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(cache, indent=2))
+
+
+def _key(messages: str) -> str:
     raw = json.dumps(messages, sort_keys=True)
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
-def get_cached(messages):
+def get_cached(who: str, messages) -> str | None:
     if not CACHE_ENABLED:
         return None
-    cache = _load_cache()
+    cache = _load_cache(who)
     entry = cache.get(_key(messages))
     if entry is None:
         return None
-    return entry[1]
+    return entry  # stored value (string or JSON-able)
 
 
-def set_cached(messages, value):
+def set_cached(who: str, messages, value) -> None:
     if not CACHE_ENABLED:
         return
-    cache = _load_cache()
-    cache[_key(messages)] = [messages, value]
-    os.makedirs(CACHE_PATH.parent, exist_ok=True)
-    CACHE_PATH.write_text(json.dumps(cache, indent=2))
+    cache = _load_cache(who)
+    cache[_key(messages)] = value
+    _save_cache(who, cache)

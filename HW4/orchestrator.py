@@ -14,7 +14,12 @@ Question:
 {state["question"]}
 """
 
-    decision: OrchestrationDecision = call_llm("", prompt, OrchestrationDecision)
+    decision: OrchestrationDecision = call_llm(
+        system_prompt="",
+        user_prompt=prompt,
+        who="orchestrate",
+        response_model=OrchestrationDecision,
+    )
 
     state["csv_paths"].sort()
 

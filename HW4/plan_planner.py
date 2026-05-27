@@ -300,6 +300,7 @@ Script to verify:
 {state["analytics_result"]["overall_plan"]}
 ```
     """,
+        who="plan",
     )
 
     json_str = _extract_json(raw)

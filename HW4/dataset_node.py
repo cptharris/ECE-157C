@@ -37,6 +37,7 @@ Question:
 Unfiltered Dataset Specifications:
 {json.dumps(dataset_schema, indent=None)}
     """,
+        who="dataset",
     )
 
     thoughts = DatasetThoughts.model_validate_json(thoughts)
