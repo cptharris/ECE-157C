@@ -77,7 +77,9 @@ class InvokeRequest(BaseModel):
 @app.get("/api/files")
 async def list_files() -> dict:
     """Return all CSV filenames found in the datasets/ directory."""
-    files = sorted((f.name for f in DATASETS_DIR.iterdir() if f.suffix == ".csv"), reverse=True)
+    files = sorted(
+        (f.name for f in DATASETS_DIR.iterdir() if f.suffix == ".csv"), reverse=True
+    )
     return {"files": files}
 
 
@@ -135,8 +137,11 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
             data: dict = event.get("data", {})
 
             # ── Node lifecycle ────────────────────────────────────────────
-            if kind == "on_chain_start" and name in TRACKED_NODES:
-                yield _emit("node_start", node=name)
+            if kind == "on_chain_start":
+                if name in TRACKED_NODES:
+                    yield _emit("node_start", node=name)
+                else:
+                    print(f"an unrecognized node just started: {name}")
 
             elif kind == "on_chain_end" and name in TRACKED_NODES:
                 yield _emit("node_end", node=name)
@@ -211,10 +216,6 @@ async def stream_agent(request: InvokeRequest) -> StreamingResponse:
     """
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question must not be empty.")
-    # if not request.csv_files:
-    #     raise HTTPException(
-    #         status_code=400, detail="At least one CSV file must be selected."
-    #     )
     # Validate files exist in datasets/.
     for name in request.csv_files:
         if not (DATASETS_DIR / name).exists():
@@ -250,4 +251,6 @@ async def serve_frontend() -> str:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True, log_level="info")
+    uvicorn.run(
+        "server:app", host="127.0.0.1", port=8000, reload=True, log_level="info"
+    )
