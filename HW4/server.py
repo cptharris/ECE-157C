@@ -133,6 +133,8 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
         )
         return
 
+    nodes_seen: dict[str, int] = {}
+
     try:
         async for event in graph.astream_events(
             GraphInput(question=question, csv_paths=csv_files),
@@ -143,15 +145,22 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
             name: str = event.get("name", "")
             data: dict = event.get("data", {})
 
+            if name == "LangGraph":
+                continue
+
+            if kind != "on_chain_stream":
+                print(f"{"="*5} {name}: {kind} {"="*5}")
+                # print(data)
+
             # ── Node lifecycle ────────────────────────────────────────────
             if kind == "on_chain_start":
-                if name in TRACKED_NODES:
-                    yield _emit("node_start", node=name)
-                else:
-                    print(f"an unrecognized node just started: {name}")
+                if name not in nodes_seen:
+                    nodes_seen[name] = 0
+                yield _emit("node_start", node=str(nodes_seen[name]) + "--" + name)
 
-            elif kind == "on_chain_end" and name in TRACKED_NODES:
-                yield _emit("node_end", node=name)
+            elif kind == "on_chain_end":
+                yield _emit("node_end", node=str(nodes_seen[name]) + "--" + name)
+                nodes_seen[name] += 1
                 output = data.get("output", {}) or {}
 
                 # Emit plots as soon as they appear in state.
@@ -170,7 +179,7 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                             verdict=vr.get("verdict", ""),
                             reasoning=vr.get("reasoning", ""),
                         )
-                
+
                 if name == "analytics_step":
                     steps: list = output.get("steps", [])
                     if steps:
