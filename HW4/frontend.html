@@ -2,67 +2,67 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Analytics Agent</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ECE 272C: Analytics Agent</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap"
-    rel="stylesheet" />
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked@13/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@13/marked.min.js"></script>
 
-  <style>
-    /* ── Dracula palette ──────────────────────────────────────────────────── */
-    :root {
-      --bg: #1a1b26;
-      --surface: #282a36;
-      --elevated: #313444;
-      --border: #44475a;
-      --comment: #6272a4;
-      --fg: #f8f8f2;
-      --cyan: #8be9fd;
-      --green: #50fa7b;
-      --orange: #ffb86c;
-      --pink: #ff79c6;
-      --purple: #bd93f9;
-      --red: #ff5555;
-      --yellow: #f1fa8c;
+    <style>
+        /* ── Dracula palette ──────────────────────────────────────────────────── */
+        :root {
+            --bg: #1a1b26;
+            --surface: #282a36;
+            --elevated: #313444;
+            --border: #44475a;
+            --comment: #6272a4;
+            --fg: #f8f8f2;
+            --cyan: #8be9fd;
+            --green: #50fa7b;
+            --orange: #ffb86c;
+            --pink: #ff79c6;
+            --purple: #bd93f9;
+            --red: #ff5555;
+            --yellow: #f1fa8c;
 
-      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-      --font-ui: 'Syne', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-ui: 'Syne', sans-serif;
 
-      --sidebar-w: 280px;
-      --radius: 6px;
-    }
+            --sidebar-w: 280px;
+            --radius: 6px;
+        }
 
-    /* ── Reset ─────────────────────────────────────────────────────────────── */
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+        /* ── Reset ─────────────────────────────────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    html,
-    body {
-      height: 100%;
-      overflow: hidden;
-    }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
 
-    body {
-      font-family: var(--font-mono);
-      background: var(--bg);
-      color: var(--fg);
-      display: flex;
-      position: relative;
-    }
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg);
+            color: var(--fg);
+            display: flex;
+            position: relative;
+        }
 
-    /* noise texture overlay */
-    /* body::before {
+        /* noise texture overlay */
+        /* body::before {
       content: '';
       position: fixed;
       inset: 0;
@@ -71,1436 +71,1437 @@
       z-index: 999;
     } */
 
-    /* ── Scrollbar ──────────────────────────────────────────────────────────── */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 3px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--comment);
-    }
-
-    /* ── Sidebar ────────────────────────────────────────────────────────────── */
-    #sidebar {
-      width: var(--sidebar-w);
-      min-width: var(--sidebar-w);
-      height: 100vh;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    #logo {
-      padding: 24px 20px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    #logo .logo-mark {
-      font-family: var(--font-ui);
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      line-height: 1;
-      color: var(--fg);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    #logo .logo-mark .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--purple);
-      box-shadow: 0 0 8px var(--purple);
-      flex-shrink: 0;
-    }
-
-    #logo .logo-sub {
-      font-size: 10px;
-      color: var(--comment);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-top: 6px;
-      padding-left: 18px;
-    }
-
-    /* file panel */
-    #file-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 16px;
-      gap: 12px;
-    }
-
-    #file-panel h3 {
-      font-family: var(--font-ui);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--comment);
-    }
-
-
-
-    /* file list */
-    #file-list {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .file-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: var(--radius);
-      background: var(--elevated);
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      user-select: none;
-    }
-
-    .file-item:hover {
-      border-color: var(--border);
-    }
-
-    .file-item.selected {
-      border-color: var(--purple);
-      background: rgba(189, 147, 249, 0.1);
-    }
-
-    .file-item .fi-check {
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-      border: 1px solid var(--border);
-      flex-shrink: 0;
-      transition: background 0.15s, border-color 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .file-item.selected .fi-check {
-      background: var(--purple);
-      border-color: var(--purple);
-    }
-
-    .file-item.selected .fi-check::after {
-      content: '✓';
-      font-size: 9px;
-      color: var(--bg);
-      font-weight: 700;
-    }
-
-    .file-item .fi-name {
-      font-size: 11px;
-      color: var(--fg);
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-
-    .no-files {
-      font-size: 11px;
-      color: var(--comment);
-      text-align: center;
-      padding: 16px 0;
-    }
-
-    /* ── Main ───────────────────────────────────────────────────────────────── */
-    #main {
-      flex: 1;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* header bar */
-    #top-bar {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-shrink: 0;
-    }
-
-    /* node pipeline display */
-    #pipeline {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    .pipe-node {
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--comment);
-      white-space: nowrap;
-      transition: all 0.3s;
-      flex-shrink: 0;
-    }
-
-    .pipe-node.active {
-      border-color: var(--cyan);
-      color: var(--cyan);
-      background: rgba(139, 233, 253, 0.08);
-      box-shadow: 0 0 8px rgba(139, 233, 253, 0.2);
-    }
-
-    .pipe-node.done {
-      border-color: var(--green);
-      color: var(--green);
-      background: rgba(80, 250, 123, 0.06);
-    }
-
-    .pipe-node.error {
-      border-color: var(--red);
-      color: var(--red);
-    }
-
-    .pipe-arrow {
-      color: var(--border);
-      font-size: 10px;
-      flex-shrink: 0;
-    }
-
-    /* status dot */
-    #status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--comment);
-      flex-shrink: 0;
-      transition: background 0.3s;
-    }
-
-    #status-dot.running {
-      background: var(--cyan);
-      box-shadow: 0 0 6px var(--cyan);
-      animation: pulse 1.2s ease-in-out infinite;
-    }
-
-    #status-dot.done {
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
-    }
-
-    #status-dot.error {
-      background: var(--red);
-      box-shadow: 0 0 6px var(--red);
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.4;
-      }
-    }
-
-    /* ── Question area ──────────────────────────────────────────────────────── */
-    #question-area {
-      padding: 20px 24px;
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-      display: flex;
-      gap: 12px;
-      align-items: flex-end;
-      background: rgba(40, 42, 54, 0.5);
-    }
-
-    #question {
-      flex: 1;
-      background: var(--elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--fg);
-      font-family: var(--font-mono);
-      font-size: 13px;
-      padding: 12px 16px;
-      resize: none;
-      min-height: 46px;
-      max-height: 140px;
-      line-height: 1.5;
-      transition: border-color 0.2s;
-      outline: none;
-    }
-
-    #question::placeholder {
-      color: var(--comment);
-    }
-
-    #question:focus {
-      border-color: var(--purple);
-    }
-
-    #run-btn {
-      background: var(--purple);
-      color: var(--bg);
-      border: none;
-      border-radius: var(--radius);
-      font-family: var(--font-ui);
-      font-weight: 700;
-      font-size: 13px;
-      padding: 12px 22px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-      letter-spacing: 0.04em;
-    }
-
-    #run-btn:hover {
-      background: var(--pink);
-      box-shadow: 0 0 14px rgba(255, 121, 198, 0.3);
-    }
-
-    #run-btn:active {
-      transform: scale(0.97);
-    }
-
-    #run-btn:disabled {
-      background: var(--comment);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    #clear-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--comment);
-      border-radius: var(--radius);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 12px 14px;
-      cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
-    }
-
-    #clear-btn:hover {
-      color: var(--red);
-      border-color: var(--red);
-    }
-
-    /* ── Chat turns ─────────────────────────────────────────────────────────── */
-    .chat-turn {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chat-bubble.user {
-      align-self: flex-end;
-      max-width: 72%;
-      background: rgba(189, 147, 249, 0.12);
-      border: 1px solid rgba(189, 147, 249, 0.35);
-      border-radius: 16px 16px 4px 16px;
-      padding: 10px 16px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: var(--fg);
-      white-space: pre-wrap;
-      word-break: break-word;
-      animation: slide-in 0.2s ease;
-    }
-
-    .chat-bubble.agent {
-      align-self: flex-start;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    /* thinking dots */
-    .thinking-dots {
-      font-size: 15px;
-      color: var(--comment);
-      letter-spacing: 0.2em;
-      padding: 4px 2px;
-      min-height: 24px;
-      animation: slide-in 0.2s ease;
-    }
-
-
-    #output-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    /* empty state */
-    #empty-state {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      opacity: 0.4;
-    }
-
-    #empty-state .es-glyph {
-      font-size: 40px;
-      line-height: 1;
-    }
-
-    #empty-state p {
-      font-size: 13px;
-      color: var(--comment);
-      text-align: center;
-      max-width: 300px;
-      line-height: 1.6;
-    }
-
-    /* output blocks */
-    .out-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: scroll;
-      animation: slide-in 0.25s ease;
-    }
-
-    @keyframes slide-in {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .out-block .block-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      background: var(--elevated);
-      border-bottom: 1px solid var(--border);
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--comment);
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .out-block .block-header .bh-label {
-      flex: 1;
-    }
-
-    .out-block .block-header .bh-toggle {
-      font-size: 9px;
-      transition: transform 0.2s;
-    }
-
-    .out-block.collapsed .bh-toggle {
-      transform: rotate(-90deg);
-    }
-
-    .out-block.collapsed .block-body {
-      display: none;
-    }
-
-    .block-header .bh-tag {
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 9px;
-      font-weight: 600;
-    }
-
-    .tag-step {
-      background: rgba(139, 233, 253, 0.15);
-      color: var(--cyan);
-    }
-
-    .tag-result {
-      background: rgba(80, 250, 123, 0.15);
-      color: var(--green);
-    }
-
-    .tag-plot {
-      background: rgba(255, 184, 108, 0.15);
-      color: var(--orange);
-    }
-
-    .tag-valid {
-      background: rgba(189, 147, 249, 0.15);
-      color: var(--purple);
-    }
-
-    .tag-answer {
-      background: rgba(80, 250, 123, 0.15);
-      color: var(--green);
-    }
-
-    .tag-error {
-      background: rgba(255, 85, 85, 0.15);
-      color: var(--red);
-    }
-
-    .tag-generic {
-      background: rgba(241, 250, 140, 0.15);
-      color: var(--yellow);
-    }
-
-    .block-body {
-      padding: 14px;
-    }
-
-    /* code block */
-    .code-block {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 12px 14px;
-      font-size: 12px;
-      line-height: 1.6;
-      overflow-x: auto;
-      white-space: pre;
-      color: var(--fg);
-      margin-bottom: 10px;
-    }
-
-    .code-block:last-child {
-      margin-bottom: 0;
-    }
-
-    /* labels within blocks */
-    .block-label {
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--comment);
-      margin-bottom: 6px;
-    }
-
-    /* reasoning text */
-    .reasoning-text {
-      font-size: 12px;
-      line-height: 1.7;
-      color: var(--orange);
-      margin-bottom: 10px;
-      padding: 10px 12px;
-      border-left: 2px solid var(--orange);
-      background: rgba(255, 184, 108, 0.05);
-      border-radius: 0 4px 4px 0;
-    }
-
-    /* stdout */
-    .stdout-block {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 10px 14px;
-      font-size: 11.5px;
-      line-height: 1.6;
-      color: var(--green);
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .stdout-empty {
-      color: var(--comment);
-      font-style: italic;
-    }
-
-    .error-text {
-      color: var(--red);
-    }
-
-    /* streaming answer */
-    #answer-block .block-body {
-      font-size: 14px;
-      line-height: 1.8;
-      color: var(--fg);
-    }
-
-    #answer-block .block-body p {
-      margin-bottom: 10px;
-    }
-
-    #answer-block .block-body p:last-child {
-      margin-bottom: 0;
-    }
-
-    #streaming-tokens {
-      font-size: 14px;
-      line-height: 1.8;
-      color: var(--fg);
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .cursor {
-      display: inline-block;
-      width: 2px;
-      height: 1em;
-      background: var(--purple);
-      vertical-align: text-bottom;
-      animation: blink 0.8s step-end infinite;
-      margin-left: 1px;
-    }
-
-    @keyframes blink {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0;
-      }
-    }
-
-    /* validation block */
-    .verdict-badge {
-      display: inline-block;
-      padding: 3px 12px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .verdict-approved {
-      background: rgba(80, 250, 123, 0.15);
-      color: var(--green);
-      border: 1px solid var(--green);
-    }
-
-    .verdict-retry {
-      background: rgba(255, 85, 85, 0.15);
-      color: var(--red);
-      border: 1px solid var(--red);
-    }
-
-    .verdict-needs_more_analysis {
-      background: rgba(255, 184, 108, 0.15);
-      color: var(--orange);
-      border: 1px solid var(--orange);
-    }
-
-    .verdict-inconsistent_results {
-      background: rgba(255, 85, 85, 0.15);
-      color: var(--red);
-      border: 1px solid var(--red);
-    }
-
-    .verdict-missing_analysis {
-      background: rgba(241, 250, 140, 0.15);
-      color: var(--yellow);
-      border: 1px solid var(--yellow);
-    }
-
-    .verdict-text {
-      font-size: 12px;
-      line-height: 1.7;
-      color: var(--fg);
-      white-space: pre-wrap;
-    }
-
-    /* plot container */
-    .plot-container {
-      width: 100%;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    /* final answer — rendered markdown */
-    .final-answer-text {
-      font-size: 14px;
-      line-height: 1.8;
-      color: var(--fg);
-    }
-
-    .final-answer-text h1,
-    .final-answer-text h2,
-    .final-answer-text h3,
-    .final-answer-text h4 {
-      font-family: var(--font-ui);
-      font-weight: 700;
-      color: var(--purple);
-      margin: 1.1em 0 0.4em;
-      line-height: 1.3;
-    }
-
-    .final-answer-text h1 {
-      font-size: 18px;
-    }
-
-    .final-answer-text h2 {
-      font-size: 15px;
-    }
-
-    .final-answer-text h3 {
-      font-size: 13px;
-      color: var(--cyan);
-    }
-
-    .final-answer-text p {
-      margin: 0 0 0.8em;
-    }
-
-    .final-answer-text p:last-child {
-      margin-bottom: 0;
-    }
-
-    .final-answer-text strong {
-      color: var(--yellow);
-      font-weight: 600;
-    }
-
-    .final-answer-text em {
-      color: var(--orange);
-      font-style: italic;
-    }
-
-    .final-answer-text a {
-      color: var(--cyan);
-      text-underline-offset: 3px;
-    }
-
-    .final-answer-text a:hover {
-      color: var(--pink);
-    }
-
-    .final-answer-text ul,
-    .final-answer-text ol {
-      padding-left: 1.4em;
-      margin: 0 0 0.8em;
-    }
-
-    .final-answer-text li {
-      margin-bottom: 0.3em;
-    }
-
-    .final-answer-text code {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      background: var(--elevated);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 1px 5px;
-      color: var(--green);
-    }
-
-    .final-answer-text pre {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 12px 14px;
-      overflow-x: auto;
-      margin: 0 0 0.8em;
-    }
-
-    .final-answer-text pre code {
-      background: none;
-      border: none;
-      padding: 0;
-      font-size: 12px;
-      color: var(--fg);
-    }
-
-    .final-answer-text blockquote {
-      border-left: 3px solid var(--purple);
-      margin: 0 0 0.8em;
-      padding: 4px 12px;
-      color: var(--comment);
-      background: rgba(189, 147, 249, 0.05);
-      border-radius: 0 4px 4px 0;
-    }
-
-    .final-answer-text table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      margin-bottom: 0.8em;
-    }
-
-    .final-answer-text th,
-    .final-answer-text td {
-      padding: 6px 12px;
-      border: 1px solid var(--border);
-      text-align: left;
-    }
-
-    .final-answer-text th {
-      background: var(--elevated);
-      color: var(--cyan);
-      font-weight: 600;
-      letter-spacing: 0.04em;
-    }
-
-    .final-answer-text tr:nth-child(even) td {
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .final-answer-text hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 1em 0;
-    }
-
-
-
-    /* ── Misc helpers ───────────────────────────────────────────────────────── */
-    .flex-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .mt-8 {
-      margin-top: 8px;
-    }
-  </style>
+        /* ── Scrollbar ──────────────────────────────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--comment);
+        }
+
+        /* ── Sidebar ────────────────────────────────────────────────────────────── */
+        #sidebar {
+            width: var(--sidebar-w);
+            min-width: var(--sidebar-w);
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #logo {
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #logo .logo-mark {
+            font-family: var(--font-ui);
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1;
+            color: var(--fg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #logo .logo-mark .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--purple);
+            box-shadow: 0 0 8px var(--purple);
+            flex-shrink: 0;
+        }
+
+        #logo .logo-sub {
+            font-size: 10px;
+            color: var(--comment);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 6px;
+            padding-left: 18px;
+        }
+
+        /* file panel */
+        #file-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 16px;
+            gap: 12px;
+        }
+
+        #file-panel h3 {
+            font-family: var(--font-ui);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--comment);
+        }
+
+
+
+        /* file list */
+        #file-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: var(--radius);
+            background: var(--elevated);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            user-select: none;
+        }
+
+        .file-item:hover {
+            border-color: var(--border);
+        }
+
+        .file-item.selected {
+            border-color: var(--purple);
+            background: rgba(189, 147, 249, 0.1);
+        }
+
+        .file-item .fi-check {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+            transition: background 0.15s, border-color 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-item.selected .fi-check {
+            background: var(--purple);
+            border-color: var(--purple);
+        }
+
+        .file-item.selected .fi-check::after {
+            content: '✓';
+            font-size: 9px;
+            color: var(--bg);
+            font-weight: 700;
+        }
+
+        .file-item .fi-name {
+            font-size: 11px;
+            color: var(--fg);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+
+        .no-files {
+            font-size: 11px;
+            color: var(--comment);
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        /* ── Main ───────────────────────────────────────────────────────────────── */
+        #main {
+            flex: 1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* header bar */
+        #top-bar {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        /* node pipeline display */
+        #pipeline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .pipe-node {
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--comment);
+            white-space: nowrap;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .pipe-node.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: rgba(139, 233, 253, 0.08);
+            box-shadow: 0 0 8px rgba(139, 233, 253, 0.2);
+        }
+
+        .pipe-node.done {
+            border-color: var(--green);
+            color: var(--green);
+            background: rgba(80, 250, 123, 0.06);
+        }
+
+        .pipe-node.error {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .pipe-arrow {
+            color: var(--border);
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        /* status dot */
+        #status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--comment);
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+
+        #status-dot.running {
+            background: var(--cyan);
+            box-shadow: 0 0 6px var(--cyan);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        #status-dot.done {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        #status-dot.error {
+            background: var(--red);
+            box-shadow: 0 0 6px var(--red);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* ── Question area ──────────────────────────────────────────────────────── */
+        #question-area {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            background: rgba(40, 42, 54, 0.5);
+        }
+
+        #question {
+            flex: 1;
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--fg);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 12px 16px;
+            resize: none;
+            min-height: 46px;
+            max-height: 140px;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        #question::placeholder {
+            color: var(--comment);
+        }
+
+        #question:focus {
+            border-color: var(--purple);
+        }
+
+        #run-btn {
+            background: var(--purple);
+            color: var(--bg);
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-ui);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 12px 22px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+            letter-spacing: 0.04em;
+        }
+
+        #run-btn:hover {
+            background: var(--pink);
+            box-shadow: 0 0 14px rgba(255, 121, 198, 0.3);
+        }
+
+        #run-btn:active {
+            transform: scale(0.97);
+        }
+
+        #run-btn:disabled {
+            background: var(--comment);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #clear-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--comment);
+            border-radius: var(--radius);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        #clear-btn:hover {
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        /* ── Chat turns ─────────────────────────────────────────────────────────── */
+        .chat-turn {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-bubble.user {
+            align-self: flex-end;
+            max-width: 72%;
+            background: rgba(189, 147, 249, 0.12);
+            border: 1px solid rgba(189, 147, 249, 0.35);
+            border-radius: 16px 16px 4px 16px;
+            padding: 10px 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--fg);
+            white-space: pre-wrap;
+            word-break: break-word;
+            animation: slide-in 0.2s ease;
+        }
+
+        .chat-bubble.agent {
+            align-self: flex-start;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* thinking dots */
+        .thinking-dots {
+            font-size: 15px;
+            color: var(--comment);
+            letter-spacing: 0.2em;
+            padding: 4px 2px;
+            min-height: 24px;
+            animation: slide-in 0.2s ease;
+        }
+
+
+        #output-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* empty state */
+        #empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            opacity: 0.4;
+        }
+
+        #empty-state .es-glyph {
+            font-size: 40px;
+            line-height: 1;
+        }
+
+        #empty-state p {
+            font-size: 13px;
+            color: var(--comment);
+            text-align: center;
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        /* output blocks */
+        .out-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: scroll;
+            animation: slide-in 0.25s ease;
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .out-block .block-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--elevated);
+            border-bottom: 1px solid var(--border);
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--comment);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .out-block .block-header .bh-label {
+            flex: 1;
+        }
+
+        .out-block .block-header .bh-toggle {
+            font-size: 9px;
+            transition: transform 0.2s;
+        }
+
+        .out-block.collapsed .bh-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .out-block.collapsed .block-body {
+            display: none;
+        }
+
+        .block-header .bh-tag {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .tag-step {
+            background: rgba(139, 233, 253, 0.15);
+            color: var(--cyan);
+        }
+
+        .tag-result {
+            background: rgba(80, 250, 123, 0.15);
+            color: var(--green);
+        }
+
+        .tag-plot {
+            background: rgba(255, 184, 108, 0.15);
+            color: var(--orange);
+        }
+
+        .tag-valid {
+            background: rgba(189, 147, 249, 0.15);
+            color: var(--purple);
+        }
+
+        .tag-answer {
+            background: rgba(80, 250, 123, 0.15);
+            color: var(--green);
+        }
+
+        .tag-error {
+            background: rgba(255, 85, 85, 0.15);
+            color: var(--red);
+        }
+
+        .tag-generic {
+            background: rgba(241, 250, 140, 0.15);
+            color: var(--yellow);
+        }
+
+        .block-body {
+            padding: 14px;
+        }
+
+        /* code block */
+        .code-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 12px 14px;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--fg);
+            margin-bottom: 10px;
+        }
+
+        .code-block:last-child {
+            margin-bottom: 0;
+        }
+
+        /* labels within blocks */
+        .block-label {
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--comment);
+            margin-bottom: 6px;
+        }
+
+        /* reasoning text */
+        .reasoning-text {
+            font-size: 12px;
+            line-height: 1.7;
+            color: var(--orange);
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border-left: 2px solid var(--orange);
+            background: rgba(255, 184, 108, 0.05);
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* stdout */
+        .stdout-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-size: 11.5px;
+            line-height: 1.6;
+            color: var(--green);
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .stdout-empty {
+            color: var(--comment);
+            font-style: italic;
+        }
+
+        .error-text {
+            color: var(--red);
+        }
+
+        /* streaming answer */
+        #answer-block .block-body {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--fg);
+        }
+
+        #answer-block .block-body p {
+            margin-bottom: 10px;
+        }
+
+        #answer-block .block-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        #streaming-tokens {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--fg);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: var(--purple);
+            vertical-align: text-bottom;
+            animation: blink 0.8s step-end infinite;
+            margin-left: 1px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* validation block */
+        .verdict-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .verdict-approved {
+            background: rgba(80, 250, 123, 0.15);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .verdict-retry {
+            background: rgba(255, 85, 85, 0.15);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        .verdict-needs_more_analysis {
+            background: rgba(255, 184, 108, 0.15);
+            color: var(--orange);
+            border: 1px solid var(--orange);
+        }
+
+        .verdict-inconsistent_results {
+            background: rgba(255, 85, 85, 0.15);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        .verdict-missing_analysis {
+            background: rgba(241, 250, 140, 0.15);
+            color: var(--yellow);
+            border: 1px solid var(--yellow);
+        }
+
+        .verdict-text {
+            font-size: 12px;
+            line-height: 1.7;
+            color: var(--fg);
+            white-space: pre-wrap;
+        }
+
+        /* plot container */
+        .plot-container {
+            width: 100%;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* final answer — rendered markdown */
+        .final-answer-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--fg);
+        }
+
+        .final-answer-text h1,
+        .final-answer-text h2,
+        .final-answer-text h3,
+        .final-answer-text h4 {
+            font-family: var(--font-ui);
+            font-weight: 700;
+            color: var(--purple);
+            margin: 1.1em 0 0.4em;
+            line-height: 1.3;
+        }
+
+        .final-answer-text h1 {
+            font-size: 18px;
+        }
+
+        .final-answer-text h2 {
+            font-size: 15px;
+        }
+
+        .final-answer-text h3 {
+            font-size: 13px;
+            color: var(--cyan);
+        }
+
+        .final-answer-text p {
+            margin: 0 0 0.8em;
+        }
+
+        .final-answer-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .final-answer-text strong {
+            color: var(--yellow);
+            font-weight: 600;
+        }
+
+        .final-answer-text em {
+            color: var(--orange);
+            font-style: italic;
+        }
+
+        .final-answer-text a {
+            color: var(--cyan);
+            text-underline-offset: 3px;
+        }
+
+        .final-answer-text a:hover {
+            color: var(--pink);
+        }
+
+        .final-answer-text ul,
+        .final-answer-text ol {
+            padding-left: 1.4em;
+            margin: 0 0 0.8em;
+        }
+
+        .final-answer-text li {
+            margin-bottom: 0.3em;
+        }
+
+        .final-answer-text code {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 1px 5px;
+            color: var(--green);
+        }
+
+        .final-answer-text pre {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 12px 14px;
+            overflow-x: auto;
+            margin: 0 0 0.8em;
+        }
+
+        .final-answer-text pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 12px;
+            color: var(--fg);
+        }
+
+        .final-answer-text blockquote {
+            border-left: 3px solid var(--purple);
+            margin: 0 0 0.8em;
+            padding: 4px 12px;
+            color: var(--comment);
+            background: rgba(189, 147, 249, 0.05);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .final-answer-text table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 0.8em;
+        }
+
+        .final-answer-text th,
+        .final-answer-text td {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .final-answer-text th {
+            background: var(--elevated);
+            color: var(--cyan);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .final-answer-text tr:nth-child(even) td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .final-answer-text hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1em 0;
+        }
+
+
+
+        /* ── Misc helpers ───────────────────────────────────────────────────────── */
+        .flex-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mt-8 {
+            margin-top: 8px;
+        }
+    </style>
 </head>
 
 <body>
 
-  <!-- ═══════════════════════════════ SIDEBAR ══════════════════════════════ -->
-  <aside id="sidebar">
-    <div id="logo">
-      <div class="logo-mark">
-        <span class="dot"></span>
-        analytics agent
-      </div>
-      <div class="logo-sub">LangGraph · Plotly · SSE</div>
-    </div>
-
-    <div id="file-panel">
-      <h3>Datasets</h3>
-
-      <div id="file-list">
-        <div class="no-files" id="no-files-msg">No CSV files found in datasets/.</div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ═══════════════════════════════ MAIN ═════════════════════════════════ -->
-  <main id="main">
-
-    <!-- pipeline progress bar -->
-    <div id="top-bar">
-      <div id="status-dot"></div>
-      <div id="pipeline">
-        <span class="pipe-node" id="pipe-orchestrate">orchestrate</span>
-        <span class="pipe-arrow" id="pipe-arrow-generic" style="display:none">→</span>
-        <span class="pipe-node" id="pipe-generic" style="display:none">generic</span>
-        <span class="pipe-arrow">→</span>
-        <span class="pipe-node" id="pipe-dataset_fan">dataset</span>
-        <span class="pipe-arrow">→</span>
-        <span class="pipe-node" id="pipe-analytics">analytics</span>
-        <span class="pipe-arrow">→</span>
-        <span class="pipe-node" id="pipe-plan_execute">plan·exec</span>
-        <span class="pipe-arrow">→</span>
-        <span class="pipe-node" id="pipe-validate">validate</span>
-        <span class="pipe-arrow">→</span>
-        <span class="pipe-node" id="pipe-finalize">finalize</span>
-      </div>
-    </div>
-
-    <!-- output -->
-    <div id="output-area">
-      <div id="empty-state">
-        <div class="es-glyph">◈</div>
-        <p>Select one or more datasets from the sidebar, then ask a question.</p>
-      </div>
-    </div>
-
-    <!-- question input -->
-    <div id="question-area">
-      <textarea id="question" placeholder="Ask a question about your datasets… (Enter to send, Shift+Enter for newline)"
-        rows="2"></textarea>
-      <button id="clear-btn" title="Clear output">✕</button>
-      <button id="run-btn">Run ▶</button>
-    </div>
-
-  </main>
-
-  <script>
-    /* ═══════════════════════════════════════════════════════════════════════
-       STATE
-    ═══════════════════════════════════════════════════════════════════════ */
-    const state = {
-      files: [],
-      selected: new Set(),
-      running: false,
-      evtSource: null,
-    };
-
-    let currentAgentContainer = null;
-    let thinkingEl = null;
-    let thinkingInterval = null;
-
-    /* ═══════════════════════════════════════════════════════════════════════
-       ELEMENTS
-    ═══════════════════════════════════════════════════════════════════════ */
-    const $ = id => document.getElementById(id);
-    const fileList = $('file-list');
-    const noFilesMsg = $('no-files-msg');
-    const questionEl = $('question');
-    const runBtn = $('run-btn');
-    const clearBtn = $('clear-btn');
-    const outputArea = $('output-area');
-    const emptyState = $('empty-state');
-    const statusDot = $('status-dot');
-    const pipeGeneric = $('pipe-generic');
-    const pipeArrowGen = $('pipe-arrow-generic');
-
-    /* ═══════════════════════════════════════════════════════════════════════
-       FILE MANAGEMENT
-    ═══════════════════════════════════════════════════════════════════════ */
-    async function fetchFiles() {
-      try {
-        const r = await fetch('/api/files');
-        const d = await r.json();
-        state.files = d.files || [];
-        renderFileList();
-      } catch (e) {
-        console.error('fetchFiles:', e);
-      }
-    }
-
-    function renderFileList() {
-      fileList.innerHTML = '';
-      if (state.files.length === 0) {
-        fileList.appendChild(noFilesMsg);
-        noFilesMsg.style.display = '';
-        return;
-      }
-      noFilesMsg.style.display = 'none';
-
-      state.files.forEach(name => {
-        const item = document.createElement('div');
-        item.className = 'file-item' + (state.selected.has(name) ? ' selected' : '');
-        item.dataset.name = name;
-
-        const check = document.createElement('div');
-        check.className = 'fi-check';
-
-        const label = document.createElement('span');
-        label.className = 'fi-name';
-        label.textContent = name;
-        label.title = name;
-
-        item.appendChild(check);
-        item.appendChild(label);
-        item.addEventListener('click', () => toggleSelect(name));
-        fileList.appendChild(item);
-      });
-    }
-
-    function toggleSelect(name) {
-      if (state.selected.has(name)) {
-        state.selected.delete(name);
-      } else {
-        state.selected.add(name);
-      }
-      renderFileList();
-    }
-
-    /* ═══════════════════════════════════════════════════════════════════════
-       PIPELINE DISPLAY
-    ═══════════════════════════════════════════════════════════════════════ */
-    const nodeStates = {}; // node → 'active' | 'done' | 'error'
-
-    function resetPipeline() {
-      for (const key of Object.keys(nodeStates)) delete nodeStates[key];
-      document.querySelectorAll('.pipe-node').forEach(el => {
-        el.className = 'pipe-node';
-      });
-      pipeGeneric.style.display = 'none';
-      pipeArrowGen.style.display = 'none';
-      statusDot.className = '';
-    }
-
-    function setNodeState(node, st) {
-      nodeStates[node] = st;
-      // Show generic node if it's activated.
-      if (node === 'generic') {
-        pipeGeneric.style.display = '';
-        pipeArrowGen.style.display = '';
-      }
-      const el = $(`pipe-${node}`);
-      if (el) el.className = `pipe-node ${st}`;
-    }
-
-    /* ═══════════════════════════════════════════════════════════════════════
-       OUTPUT RENDERING
-    ═══════════════════════════════════════════════════════════════════════ */
-    let stepBlocks = {}; // step index → DOM element
-    let tokenTarget = null; // span receiving streamed tokens
-    let plotlyCounter = 0;
-
-    function clearOutput() {
-      outputArea.querySelectorAll('.chat-turn').forEach(el => el.remove());
-      stepBlocks = {};
-      tokenTarget = null;
-      plotlyCounter = 0;
-      currentAgentContainer = null;
-      stopThinking();
-    }
-
-    function hideEmpty() {
-      emptyState.style.display = 'none';
-    }
-
-    function startThinking() {
-      if (thinkingEl) return;
-      thinkingEl = document.createElement('div');
-      thinkingEl.className = 'thinking-dots';
-      thinkingEl.textContent = '.';
-      currentAgentContainer.appendChild(thinkingEl);
-
-      let step = 0;
-      const frames = ['.&nbsp;&nbsp;', '..&nbsp;', '...'];
-      thinkingInterval = setInterval(() => {
-        step = (step + 1) % frames.length;
-        if (thinkingEl) thinkingEl.innerHTML = frames[step];
-      }, 500);
-    }
-
-    function stopThinking() {
-      if (thinkingInterval) { clearInterval(thinkingInterval); thinkingInterval = null; }
-      if (thinkingEl) { thinkingEl.remove(); thinkingEl = null; }
-    }
-
-    function renderUserBubble(question) {
-      const turn = document.createElement('div');
-      turn.className = 'chat-turn';
-
-      const bubble = document.createElement('div');
-      bubble.className = 'chat-bubble user';
-      bubble.textContent = question;
-      turn.appendChild(bubble);
-
-      // Agent container lives inside the same turn.
-      const agent = document.createElement('div');
-      agent.className = 'chat-bubble agent';
-      turn.appendChild(agent);
-
-      outputArea.appendChild(turn);
-      currentAgentContainer = agent;
-      outputArea.scrollTop = outputArea.scrollHeight;
-    }
-
-    function makeBlock(id, headerLabel, tag, tagClass, collapsible = true) {
-      const block = document.createElement('div');
-      block.className = 'out-block';
-      if (id) block.id = id;
-
-      const header = document.createElement('div');
-      header.className = 'block-header';
-
-      const label = document.createElement('span');
-      label.className = 'bh-label';
-      label.textContent = headerLabel;
-
-      const tagEl = document.createElement('span');
-      tagEl.className = `bh-tag ${tagClass}`;
-      tagEl.textContent = tag;
-
-      const toggle = document.createElement('span');
-      toggle.className = 'bh-toggle';
-      toggle.textContent = '▾';
-
-      header.appendChild(label);
-      header.appendChild(tagEl);
-      if (collapsible) {
-        header.appendChild(toggle);
-        header.addEventListener('click', () => block.classList.toggle('collapsed'));
-      }
-
-      const body = document.createElement('div');
-      body.className = 'block-body';
-
-      block.appendChild(header);
-      block.appendChild(body);
-      outputArea.appendChild(block);
-      const target = currentAgentContainer || outputArea;
-      target.appendChild(block);
-      outputArea.scrollTop = outputArea.scrollHeight;
-      return { block, body };
-    }
-
-    function renderStep(ev) {
-      const idx = ev.index;
-      const key = `step-${idx}`;
-
-      if (stepBlocks[key]) {
-        // Already rendered step header — update body if needed.
-        return;
-      }
-
-      const { block, body } = makeBlock(null, `Step ${idx + 1}`, 'step', 'tag-step');
-      stepBlocks[key] = body;
-
-      if (ev.reasoning) {
-        const rl = document.createElement('div');
-        rl.className = 'block-label';
-        rl.textContent = 'Reasoning';
-        const rt = document.createElement('div');
-        rt.className = 'reasoning-text';
-        rt.textContent = ev.reasoning;
-        body.appendChild(rl);
-        body.appendChild(rt);
-      }
-
-      if (ev.code) {
-        const cl = document.createElement('div');
-        cl.className = 'block-label';
-        cl.textContent = 'Code';
-        const cb = document.createElement('pre');
-        cb.className = 'code-block';
-        cb.textContent = ev.code;
-        body.appendChild(cl);
-        body.appendChild(cb);
-      }
-    }
-
-    function renderStepResult(ev) {
-      const key = `step-${ev.index}`;
-      const body = stepBlocks[key];
-      if (!body) return;
-
-      const sl = document.createElement('div');
-      sl.className = 'block-label mt-8';
-      sl.textContent = ev.error ? 'Error' : 'Output';
-
-      const sb = document.createElement('pre');
-      sb.className = 'stdout-block' + (ev.error ? ' error-text' : '');
-      sb.textContent = ev.error
-        ? ev.error
-        : (ev.stdout || '(no output)');
-      if (!ev.stdout && !ev.error) sb.classList.add('stdout-empty');
-
-      body.appendChild(sl);
-      body.appendChild(sb);
-    }
-
-    function renderPlot(ev) {
-      const ctr = ++plotlyCounter;
-      const { block, body } = makeBlock(null, ev.title || `Plot ${ctr}`, 'plot', 'tag-plot', false);
-
-      const plotDiv = document.createElement('div');
-      plotDiv.className = 'plot-container';
-      plotDiv.id = `plotly-${ctr}`;
-      body.appendChild(plotDiv);
-
-      // Apply Dracula-compatible Plotly layout overrides.
-      const fig = ev.figure_json || {};
-      const layout = Object.assign({
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { family: "'JetBrains Mono', monospace", color: '#f8f8f2', size: 12 },
-        xaxis: { gridcolor: '#44475a', linecolor: '#44475a', zerolinecolor: '#44475a' },
-        yaxis: { gridcolor: '#44475a', linecolor: '#44475a', zerolinecolor: '#44475a' },
-        margin: { t: 40, r: 20, b: 60, l: 60 },
-        legend: { bgcolor: 'rgba(0,0,0,0)', font: { color: '#f8f8f2' } },
-      }, fig.layout || {});
-
-      // Remap default trace colors to Dracula palette.
-      const draculaColors = ['#bd93f9', '#8be9fd', '#50fa7b', '#ffb86c', '#ff79c6', '#ff5555', '#f1fa8c'];
-      const data = (fig.data || []).map((trace, i) => {
-        const t = { ...trace };
-        if (!t.marker) t.marker = {};
-        if (!t.marker.color) t.marker.color = draculaColors[i % draculaColors.length];
-        if (!t.line) t.line = {};
-        if (!t.line.color) t.line.color = draculaColors[i % draculaColors.length];
-        return t;
-      });
-
-      Plotly.newPlot(plotDiv.id, data, layout, {
-        responsive: true,
-        displayModeBar: true,
-        modeBarButtonsToRemove: ['toImage'],
-        displaylogo: false,
-      });
-    }
-
-    function renderValidation(ev) {
-      const { block, body } = makeBlock(null, 'Validation', 'validate', 'tag-valid');
-
-      const badge = document.createElement('span');
-      badge.className = `verdict-badge verdict-${ev.verdict}`;
-      badge.textContent = ev.verdict.replace(/_/g, ' ');
-
-      const text = document.createElement('pre');
-      text.className = 'verdict-text';
-      text.textContent = ev.reasoning || '';
-
-      body.appendChild(badge);
-      body.appendChild(text);
-    }
-
-    function renderFinalAnswer(ev) {
-      const { block, body } = makeBlock('answer-block', 'Answer', 'answer', 'tag-answer', false);
-
-      const text = document.createElement('div');
-      text.className = 'final-answer-text';
-      text.innerHTML = marked.parse(ev.answer, { breaks: true, gfm: true });
-      body.appendChild(text);
-    }
-
-    function ensureTokenBlock() {
-      if (tokenTarget) return;
-      const { block, body } = makeBlock(null, 'Generating…', 'answer', 'tag-generic', false);
-      const span = document.createElement('span');
-      span.id = 'streaming-tokens';
-      const cursor = document.createElement('span');
-      cursor.className = 'cursor';
-      body.appendChild(span);
-      body.appendChild(cursor);
-      tokenTarget = span;
-
-      // Update header label to "Response" when done.
-      block._headerLabel = block.querySelector('.bh-label');
-      block._cursor = cursor;
-      tokenTarget._block = block;
-    }
-
-    function appendToken(text) {
-      ensureTokenBlock();
-      tokenTarget.textContent += text;
-    }
-
-    function finaliseTokenBlock() {
-      if (!tokenTarget) return;
-      const block = tokenTarget._block;
-      if (block) {
-        const lbl = block.querySelector('.bh-label');
-        if (lbl) lbl.textContent = 'Response';
-        const cur = block._cursor;
-        if (cur) cur.remove();
-      }
-      tokenTarget = null;
-    }
-
-    /* ═══════════════════════════════════════════════════════════════════════
-       AGENT RUN
-    ═══════════════════════════════════════════════════════════════════════ */
-    async function runAgent() {
-      if (state.running) return;
-
-      const question = questionEl.value.trim();
-      if (!question) { questionEl.focus(); return; }
-      const selectedFiles = [...state.selected];
-      // if (selectedFiles.length === 0) {
-      //   alert('Select at least one CSV dataset from the sidebar.');
-      //   return;
-      // }
-
-      // Clear input immediately and hide empty state.
-      questionEl.value = '';
-      questionEl.style.height = 'auto';
-      hideEmpty();
-
-      // Render user bubble + empty agent container, then start thinking dots.
-      renderUserBubble(question);
-      startThinking();
-
-      state.running = true;
-      runBtn.disabled = true;
-      runBtn.textContent = 'Running…';
-      resetPipeline();
-      statusDot.className = 'running';
-
-      let firstContent = false;
-
-      try {
-        const resp = await fetch('/api/stream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, csv_files: selectedFiles }),
-        });
-
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-          throw new Error(err.detail || resp.statusText);
+    <!-- ═══════════════════════════════ SIDEBAR ══════════════════════════════ -->
+    <aside id="sidebar">
+        <div id="logo">
+            <div class="logo-mark">
+                <span class="dot"></span>
+                analytics agent
+            </div>
+            <div class="logo-sub">LangGraph · Plotly · AI</div>
+        </div>
+
+        <div id="file-panel">
+            <h3>Datasets</h3>
+
+            <div id="file-list">
+                <div class="no-files" id="no-files-msg">No CSV files found in datasets/.</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════════════════════ MAIN ═════════════════════════════════ -->
+    <main id="main">
+
+        <!-- pipeline progress bar -->
+        <div id="top-bar">
+            <div id="status-dot"></div>
+            <div id="pipeline">
+                <span class="pipe-node" id="pipe-orchestrate">orchestrate</span>
+                <span class="pipe-arrow" id="pipe-arrow-generic" style="display:none">→</span>
+                <span class="pipe-node" id="pipe-generic" style="display:none">generic</span>
+                <span class="pipe-arrow">→</span>
+                <span class="pipe-node" id="pipe-dataset_fan">dataset</span>
+                <span class="pipe-arrow">→</span>
+                <span class="pipe-node" id="pipe-analytics">analytics</span>
+                <span class="pipe-arrow">→</span>
+                <span class="pipe-node" id="pipe-plan_execute">plan·exec</span>
+                <span class="pipe-arrow">→</span>
+                <span class="pipe-node" id="pipe-validate">validate</span>
+                <span class="pipe-arrow">→</span>
+                <span class="pipe-node" id="pipe-finalize">finalize</span>
+            </div>
+        </div>
+
+        <!-- output -->
+        <div id="output-area">
+            <div id="empty-state">
+                <div class="es-glyph">◈</div>
+                <p>Select one or more datasets from the sidebar, then ask a question.</p>
+            </div>
+        </div>
+
+        <!-- question input -->
+        <div id="question-area">
+            <textarea id="question"
+                placeholder="Ask a question about your datasets… (Enter to send, Shift+Enter for newline)"
+                rows="2"></textarea>
+            <button id="clear-btn" title="Clear output">✕</button>
+            <button id="run-btn">Run ▶</button>
+        </div>
+
+    </main>
+
+    <script>
+        /* ═══════════════════════════════════════════════════════════════════════
+           STATE
+        ═══════════════════════════════════════════════════════════════════════ */
+        const state = {
+            files: [],
+            selected: new Set(),
+            running: false,
+            evtSource: null,
+        };
+
+        let currentAgentContainer = null;
+        let thinkingEl = null;
+        let thinkingInterval = null;
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           ELEMENTS
+        ═══════════════════════════════════════════════════════════════════════ */
+        const $ = id => document.getElementById(id);
+        const fileList = $('file-list');
+        const noFilesMsg = $('no-files-msg');
+        const questionEl = $('question');
+        const runBtn = $('run-btn');
+        const clearBtn = $('clear-btn');
+        const outputArea = $('output-area');
+        const emptyState = $('empty-state');
+        const statusDot = $('status-dot');
+        const pipeGeneric = $('pipe-generic');
+        const pipeArrowGen = $('pipe-arrow-generic');
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           FILE MANAGEMENT
+        ═══════════════════════════════════════════════════════════════════════ */
+        async function fetchFiles() {
+            try {
+                const r = await fetch('/api/files');
+                const d = await r.json();
+                state.files = d.files || [];
+                renderFileList();
+            } catch (e) {
+                console.error('fetchFiles:', e);
+            }
         }
 
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+        function renderFileList() {
+            fileList.innerHTML = '';
+            if (state.files.length === 0) {
+                fileList.appendChild(noFilesMsg);
+                noFilesMsg.style.display = '';
+                return;
+            }
+            noFilesMsg.style.display = 'none';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
+            state.files.forEach(name => {
+                const item = document.createElement('div');
+                item.className = 'file-item' + (state.selected.has(name) ? ' selected' : '');
+                item.dataset.name = name;
 
-          const parts = buffer.split('\n\n');
-          buffer = parts.pop();
+                const check = document.createElement('div');
+                check.className = 'fi-check';
 
-          for (const part of parts) {
-            const line = part.trim();
-            if (!line.startsWith('data: ')) continue;
-            let ev;
-            try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+                const label = document.createElement('span');
+                label.className = 'fi-name';
+                label.textContent = name;
+                label.title = name;
 
-            // Remove thinking dots on first real content event.
-            if (!firstContent && ['step', 'plot', 'token', 'final_answer', 'error'].includes(ev.type)) {
-              stopThinking();
-              firstContent = true;
+                item.appendChild(check);
+                item.appendChild(label);
+                item.addEventListener('click', () => toggleSelect(name));
+                fileList.appendChild(item);
+            });
+        }
+
+        function toggleSelect(name) {
+            if (state.selected.has(name)) {
+                state.selected.delete(name);
+            } else {
+                state.selected.add(name);
+            }
+            renderFileList();
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           PIPELINE DISPLAY
+        ═══════════════════════════════════════════════════════════════════════ */
+        const nodeStates = {}; // node → 'active' | 'done' | 'error'
+
+        function resetPipeline() {
+            for (const key of Object.keys(nodeStates)) delete nodeStates[key];
+            document.querySelectorAll('.pipe-node').forEach(el => {
+                el.className = 'pipe-node';
+            });
+            pipeGeneric.style.display = 'none';
+            pipeArrowGen.style.display = 'none';
+            statusDot.className = '';
+        }
+
+        function setNodeState(node, st) {
+            nodeStates[node] = st;
+            // Show generic node if it's activated.
+            if (node === 'generic') {
+                pipeGeneric.style.display = '';
+                pipeArrowGen.style.display = '';
+            }
+            const el = $(`pipe-${node}`);
+            if (el) el.className = `pipe-node ${st}`;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           OUTPUT RENDERING
+        ═══════════════════════════════════════════════════════════════════════ */
+        let stepBlocks = {}; // step index → DOM element
+        let tokenTarget = null; // span receiving streamed tokens
+        let plotlyCounter = 0;
+
+        function clearOutput() {
+            outputArea.querySelectorAll('.chat-turn').forEach(el => el.remove());
+            stepBlocks = {};
+            tokenTarget = null;
+            plotlyCounter = 0;
+            currentAgentContainer = null;
+            stopThinking();
+        }
+
+        function hideEmpty() {
+            emptyState.style.display = 'none';
+        }
+
+        function startThinking() {
+            if (thinkingEl) return;
+            thinkingEl = document.createElement('div');
+            thinkingEl.className = 'thinking-dots';
+            thinkingEl.textContent = '.';
+            currentAgentContainer.appendChild(thinkingEl);
+
+            let step = 0;
+            const frames = ['.&nbsp;&nbsp;', '..&nbsp;', '...'];
+            thinkingInterval = setInterval(() => {
+                step = (step + 1) % frames.length;
+                if (thinkingEl) thinkingEl.innerHTML = frames[step];
+            }, 500);
+        }
+
+        function stopThinking() {
+            if (thinkingInterval) { clearInterval(thinkingInterval); thinkingInterval = null; }
+            if (thinkingEl) { thinkingEl.remove(); thinkingEl = null; }
+        }
+
+        function renderUserBubble(question) {
+            const turn = document.createElement('div');
+            turn.className = 'chat-turn';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble user';
+            bubble.textContent = question;
+            turn.appendChild(bubble);
+
+            // Agent container lives inside the same turn.
+            const agent = document.createElement('div');
+            agent.className = 'chat-bubble agent';
+            turn.appendChild(agent);
+
+            outputArea.appendChild(turn);
+            currentAgentContainer = agent;
+            outputArea.scrollTop = outputArea.scrollHeight;
+        }
+
+        function makeBlock(id, headerLabel, tag, tagClass, collapsible = true) {
+            const block = document.createElement('div');
+            block.className = 'out-block';
+            if (id) block.id = id;
+
+            const header = document.createElement('div');
+            header.className = 'block-header';
+
+            const label = document.createElement('span');
+            label.className = 'bh-label';
+            label.textContent = headerLabel;
+
+            const tagEl = document.createElement('span');
+            tagEl.className = `bh-tag ${tagClass}`;
+            tagEl.textContent = tag;
+
+            const toggle = document.createElement('span');
+            toggle.className = 'bh-toggle';
+            toggle.textContent = '▾';
+
+            header.appendChild(label);
+            header.appendChild(tagEl);
+            if (collapsible) {
+                header.appendChild(toggle);
+                header.addEventListener('click', () => block.classList.toggle('collapsed'));
             }
 
-            handleEvent(ev);
-          }
+            const body = document.createElement('div');
+            body.className = 'block-body';
+
+            block.appendChild(header);
+            block.appendChild(body);
+            outputArea.appendChild(block);
+            const target = currentAgentContainer || outputArea;
+            target.appendChild(block);
+            outputArea.scrollTop = outputArea.scrollHeight;
+            return { block, body };
         }
 
-      } catch (err) {
-        stopThinking();
-        statusDot.className = 'error';
-        const { block, body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
-        const msg = document.createElement('pre');
-        msg.className = 'stdout-block error-text';
-        msg.textContent = err.message;
-        body.appendChild(msg);
-      } finally {
-        stopThinking();
-        finaliseTokenBlock();
-        state.running = false;
-        runBtn.disabled = false;
-        runBtn.textContent = 'Run ▶';
-        if (statusDot.className === 'running') statusDot.className = 'done';
-        outputArea.scrollTop = outputArea.scrollHeight;
-        questionEl.focus();
-      }
-    }
+        function renderStep(ev) {
+            const idx = ev.index;
+            const key = `step-${idx}`;
 
-    /* ── Event dispatcher ── */
-    function handleEvent(ev) {
-      switch (ev.type) {
-        case 'node_start':
-          setNodeState(ev.node, 'active');
-          break;
+            if (stepBlocks[key]) {
+                // Already rendered step header — update body if needed.
+                return;
+            }
 
-        case 'node_end':
-          setNodeState(ev.node, 'done');
-          break;
+            const { block, body } = makeBlock(null, `Step ${idx + 1}`, 'step', 'tag-step');
+            stepBlocks[key] = body;
 
-        case 'token':
-          appendToken(ev.text);
-          break;
+            if (ev.reasoning) {
+                const rl = document.createElement('div');
+                rl.className = 'block-label';
+                rl.textContent = 'Reasoning';
+                const rt = document.createElement('div');
+                rt.className = 'reasoning-text';
+                rt.textContent = ev.reasoning;
+                body.appendChild(rl);
+                body.appendChild(rt);
+            }
 
-        case 'step':
-          finaliseTokenBlock(); // close any open generic block
-          renderStep(ev);
-          break;
+            if (ev.code) {
+                const cl = document.createElement('div');
+                cl.className = 'block-label';
+                cl.textContent = 'Code';
+                const cb = document.createElement('pre');
+                cb.className = 'code-block';
+                cb.textContent = ev.code;
+                body.appendChild(cl);
+                body.appendChild(cb);
+            }
+        }
 
-        case 'step_result':
-          renderStepResult(ev);
-          break;
+        function renderStepResult(ev) {
+            const key = `step-${ev.index}`;
+            const body = stepBlocks[key];
+            if (!body) return;
 
-        case 'plot':
-          renderPlot(ev);
-          break;
+            const sl = document.createElement('div');
+            sl.className = 'block-label mt-8';
+            sl.textContent = ev.error ? 'Error' : 'Output';
 
-        case 'validation':
-          renderValidation(ev);
-          break;
+            const sb = document.createElement('pre');
+            sb.className = 'stdout-block' + (ev.error ? ' error-text' : '');
+            sb.textContent = ev.error
+                ? ev.error
+                : (ev.stdout || '(no output)');
+            if (!ev.stdout && !ev.error) sb.classList.add('stdout-empty');
 
-        case 'final_answer':
-          finaliseTokenBlock();
-          renderFinalAnswer(ev);
-          break;
+            body.appendChild(sl);
+            body.appendChild(sb);
+        }
 
-        case 'done':
-          statusDot.className = 'done';
-          break;
+        function renderPlot(ev) {
+            const ctr = ++plotlyCounter;
+            const { block, body } = makeBlock(null, ev.title || `Plot ${ctr}`, 'plot', 'tag-plot', false);
 
-        case 'error':
-          statusDot.className = 'error';
-          finaliseTokenBlock();
-          const { block, body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
-          const msg = document.createElement('pre');
-          msg.className = 'stdout-block error-text';
-          msg.textContent = ev.message + (ev.traceback ? '\n\n' + ev.traceback : '');
-          body.appendChild(msg);
-          break;
-      }
-    }
+            const plotDiv = document.createElement('div');
+            plotDiv.className = 'plot-container';
+            plotDiv.id = `plotly-${ctr}`;
+            body.appendChild(plotDiv);
 
-    /* ═══════════════════════════════════════════════════════════════════════
-       BUTTON HANDLERS
-    ═══════════════════════════════════════════════════════════════════════ */
-    runBtn.addEventListener('click', runAgent);
+            // Apply Dracula-compatible Plotly layout overrides.
+            const fig = ev.figure_json || {};
+            const layout = Object.assign({
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { family: "'JetBrains Mono', monospace", color: '#f8f8f2', size: 12 },
+                xaxis: { gridcolor: '#44475a', linecolor: '#44475a', zerolinecolor: '#44475a' },
+                yaxis: { gridcolor: '#44475a', linecolor: '#44475a', zerolinecolor: '#44475a' },
+                margin: { t: 40, r: 20, b: 60, l: 60 },
+                legend: { bgcolor: 'rgba(0,0,0,0)', font: { color: '#f8f8f2' } },
+            }, fig.layout || {});
 
-    questionEl.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        runAgent();
-      }
-    });
+            // Remap default trace colors to Dracula palette.
+            const draculaColors = ['#bd93f9', '#8be9fd', '#50fa7b', '#ffb86c', '#ff79c6', '#ff5555', '#f1fa8c'];
+            const data = (fig.data || []).map((trace, i) => {
+                const t = { ...trace };
+                if (!t.marker) t.marker = {};
+                if (!t.marker.color) t.marker.color = draculaColors[i % draculaColors.length];
+                if (!t.line) t.line = {};
+                if (!t.line.color) t.line.color = draculaColors[i % draculaColors.length];
+                return t;
+            });
 
-    clearBtn.addEventListener('click', () => {
-      clearOutput();
-      resetPipeline();
-      statusDot.className = '';
-      emptyState.style.display = '';
-      stepBlocks = {};
-      tokenTarget = null;
-      plotlyCounter = 0;
-    });
+            Plotly.newPlot(plotDiv.id, data, layout, {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['toImage'],
+                displaylogo: false,
+            });
+        }
 
-    /* auto-resize textarea */
-    questionEl.addEventListener('input', () => {
-      questionEl.style.height = 'auto';
-      questionEl.style.height = Math.min(questionEl.scrollHeight, 140) + 'px';
-    });
+        function renderValidation(ev) {
+            const { block, body } = makeBlock(null, 'Validation', 'validate', 'tag-valid');
 
-    /* ═══════════════════════════════════════════════════════════════════════
-       INIT
-    ═══════════════════════════════════════════════════════════════════════ */
-    fetchFiles();
-  </script>
+            const badge = document.createElement('span');
+            badge.className = `verdict-badge verdict-${ev.verdict}`;
+            badge.textContent = ev.verdict.replace(/_/g, ' ');
+
+            const text = document.createElement('pre');
+            text.className = 'verdict-text';
+            text.textContent = ev.reasoning || '';
+
+            body.appendChild(badge);
+            body.appendChild(text);
+        }
+
+        function renderFinalAnswer(ev) {
+            const { block, body } = makeBlock('answer-block', 'Answer', 'answer', 'tag-answer', false);
+
+            const text = document.createElement('div');
+            text.className = 'final-answer-text';
+            text.innerHTML = marked.parse(ev.answer, { breaks: true, gfm: true });
+            body.appendChild(text);
+        }
+
+        function ensureTokenBlock() {
+            if (tokenTarget) return;
+            const { block, body } = makeBlock(null, 'Generating…', 'answer', 'tag-generic', false);
+            const span = document.createElement('span');
+            span.id = 'streaming-tokens';
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            body.appendChild(span);
+            body.appendChild(cursor);
+            tokenTarget = span;
+
+            // Update header label to "Response" when done.
+            block._headerLabel = block.querySelector('.bh-label');
+            block._cursor = cursor;
+            tokenTarget._block = block;
+        }
+
+        function appendToken(text) {
+            ensureTokenBlock();
+            tokenTarget.textContent += text;
+        }
+
+        function finaliseTokenBlock() {
+            if (!tokenTarget) return;
+            const block = tokenTarget._block;
+            if (block) {
+                const lbl = block.querySelector('.bh-label');
+                if (lbl) lbl.textContent = 'Response';
+                const cur = block._cursor;
+                if (cur) cur.remove();
+            }
+            tokenTarget = null;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           AGENT RUN
+        ═══════════════════════════════════════════════════════════════════════ */
+        async function runAgent() {
+            if (state.running) return;
+
+            const question = questionEl.value.trim();
+            if (!question) { questionEl.focus(); return; }
+            const selectedFiles = [...state.selected];
+            // if (selectedFiles.length === 0) {
+            //   alert('Select at least one CSV dataset from the sidebar.');
+            //   return;
+            // }
+
+            // Clear input immediately and hide empty state.
+            questionEl.value = '';
+            questionEl.style.height = 'auto';
+            hideEmpty();
+
+            // Render user bubble + empty agent container, then start thinking dots.
+            renderUserBubble(question);
+            startThinking();
+
+            state.running = true;
+            runBtn.disabled = true;
+            runBtn.textContent = 'Running…';
+            resetPipeline();
+            statusDot.className = 'running';
+
+            let firstContent = false;
+
+            try {
+                const resp = await fetch('/api/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, csv_files: selectedFiles }),
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+                    throw new Error(err.detail || resp.statusText);
+                }
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    const parts = buffer.split('\n\n');
+                    buffer = parts.pop();
+
+                    for (const part of parts) {
+                        const line = part.trim();
+                        if (!line.startsWith('data: ')) continue;
+                        let ev;
+                        try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+
+                        // Remove thinking dots on first real content event.
+                        if (!firstContent && ['step', 'plot', 'token', 'final_answer', 'error'].includes(ev.type)) {
+                            stopThinking();
+                            firstContent = true;
+                        }
+
+                        handleEvent(ev);
+                    }
+                }
+
+            } catch (err) {
+                stopThinking();
+                statusDot.className = 'error';
+                const { block, body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
+                const msg = document.createElement('pre');
+                msg.className = 'stdout-block error-text';
+                msg.textContent = err.message;
+                body.appendChild(msg);
+            } finally {
+                stopThinking();
+                finaliseTokenBlock();
+                state.running = false;
+                runBtn.disabled = false;
+                runBtn.textContent = 'Run ▶';
+                if (statusDot.className === 'running') statusDot.className = 'done';
+                outputArea.scrollTop = outputArea.scrollHeight;
+                questionEl.focus();
+            }
+        }
+
+        /* ── Event dispatcher ── */
+        function handleEvent(ev) {
+            switch (ev.type) {
+                case 'node_start':
+                    setNodeState(ev.node, 'active');
+                    break;
+
+                case 'node_end':
+                    setNodeState(ev.node, 'done');
+                    break;
+
+                case 'token':
+                    appendToken(ev.text);
+                    break;
+
+                case 'step':
+                    finaliseTokenBlock(); // close any open generic block
+                    renderStep(ev);
+                    break;
+
+                case 'step_result':
+                    renderStepResult(ev);
+                    break;
+
+                case 'plot':
+                    renderPlot(ev);
+                    break;
+
+                case 'validation':
+                    renderValidation(ev);
+                    break;
+
+                case 'final_answer':
+                    finaliseTokenBlock();
+                    renderFinalAnswer(ev);
+                    break;
+
+                case 'done':
+                    statusDot.className = 'done';
+                    break;
+
+                case 'error':
+                    statusDot.className = 'error';
+                    finaliseTokenBlock();
+                    const { block, body } = makeBlock(null, 'Error', 'error', 'tag-error', false);
+                    const msg = document.createElement('pre');
+                    msg.className = 'stdout-block error-text';
+                    msg.textContent = ev.message + (ev.traceback ? '\n\n' + ev.traceback : '');
+                    body.appendChild(msg);
+                    break;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           BUTTON HANDLERS
+        ═══════════════════════════════════════════════════════════════════════ */
+        runBtn.addEventListener('click', runAgent);
+
+        questionEl.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                runAgent();
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            clearOutput();
+            resetPipeline();
+            statusDot.className = '';
+            emptyState.style.display = '';
+            stepBlocks = {};
+            tokenTarget = null;
+            plotlyCounter = 0;
+        });
+
+        /* auto-resize textarea */
+        questionEl.addEventListener('input', () => {
+            questionEl.style.height = 'auto';
+            questionEl.style.height = Math.min(questionEl.scrollHeight, 140) + 'px';
+        });
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           INIT
+        ═══════════════════════════════════════════════════════════════════════ */
+        fetchFiles();
+    </script>
 </body>
 
 </html>
