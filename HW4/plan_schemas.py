@@ -75,6 +75,10 @@ class DerivedColumn(BaseModel):
         ">=",
         "<",
         "<=",
+        "mean",
+        "sum",
+        "min",
+        "max",
     ] = Field(
         description="Arithmetic or comparison operation applied between the left and right inputs."
     )
@@ -85,6 +89,10 @@ class DerivedColumn(BaseModel):
     false_value: Union[int, float, bool, str, None] = Field(
         default=0,
         description="Value assigned when a comparison operation evaluates to false."
+    )
+    skipna: bool = Field(
+        default=True,
+        description="Whether row-wise aggregation operators should ignore missing values."
     )
 
 

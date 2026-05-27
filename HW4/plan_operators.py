@@ -71,7 +71,11 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
         new_col = c.new_column
         left = df[c.left_source_column]
 
-        if isinstance(c.right_source, str) and c.right_source in df.columns:
+        right_is_column = (
+            isinstance(c.right_source, str) and c.right_source in df.columns
+        )
+
+        if right_is_column:
             right = df[c.right_source]
         else:
             right = c.right_source
@@ -86,6 +90,39 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
             df[new_col] = left * right
         elif op == "divide":
             df[new_col] = left / right
+
+        elif op == "mean":
+            cols = [left]
+            if right_is_column:
+                cols.append(right)
+            else:
+                cols.append(pd.Series([right] * len(df), index=df.index))
+            df[new_col] = pd.concat(cols, axis=1).mean(axis=1, skipna=c.skipna)
+
+        elif op == "sum":
+            cols = [left]
+            if right_is_column:
+                cols.append(right)
+            else:
+                cols.append(pd.Series([right] * len(df), index=df.index))
+            df[new_col] = pd.concat(cols, axis=1).sum(axis=1, skipna=c.skipna)
+
+        elif op == "min":
+            cols = [left]
+            if right_is_column:
+                cols.append(right)
+            else:
+                cols.append(pd.Series([right] * len(df), index=df.index))
+            df[new_col] = pd.concat(cols, axis=1).min(axis=1, skipna=c.skipna)
+
+        elif op == "max":
+            cols = [left]
+            if right_is_column:
+                cols.append(right)
+            else:
+                cols.append(pd.Series([right] * len(df), index=df.index))
+            df[new_col] = pd.concat(cols, axis=1).max(axis=1, skipna=c.skipna)
+
         elif op == "==":
             df[new_col] = np.where(left == right, c.true_value, c.false_value)
         elif op == "!=":

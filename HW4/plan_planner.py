@@ -93,10 +93,12 @@ RULE:
     right_source: string | number | boolean,
     operation: one of [
       "add", "subtract", "multiply", "divide",
-      "==", "!=", ">", ">=", "<", "<="
+      "==", "!=", ">", ">=", "<", "<=",
+      "mean", "sum", "min", "max"
     ],
     true_value: any,
-    false_value: any
+    false_value: any,
+    skipna: boolean
   }
 
   Note:
