@@ -156,7 +156,6 @@ def _harvest_plots(namespace: dict[str, Any]) -> list[Plot]:
                 figure_json=copy.deepcopy(json.loads(fig_json)),
             )
         )
-        print(json.loads(fig_json))
 
     # Clear after harvest to avoid duplicate accumulation
     namespace[PLOTLY_NAMESPACE_KEY] = {}

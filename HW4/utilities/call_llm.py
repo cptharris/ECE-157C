@@ -5,10 +5,13 @@ from pathlib import Path
 from openai import OpenAI
 from typing import TypeVar, Type, overload, Literal
 from pydantic import BaseModel
+import time
+import random
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 API_MODEL = "gpt-5-mini"
+DODEBUG = False
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -34,9 +37,13 @@ def call_llm(
     if cached is not None:
         if response_model is not None:
             cached = response_model.model_validate_json(cached)
-        print(f"{"="*10} RESPONSE {"="*10} (cached)")
-        print(cached)
-        print(f"{"="*10} ======== {"="*10}")
+
+        if DODEBUG:
+            print(f"{"="*10} RESPONSE {"="*10} (cached)")
+            print(cached)
+            print(f"{"="*10} ======== {"="*10}")
+
+        # time.sleep(random.randint(2, 4))
         return cached
 
     messages = [
@@ -44,11 +51,12 @@ def call_llm(
         {"role": "user", "content": user_prompt},
     ]
 
-    print(f"{"="*10} REQUEST {"="*10}")
-    print(user_prompt)
-    print(f"{"="*10} ======= {"="*10}")
+    if DODEBUG:
+        print(f"{"="*10} REQUEST {"="*10}")
+        print(user_prompt)
+        print(f"{"="*10} ======= {"="*10}")
 
-    if input("continue? ") != "y":
+    if DODEBUG and input("continue? ") != "y":
         exit(1)
 
     if response_model is None:
@@ -61,21 +69,18 @@ def call_llm(
             .message.content.strip()
         )
 
-        print("=" * 10 + " RESPONSE " + "=" * 10)
-        print(response)
-        print("=" * 10 + " ========" + "=" * 10)
-
         set_cached(who, user_prompt, response)
     else:
         response = client.responses.parse(
             model=API_MODEL, input=messages, text_format=response_model
         ).output_parsed
 
+        set_cached(who, user_prompt, response.model_dump_json())
+
+    if DODEBUG:
         print("=" * 10 + " RESPONSE " + "=" * 10)
         print(response)
-        print("=" * 10 + " ======== " + "=" * 10)
-
-        set_cached(who, user_prompt, response.model_dump_json())
+        print("=" * 10 + " ========" + "=" * 10)
 
     return response
 

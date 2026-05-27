@@ -4,6 +4,8 @@ sandbox.py
 
 from typing import TypedDict, Optional
 
+DODEBUG = False
+
 
 class ExecutionResult(TypedDict):
     stdout: str
@@ -20,9 +22,10 @@ def execute(code: str, namespace: dict) -> ExecutionResult:
     out_buf = StringIO()
     err_buf = StringIO()
 
-    print(f"{"="*10} CODE {"="*10}")
-    print(code)
-    print(f"{"="*10} ======= {"="*10}")
+    if DODEBUG:
+        print(f"{"="*10} CODE {"="*10}")
+        print(code)
+        print(f"{"="*10} ======= {"="*10}")
 
     orig_stdout, orig_stderr = sys.stdout, sys.stderr
     sys.stdout, sys.stderr = out_buf, err_buf
