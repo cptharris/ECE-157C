@@ -104,7 +104,7 @@ def analytics_step_node(
         "plots": harvested_plots,
         "namespace": state["namespace"],
         "current_step_index": state["current_step_index"] + 1,
-        "is_complete": action.is_final_step,
+        "is_complete": action.is_final_step & (execution_result["error"] is None),
     }
 
 
