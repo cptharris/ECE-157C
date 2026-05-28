@@ -890,19 +890,23 @@
         ═══════════════════════════════════════════════════════════════════════ */
         const NODE_LABELS = {
             orchestrate: 'orchestrate',
-            dataset_fan: 'dataset·fan',
+            agent_task_router: 'orchestrate · router',
+            dataset_fan: 'dataset fan',
             analytics: 'analytics',
-            analytics_init: 'analytics·init',
-            analytics_step: 'analytics·step',
-            analytics_answer: 'analytics·answer',
-            plan: 'plan·plan',
-            plan_execute: 'plan·execute',
-            plan_respond: 'plan·respond',
+            analytics_init: 'analytics · init',
+            analytics_step: 'analytics · step',
+            analytics_continue_router: 'analytics · router',
+            analytics_answer: 'analytics · answer',
+            plan_and_execute: 'plan',
+            plan: 'plan · plan',
+            plan_execute: 'plan · execute',
+            plan_respond: 'plan · respond',
             validate: 'validate',
+            validation_router: 'validate · router',
             retry: 'retry',
             generic: 'generic',
-            generic_search: 'generic·search',
-            generic_respond: 'generic·respond',
+            generic_search: 'generic · search',
+            generic_respond: 'generic · respond',
             finalize: 'finalize',
         };
 
@@ -999,6 +1003,8 @@
         ═══════════════════════════════════════════════════════════════════════ */
         function onNodeStart(node) {
             if (!currentNodeLog) return;
+            const nodeName = String(node).substring(String(node).lastIndexOf("--") + 2)
+
             const item = document.createElement('div');
             item.className = 'nl-item';
             item.id = `nli-${state.currentTurnId}-${node}`;
@@ -1008,11 +1014,11 @@
 
             const nameEl = document.createElement('span');
             nameEl.className = 'nl-node';
-            nameEl.textContent = NODE_LABELS[node] || node;
+            nameEl.textContent = NODE_LABELS[nodeName] || nodeName;
 
             const descEl = document.createElement('span');
             descEl.className = 'nl-desc';
-            descEl.textContent = NODE_DESCS[node] || '';
+            descEl.textContent = NODE_DESCS[nodeName] || '';
 
             item.appendChild(dot);
             item.appendChild(nameEl);
@@ -1032,7 +1038,7 @@
            OUTPUT RENDERING
         ═══════════════════════════════════════════════════════════════════════ */
         function scrollBottom() {
-            outputArea.scrollTop = outputArea.scrollHeight;
+            // outputArea.scrollTop = outputArea.scrollHeight;
         }
 
         function clearOutput() {
@@ -1081,7 +1087,7 @@
         function makeBlock(id, headerLabel, tag, tagClass, collapsible = true) {
             const block = document.createElement('div');
             block.className = 'out-block';
-            if (id) block.id = id;
+            block.id = id ? id : `${Date.now()}`
 
             const header = document.createElement('div');
             header.className = 'block-header';
@@ -1151,7 +1157,7 @@
         }
 
         function renderStepResult(ev) {
-            const body = stepBlocks[`step-${ev.index}`];
+            const body = stepBlocks[`step-${ev.index}-${Date.now()}`];
             if (!body) return;
 
             const hasError = !!ev.error;
@@ -1379,7 +1385,7 @@
                 msg.textContent = err.message;
                 body.appendChild(msg);
             } finally {
-                $(`nl-${state.currentTurnId}`).remove();
+                // $(`nl-${state.currentTurnId}`).remove();
                 finaliseTokenBlock();
                 state.running = false;
                 runBtn.disabled = false;
