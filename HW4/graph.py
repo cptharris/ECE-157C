@@ -221,7 +221,7 @@ builder = StateGraph(GraphState, input_schema=GraphInput, output_schema=GraphOut
 builder.add_node("orchestrate", orchestrate_node)
 builder.add_node("dataset_fan", dataset_node)
 builder.add_node("analytics", analytics_subgraph)
-builder.add_node("plan_execute", plan_execute_subgraph)
+builder.add_node("plan_and_execute", plan_execute_subgraph)
 builder.add_node("validate", validation_node)
 builder.add_node("retry", retry_node)
 builder.add_node("generic", generic_subgraph)
@@ -243,11 +243,11 @@ builder.add_conditional_edges(
 
 # Dataset node fans out into both analytics subgraphs
 builder.add_edge("dataset_fan", "analytics")
-# builder.add_edge("dataset_fan", "plan_execute")
+# builder.add_edge("dataset_fan", "plan_and_execute")
 
 # Validation waits for both branches to complete
-builder.add_edge("analytics", "plan_execute")
-builder.add_edge("plan_execute", "validate")
+builder.add_edge("analytics", "plan_and_execute")
+builder.add_edge("plan_and_execute", "validate")
 
 builder.add_conditional_edges(
     "validate",
