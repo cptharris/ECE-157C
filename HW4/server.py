@@ -257,6 +257,8 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
         import traceback
 
         yield _emit("error", message=str(exc), traceback=traceback.format_exc())
+    finally:
+        print(f"{bcolors.HEADER}{"="*10} DONE {"="*10}{bcolors.ENDC}")
 
 
 @app.post("/api/stream")
