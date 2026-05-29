@@ -13,10 +13,15 @@ def generic_search_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    raw_text = call_ddg(state["question"])
+    query = call_llm(
+        system_prompt="We are performing a DuckDuckGo search and need to enhance the query. Review the user question below and return an enhanced search query.",
+        user_prompt=f"Question: {state["question"]}",
+        who="generic_thinking",
+    )
+    raw_text = call_ddg(query)
 
     search_result = SearchResult(
-        query=state["question"],
+        query=query,
         raw_text=raw_text,
     )
 
