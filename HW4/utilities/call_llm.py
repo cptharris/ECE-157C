@@ -52,7 +52,7 @@ def call_llm(
     ]
 
     if DODEBUG:
-        print(f"{"="*10} REQUEST {"="*10}")
+        print(f"{"="*10} REQUEST {"="*10} ({who})")
         print(user_prompt)
         print(f"{"="*10} ======= {"="*10}")
 
