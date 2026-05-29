@@ -219,21 +219,44 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                             error=ex.get("error"),
                         )
 
-                if name == "plan":
+                if name == "plan_execute":
                     plan_execute_result = output.get("plan_execute_result", {})
                     if plan_execute_result:
                         plan = json.loads(
                             plan_execute_result.get("plan", {}).model_dump_json()
                         )
                         index = str(retry_count) + ":" + "Verify"
+                        steps = plan.get("steps", [])
+                        for trace in plan_execute_result.get("trace", {}):
+                            steps[trace.step_index]["input_shape"] = str(trace.input_shape)
+                            steps[trace.step_index]["output_shape"] = str(trace.output_shape)
+                            steps[trace.step_index]["error"] = trace.error
+
                         yield _emit(
                             "plan",
                             index=index,
                             reasoning=plan.get("reasoning", ""),
-                            code=json.dumps(
-                                plan.get("steps", []), indent=2, ensure_ascii=False
-                            ),
+                            code=json.dumps(steps, indent=2, ensure_ascii=False),
                         )
+                        yield _emit(
+                            "plan_result",
+                            index=index,
+                            stdout=plan_execute_result.get("execution_result", ""),
+                            error="",
+                        )
+                        # yield _emit(
+                        #     "plan_result",
+                        #     index=index,
+                        #     stdout="\n".join(
+                        #         [
+                        #             json.dumps(
+                        #                 json.loads(trace.model_dump_json()), indent=None
+                        #             )
+                        #             for trace in plan_execute_result.get("trace", {})
+                        #         ]
+                        #     ),
+                        #     error="",
+                        # )
 
                 # Emit final answer + final plots from finalize_node.
                 if name == "finalize":
