@@ -1157,7 +1157,7 @@
         }
 
         function renderStepResult(ev) {
-            const body = stepBlocks[`step-${ev.index}-${Date.now()}`];
+            const body = stepBlocks[`step-${ev.index}`];
             if (!body) return;
 
             const hasError = !!ev.error;
@@ -1288,6 +1288,7 @@
                     break;
 
                 case 'step':
+                case 'plan':
                     finaliseTokenBlock();
                     renderStep(ev);
                     break;

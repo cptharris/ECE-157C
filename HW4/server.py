@@ -173,29 +173,50 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                 # Emit validation verdict.
                 if name == "validate":
                     vr = output.get("validation_result")
-                    if vr and isinstance(vr, dict):
+                    if vr:
                         yield _emit(
                             "validation",
-                            verdict=vr.get("verdict", ""),
-                            reasoning=vr.get("reasoning", ""),
+                            verdict=vr.verdict,
+                            reasoning=vr.reasoning,
                         )
 
                 if name == "analytics_step":
                     steps: list = output.get("steps", [])
                     if steps:
                         latest = steps[-1]
+                        index = (
+                            str(output.get("retry_count", 0))
+                            + ":"
+                            + str(latest.get("step_index", 0))
+                        )
                         yield _emit(
                             "step",
-                            index=latest.get("step_index", 0),
+                            index=index,
                             reasoning=latest.get("reasoning", ""),
                             code=latest.get("code", ""),
                         )
                         ex = latest.get("execution", {})
                         yield _emit(
                             "step_result",
-                            index=latest.get("step_index", 0),
+                            index=index,
                             stdout=ex.get("stdout", ""),
                             error=ex.get("error"),
+                        )
+
+                if name == "plan":
+                    plan_execute_result = output.get("plan_execute_result", {})
+                    if plan_execute_result:
+                        plan = json.loads(
+                            plan_execute_result.get("plan", {}).model_dump_json()
+                        )
+                        index = str(output.get("retry_count", 0)) + ":" + "Verify"
+                        yield _emit(
+                            "plan",
+                            index=index,
+                            reasoning=plan.get("reasoning", ""),
+                            code=json.dumps(
+                                plan.get("steps", []), indent=2, ensure_ascii=False
+                            ),
                         )
 
                 # Emit final answer + final plots from finalize_node.
