@@ -228,6 +228,7 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                         index = str(retry_count) + ":" + "Verify"
                         steps = plan.get("steps", [])
                         for trace in plan_execute_result.get("trace", {}):
+                            steps[trace.step_index]["step_index"] = str(trace.step_index)
                             steps[trace.step_index]["input_shape"] = str(trace.input_shape)
                             steps[trace.step_index]["output_shape"] = str(trace.output_shape)
                             steps[trace.step_index]["error"] = trace.error
