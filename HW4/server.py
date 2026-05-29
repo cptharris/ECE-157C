@@ -43,6 +43,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
+
+class bcolors:
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
+
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
@@ -134,6 +147,7 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
         return
 
     nodes_seen: dict[str, int] = {}
+    retry_count = 0
 
     try:
         async for event in graph.astream_events(
@@ -147,9 +161,13 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
 
             if name == "LangGraph":
                 continue
+            if name == "retry" and kind == "on_chain_start":
+                retry_count += 1
 
             if kind != "on_chain_stream":
-                print(f"{"="*5} {name}: {kind} {"="*5}")
+                print(
+                    f"{bcolors.HEADER}{"="*5} {retry_count} {name.center(28, " ")}: {kind.replace("on_chain_", "").center(10, " ")} {"="*5}{bcolors.ENDC}"
+                )
                 # print(data)
 
             # ── Node lifecycle ────────────────────────────────────────────
@@ -185,9 +203,7 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                     if steps:
                         latest = steps[-1]
                         index = (
-                            str(output.get("retry_count", 0))
-                            + ":"
-                            + str(latest.get("step_index", 0))
+                            str(retry_count) + ":" + str(latest.get("step_index", 0))
                         )
                         yield _emit(
                             "step",
@@ -209,7 +225,7 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                         plan = json.loads(
                             plan_execute_result.get("plan", {}).model_dump_json()
                         )
-                        index = str(output.get("retry_count", 0)) + ":" + "Verify"
+                        index = str(retry_count) + ":" + "Verify"
                         yield _emit(
                             "plan",
                             index=index,

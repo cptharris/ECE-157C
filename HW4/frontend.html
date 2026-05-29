@@ -34,7 +34,7 @@
             --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
             --font-ui: 'Syne', sans-serif;
 
-            --sidebar-w: 260px;
+            --sidebar-w: 230px;
             --radius: 6px;
         }
 
@@ -852,7 +852,7 @@
         <div id="logo">
             <div class="logo-mark">
                 <span class="dot"></span>
-                analytics agent
+                analytics
             </div>
             <div class="logo-sub">LangGraph · Plotly · AI</div>
         </div>
@@ -1001,9 +1001,16 @@
         /* ═══════════════════════════════════════════════════════════════════════
            NODE LOG (inline activity feed per turn)
         ═══════════════════════════════════════════════════════════════════════ */
+        function getNodeName(node) {
+            return [
+                String(node).substring(String(node).lastIndexOf("--") + 2),
+                String(node).substring(0, 1)
+            ];
+        }
+
         function onNodeStart(node) {
             if (!currentNodeLog) return;
-            const nodeName = String(node).substring(String(node).lastIndexOf("--") + 2)
+            const nodeName = getNodeName(node)[0];
 
             const item = document.createElement('div');
             item.className = 'nl-item';
@@ -1425,6 +1432,7 @@
            INIT
         ═══════════════════════════════════════════════════════════════════════ */
         fetchFiles();
+        questionEl.focus();
     </script>
 </body>
 
