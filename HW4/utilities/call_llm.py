@@ -33,6 +33,8 @@ def call_llm(
     who: str = "general",
     response_model: Type[T] | None = None,
 ) -> str | T:
+    set_cached(who + "-index", user_prompt, user_prompt)
+
     cached = get_cached(who, user_prompt)
     if cached is not None:
         if response_model is not None:
