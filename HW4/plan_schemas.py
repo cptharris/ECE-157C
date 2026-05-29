@@ -58,13 +58,15 @@ class DerivedColumn(BaseModel):
     new_column: str = Field(
         description="Name of the derived output column to create or overwrite."
     )
-    left_source_column: str = Field(
-        description="Left-hand input column used in the operation."
+    left_source_column: Optional[str] = Field(
+        default=None,
+        description="Left-hand input column used in the operation. Not required for constant-valued derivations."
     )
     right_source: Union[str, int, float, bool, None] = Field(
         description="Right-hand input column name or scalar literal used in the operation."
     )
     operation: Literal[
+        "constant",
         "add",
         "subtract",
         "multiply",
@@ -83,7 +85,7 @@ class DerivedColumn(BaseModel):
         "is_null",
         "is_not_null",
     ] = Field(
-        description="Arithmetic or comparison operation applied between the left and right inputs."
+        description="Arithmetic, comparison, or constant-value operation applied between the left and right inputs."
     )
     true_value: Union[int, float, bool, str, None] = Field(
         default=1,

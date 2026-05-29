@@ -92,10 +92,9 @@ RULE:
     left_source_column: str,
     right_source: string | number | boolean | null,
     operation: one of [
-      "add", "subtract", "multiply", "divide", "safe_divide",
+      "constant", "add", "subtract", "multiply", "divide", "safe_divide",
       "==", "!=", ">", ">=", "<", "<=",
-      "mean", "sum", "min", "max",
-      "is_null", "is_not_null"
+      "mean", "sum", "min", "max", "is_null", "is_not_null"
     ],
     true_value: any,
     false_value: any,
@@ -103,7 +102,8 @@ RULE:
   }
 
   Note:
-  - For arithmetic operations, true_value and false_value are ignored.
+  - The "constant" operation injects the value from right_source into every row.
+  - For non-conditional operations, true_value and false_value are ignored.
   - right_source may be a column name (string)
 
 ────────────────────────────────────────────

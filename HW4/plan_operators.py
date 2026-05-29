@@ -69,7 +69,11 @@ def _filter_rows(df: pd.DataFrame, step: FilterRowsStep) -> pd.DataFrame:
 def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
     for c in step.columns:
         new_col = c.new_column
-        left = df[c.left_source_column]
+        left = (
+            df[c.left_source_column]
+            if c.left_source_column is not None
+            else pd.Series([None] * len(df), index=df.index)
+        )
 
         right_is_column = (
             isinstance(c.right_source, str) and c.right_source in df.columns
@@ -82,7 +86,10 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
 
         op = c.operation
 
-        if op == "add":
+        if op == "constant":
+            df[new_col] = right
+
+        elif op == "add":
             df[new_col] = left + right
         elif op == "subtract":
             df[new_col] = left - right
