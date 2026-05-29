@@ -288,7 +288,7 @@ graph = builder.compile(
 
 # Save graph visualization:
 #
-# with open("graph_mermaid.md", "w") as f:
+# with open("graphics/graph_mermaid.md", "w") as f:
 #     f.write("```mermaid\n")
 #     f.write(graph.get_graph(xray=True).draw_mermaid())
 #     f.write("```")
@@ -296,7 +296,7 @@ graph = builder.compile(
 # Or:
 #
 # png_bytes = graph.get_graph(xray=True).draw_mermaid_png()
-# with open("graph.png", "wb") as f:
+# with open("graphics/graph.png", "wb") as f:
 #     f.write(png_bytes)
 
 # ---------------------------------------------------------------------------
