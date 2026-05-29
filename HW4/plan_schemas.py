@@ -245,6 +245,34 @@ class NormalizeColumnsStep(BaseModel):
     )
 
 
+class RankStep(BaseModel):
+    """Assign ranks based on one column."""
+
+    op: Literal["rank"] = Field(
+        default="rank",
+        description="Operation identifier for ranking rows.",
+    )
+
+    source_column: str = Field(
+        description="Column whose values are ranked."
+    )
+
+    new_column: str = Field(
+        default="rank",
+        description="Output rank column name."
+    )
+
+    ascending: bool = Field(
+        default=False,
+        description="Whether smaller values receive better ranks."
+    )
+
+    method: Literal["average", "min", "max", "first", "dense"] = Field(
+        default="dense",
+        description="Tie-breaking strategy passed to pandas rank()."
+    )
+
+
 class GroupAggregateStep(BaseModel):
     """GROUP BY group_by columns, then apply each aggregation. Reduces to one row per unique group.
     If group_by is empty, the entire DataFrame is treated as one group, yielding a single row.
@@ -437,6 +465,7 @@ Step = Annotated[
         DeriveColumnsStep,
         ReduceColumnsStep,
         NormalizeColumnsStep,
+        RankStep,
         GroupAggregateStep,
         SortRowsStep,
         LimitRowsStep,

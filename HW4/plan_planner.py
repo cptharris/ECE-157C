@@ -140,6 +140,18 @@ Use this for z-score standardization instead of manually aggregating means/stds.
 
 ────────────────────────────────────────────
 
+5d. rank
+  Assigns ranks based on a column.
+
+  source_column: str
+  new_column: str
+  ascending: boolean
+  method: one of ["average", "min", "max", "first", "dense"]
+
+Use for ranking tasks instead of emulating ranks through sorting and aggregation.
+
+────────────────────────────────────────────
+
 6. group_aggregate
   Performs grouped aggregation.
 

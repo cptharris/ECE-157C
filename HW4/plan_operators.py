@@ -200,6 +200,15 @@ def _normalize_columns(df: pd.DataFrame, step: NormalizeColumnsStep) -> pd.DataF
     return df
 
 
+def _rank_rows(df: pd.DataFrame, step: RankStep) -> pd.DataFrame:
+    df[step.new_column] = (
+        df[step.source_column]
+        .rank(method=step.method, ascending=step.ascending)
+        .astype("Int64")
+    )
+    return df
+
+
 _STAR_COL = "*"
 
 
@@ -344,6 +353,8 @@ def dispatch_op(df: pd.DataFrame, step: Step) -> pd.DataFrame:
         return _reduce_columns(df, step)
     if isinstance(step, NormalizeColumnsStep):
         return _normalize_columns(df, step)
+    if isinstance(step, RankStep):
+        return _rank_rows(df, step)
     if isinstance(step, GroupAggregateStep):
         return _group_aggregate(df, step)
     if isinstance(step, SortRowsStep):
