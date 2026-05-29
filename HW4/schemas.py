@@ -189,13 +189,13 @@ class AnalyticsAction(BaseModel):
     - Do not call fig.show().
     """
 
-    reasoning: str = Field(
-        description=(
-            "Explicit step-by-step reasoning about what to explore or compute "
-            "next, informed by the question and all prior execution results. "
-            "Decide whether to generate Plotly figures in this step."
-        )
-    )
+    # reasoning: str = Field(
+    #     description=(
+    #         "Explicit step-by-step reasoning about what to explore or compute "
+    #         "next, informed by the question and all prior execution results. "
+    #         "Decide whether to generate Plotly figures in this step."
+    #     )
+    # )
     code: str = Field(
         description=(
             "Autonomous Python code to execute in the next sandbox step. "
@@ -204,11 +204,29 @@ class AnalyticsAction(BaseModel):
             "Capture Plotly figures via _plotly['Descriptive Title'] = fig.to_json()."
         )
     )
-    is_final_step: bool = Field(
+
+
+class AnalyticsReasoning(BaseModel):
+    """
+    Output of the analytics subgraph's reasoning phase.
+
+    The LLM reviews the question, prior execution history, and optional
+    validation feedback, then decides whether additional sandbox execution
+    is required and what should happen next.
+    """
+
+    reasoning: str = Field(
         description=(
-            "True when this code block completes the analysis and a final answer "
-            "can be written immediately after execution. "
-            "False when further exploration or computation will be needed."
+            "Explicit step-by-step reasoning about the current state of the analysis, "
+            "whether additional analysis is required, and what should be done next. "
+            "Describe the intended computation or Plotly visualization in detail."
+        )
+    )
+    requires_python_execution: bool = Field(
+        description=(
+            "True when additional Python code should be generated and executed "
+            "in the sandbox. False when the analysis is complete and no more "
+            "execution is necessary."
         )
     )
 
@@ -503,7 +521,7 @@ class GraphState(TypedDict):
     # ── Analytics loop ────────────────────────────────────────────────────────
     # Append-only execution memory; reducers prevent overwrite across iterations.
     steps: list[AnalyticsStep]
-    plots: list[Plot]
+    plots: Annotated[list[Plot], operator.add]
 
     # Live sandbox environment; pre-seeded with {"_plotly": {}} by init_node.
     namespace: dict[str, Any]

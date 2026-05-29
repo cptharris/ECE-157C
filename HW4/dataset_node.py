@@ -1,7 +1,7 @@
 from langchain_core.runnables import RunnableConfig
 from typing import Any
 
-from schemas import GraphState, DatasetThoughts
+from schemas import GraphState, DatasetThoughts, PLOTLY_NAMESPACE_KEY
 from utilities import call_llm
 
 SYSTEM = f"""\
@@ -21,12 +21,16 @@ def dataset_node(
     import json
 
     dataset_schema = {}
+    dataFrames = {}
     for csv_path in state["csv_paths"]:
         df = pd.read_csv("datasets/" + csv_path)
+        dataFrames[csv_path] = df
         dataset_schema[csv_path] = {
             "shape": df.shape,
             "columns": df.dtypes.apply(lambda x: x.name).to_dict(),
         }
+
+    namespace = {PLOTLY_NAMESPACE_KEY: {}, "dataFrames": dataFrames}
 
     thoughts = call_llm(
         system_prompt=SYSTEM,
@@ -42,4 +46,4 @@ Unfiltered Dataset Specifications:
 
     thoughts = DatasetThoughts.model_validate_json(thoughts)
 
-    return {"dataset_thoughts": thoughts}
+    return {"dataset_thoughts": thoughts, "namespace": namespace}

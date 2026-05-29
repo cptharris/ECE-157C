@@ -13,9 +13,11 @@ from schemas import (
     GraphState,
     Plot,
     AnalyticsStep,
+    AnalyticsReasoning,
     AnalyticsAction,
     AnalyticsResult,
     AnalyticsFinalAnswer,
+    ExecutionResult,
 )
 from utilities import call_llm, execute
 
@@ -24,30 +26,25 @@ def analytics_init_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    import json
-
-    dataset_schema = {}
-
-    for csv_path, entry in state["dataset_thoughts"].schemas.items():
-        dataset_schema[csv_path] = {"access": f"""dfs["{csv_path}"]""", **entry}
-
-    state["namespace"] = {PLOTLY_NAMESPACE_KEY: {}}
-
-    execute(
-        f"""\
+    code = """\
 import pandas as pd
-dfs = {{}}
-for csv_path in {state["csv_paths"]}:
-    dfs[csv_path] = pd.read_csv("datasets/" + csv_path)
-    """,
+# dataFrames is pre-loaded
+print(dataFrames.keys())"""
+
+    execution_result: ExecutionResult = execute(
+        code,
         state["namespace"],
+    )
+
+    execution_result["stdout"] += "\n" + json.dumps(
+        state["dataset_thoughts"].schemas, indent=None
     )
 
     step = AnalyticsStep(
         step_index=0,
-        reasoning="Reveal the shape and available columns of each dataset. 'dfs' is a dict of pandas DataFrames.",
-        code="",
-        execution=json.dumps(dataset_schema, indent=None),
+        reasoning="Reveal the shape and available columns of each dataset.",
+        code=code,
+        execution=execution_result,
         plots_captured=[],
     )
 
@@ -63,19 +60,57 @@ def analytics_step_node(
     state: GraphState,
     config: RunnableConfig,
 ) -> dict[str, Any]:
-    prompt = f"\nQuestion:\n{state["question"]}"
+    prompt = f"\nQuestion:\n{state['question']}"
 
     if "validation_feedback" in state:
-        prompt += (
-            "\n\nRetry feedback:\n" + state.get("plan_execute_result")["plan"].reasoning
-        )
+        prompt += "\n\nRetry feedback:\n" + str(state.get("validation_feedback"))
 
     prompt += "\n\nPrior steps:\n" + str(state["steps"]) + "\n"
 
-    action: AnalyticsAction = call_llm(
+    reasoning_result: AnalyticsReasoning = call_llm(
         system_prompt="",
         user_prompt=prompt,
-        who="analytics_step",
+        who="analytics_reasoning",
+        response_model=AnalyticsReasoning,
+    )
+
+    if not reasoning_result.requires_python_execution:
+        step = AnalyticsStep(
+            step_index=state["current_step_index"],
+            reasoning=reasoning_result.reasoning,
+            code="",
+            execution={
+                "stdout": "",
+                "stderr": "",
+                "error": None,
+            },
+            plots_captured=[],
+        )
+
+        state["steps"].append(step)
+
+        return {
+            "steps": state["steps"],
+            "namespace": state["namespace"],
+            "current_step_index": state["current_step_index"] + 1,
+            "is_complete": True,
+        }
+
+    code_prompt = f"""\
+Question:
+{state['question']}
+
+Prior steps:
+{state['steps']}
+
+Reasoning about the next analysis step:
+{reasoning_result.reasoning}
+"""
+
+    action: AnalyticsAction = call_llm(
+        system_prompt="",
+        user_prompt=code_prompt,
+        who="analytics_code_generation",
         response_model=AnalyticsAction,
     )
 
@@ -88,23 +123,20 @@ def analytics_step_node(
 
     step = AnalyticsStep(
         step_index=state["current_step_index"],
-        reasoning=action.reasoning,
+        reasoning=reasoning_result.reasoning,
         code=action.code,
         execution=execution_result,
         plots_captured=[p["title"] for p in harvested_plots],
     )
 
     state["steps"].append(step)
-    if "plots" not in state:
-        state["plots"] = []
-    state["plots"].append(harvested_plots)
 
     return {
         "steps": state["steps"],
         "plots": harvested_plots,
         "namespace": state["namespace"],
         "current_step_index": state["current_step_index"] + 1,
-        "is_complete": action.is_final_step & (execution_result["error"] is None),
+        "is_complete": False,
     }
 
 
