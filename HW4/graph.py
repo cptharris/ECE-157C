@@ -283,32 +283,34 @@ graph = builder.compile(
 )
 
 # ---------------------------------------------------------------------------
-# Mermaid visualization
+# Graph visualization
 # ---------------------------------------------------------------------------
 
-# Save graph visualization:
-#
-# with open("graphics/graph_mermaid.md", "w") as f:
-#     f.write("```mermaid\n")
-#     f.write(graph.get_graph(xray=True).draw_mermaid())
-#     f.write("```")
-#
-# Or:
-#
-# png_bytes = graph.get_graph(xray=True).draw_mermaid_png()
-# with open("graphics/graph.png", "wb") as f:
-#     f.write(png_bytes)
+# graph.get_graph().draw_png(output_file_path="graphics/graph.png")
+# graph.get_graph(xray=True).draw_png(output_file_path="graphics/graph-full.png")
+# for name, subgraph in graph.get_subgraphs():
+#     subgraph.get_graph(xray=True).draw_png(output_file_path=f"graphics/graph-{name}.png")
 
 # ---------------------------------------------------------------------------
 # Example invocation
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
+if __name__ == "__main__*":
+    QUESTIONS = [
+        "What caused the 2016 oil-price crash?",  # DDG
+        "Find undervalued technology companies from the dataset.",  # hard
+        "Which companies have a Debt/Equity ratio above 3.0 and negative net income — potential distress signals?",  # decent
+        "Which sectors have the most companies represented, and how does that distribution change year to year?",  # okay
+        "Which individual stocks had the top 10 highest and lowest price returns in each year?",  # decent
+        "Which sector saw the largest improvement in median EPS over the 5-year window?",  # nice
+    ]
     result = graph.invoke(
         GraphInput(
-            question="Find undervalued technology companies from the dataset.",
-            # question="Which individual stocks had the top 10 highest and lowest price returns in each year?",
+            question=QUESTIONS[3],
             csv_paths=[
+                # "2014_Financial_Data.csv",
+                # "2015_Financial_Data.csv",
+                # "2016_Financial_Data.csv",
                 "2017_Financial_Data.csv",
                 "2018_Financial_Data.csv",
             ],
