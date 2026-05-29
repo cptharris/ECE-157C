@@ -143,6 +143,10 @@ def _derive_columns(df: pd.DataFrame, step: DeriveColumnsStep) -> pd.DataFrame:
             df[new_col] = np.where(left < right, c.true_value, c.false_value)
         elif op == "<=":
             df[new_col] = np.where(left <= right, c.true_value, c.false_value)
+        elif op == "is_null":
+            df[new_col] = np.where(left.isnull, c.true_value, c.false_value)
+        elif op == "is_not_null":
+            df[new_col] = np.where(not left.isnull, c.true_value, c.false_value)
 
     return df
 

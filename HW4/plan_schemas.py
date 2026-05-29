@@ -61,7 +61,7 @@ class DerivedColumn(BaseModel):
     left_source_column: str = Field(
         description="Left-hand input column used in the operation."
     )
-    right_source: Union[str, int, float, bool] = Field(
+    right_source: Union[str, int, float, bool, None] = Field(
         description="Right-hand input column name or scalar literal used in the operation."
     )
     operation: Literal[
@@ -80,6 +80,8 @@ class DerivedColumn(BaseModel):
         "sum",
         "min",
         "max",
+        "is_null",
+        "is_not_null",
     ] = Field(
         description="Arithmetic or comparison operation applied between the left and right inputs."
     )

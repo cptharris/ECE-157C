@@ -90,11 +90,12 @@ RULE:
   columns: list of {
     new_column: str,
     left_source_column: str,
-    right_source: string | number | boolean,
+    right_source: string | number | boolean | null,
     operation: one of [
       "add", "subtract", "multiply", "divide", "safe_divide",
       "==", "!=", ">", ">=", "<", "<=",
-      "mean", "sum", "min", "max"
+      "mean", "sum", "min", "max",
+      "is_null", "is_not_null"
     ],
     true_value: any,
     false_value: any,
