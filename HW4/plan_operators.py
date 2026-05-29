@@ -177,7 +177,6 @@ def _reduce_columns(df: pd.DataFrame, step: ReduceColumnsStep) -> pd.DataFrame:
     return df
 
 
-
 def _normalize_columns(df: pd.DataFrame, step: NormalizeColumnsStep) -> pd.DataFrame:
     for col in step.columns:
         s = pd.to_numeric(df[col], errors="coerce")
@@ -256,9 +255,10 @@ def _distinct_rows(df: pd.DataFrame, step: DistinctRowsStep) -> pd.DataFrame:
 def _pivot(df: pd.DataFrame, step: PivotStep) -> pd.DataFrame:
     if not step.index or not step.columns or not step.values:
         return df
-    return df.pivot_table(
+    df = df.pivot_table(
         index=step.index, columns=step.columns, values=step.values, aggfunc=step.aggfunc
     ).reset_index()
+    return df.rename(columns={c: str(c) for c in df.columns})
 
 
 def _snapshot(
@@ -304,9 +304,7 @@ def _concat(
 
     for name in step.snapshots:
         if name not in snapshots:
-            raise KeyError(
-                f"Snapshot '{name}' not found. Available: {list(snapshots)}"
-            )
+            raise KeyError(f"Snapshot '{name}' not found. Available: {list(snapshots)}")
         frames.append(snapshots[name])
 
     return pd.concat(
@@ -322,11 +320,13 @@ def _load_dataset(
 ) -> pd.DataFrame:
     if dataset_name not in dataset_registry:
         raise KeyError(f"Dataset '{dataset_name}' not found.")
-    
+
     if dataset_registry[dataset_name]["dataframe"] is not None:
         return dataset_registry[dataset_name]["dataframe"]
-    
-    dataset_registry[dataset_name]["dataframe"] = pd.read_csv("datasets/" + dataset_registry[dataset_name]["csv_path"])
+
+    dataset_registry[dataset_name]["dataframe"] = pd.read_csv(
+        "datasets/" + dataset_registry[dataset_name]["csv_path"]
+    )
 
     return dataset_registry[dataset_name]["dataframe"]
 
