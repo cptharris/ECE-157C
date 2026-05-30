@@ -1,0 +1,191 @@
+\documentclass[12pt, oneside]{report}
+
+\pdfcompresslevel=0
+\pdfobjcompresslevel=\pdfcompresslevel
+
+\input{../ECE 157C Packages.tex}
+
+\title{ECE 157C/272C HW 04\break{\Large A Complete Dataset Analytics Agent}}
+\author{Caleb Harris}
+\date{May 31$^\text{st}$, 2026}
+
+\newcommand{\inputplan}[1]{
+  \inputminted[breaklines,autogobble,gobble=2,bgcolor=lightgray,fontsize=\footnotesize]{JSON}{report-data/#1.json}
+}
+
+\begin{document}
+\setcounter{tocdepth}{2}
+
+\input{../ECE 157C Title.tex}
+\clearpage
+
+%
+%
+\chap{Introduction}
+%
+%
+
+\input{report-sections/01-introduction}
+
+%
+%
+\chap{System Architecture}
+%
+%
+
+\input{report-sections/02-system-architecture}
+
+%
+%
+\chap{Component Design}
+%
+%
+
+%
+\sect{Orchestrator}
+%
+
+\input{report-sections/03-orchestrator}
+
+%
+\sect{Analytics Agent}
+%
+
+\input{report-sections/03-dataset-understanding}
+\input{report-sections/03-analytics-agent}
+
+%
+\sect{Plan and Execute Agent}
+%
+
+\input{report-sections/03-plan-and-execute-agent}
+
+%
+\sect{Validator Agent}
+%
+
+\input{report-sections/03-validator-agent}
+
+%
+\sect{Frontend}
+%
+
+\input{report-sections/03-frontend}
+
+%
+%
+\chap{Dataset Exploration}
+%
+%
+
+\input{report-sections/04-dataset-exploration}
+
+%
+%
+\chap{Representative Examples}
+%
+%
+
+%
+\sect{Generic Question 1}
+%
+
+\input{report-sections/05-example-generic-1}
+
+%
+\sect{Generic Question 2}
+%
+
+\input{report-sections/05-example-generic-2}
+
+%
+\sect{Analytics Question 1}
+%
+
+\input{report-sections/05-example-analytics-1}
+
+%
+\sect{Analytics Question 2}
+%
+
+\input{report-sections/05-example-analytics-2}
+
+%
+\sect{Validator Retry Question 1}
+%
+
+\input{report-sections/05-example-validator-retry}
+
+%
+\sect{Validator Retry Question 2}
+%
+
+\input{report-sections/05-example-validator-detection}
+
+%
+%
+\chap{End-to-End Analytics Scenario}
+%
+%
+
+\input{report-sections/06-scenario}
+
+%
+%
+\chap{Iterative Reasoning Deep Dives}
+%
+%
+
+%
+\sect{Deep Dive A}
+%
+
+\input{report-sections/07-deep-dive-a}
+
+%
+\sect{Deep Dive B}
+%
+
+\input{report-sections/07-deep-dive-b}
+
+%
+%
+\chap{Presentation Summary}
+%
+%
+
+\input{report-sections/08-presentation-summary}
+
+%
+%
+\chap{Discussion}
+%
+%
+
+%
+\sect{Limitations}
+%
+
+\input{report-sections/09-limitations}
+
+%
+\sect{Lessons Learned}
+%
+
+\input{report-sections/09-lessons-learned}
+
+%
+\sect{Future Work}
+%
+
+\input{report-sections/09-future-work}
+
+%
+%
+\chap{Conclusion}
+%
+%
+
+\input{report-sections/10-conclusion}
+
+\end{document}
