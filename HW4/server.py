@@ -35,7 +35,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 from typing import AsyncIterator
+import plotly.graph_objects as go
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -71,6 +73,13 @@ app.add_middleware(
 
 DATASETS_DIR = Path("datasets")
 DATASETS_DIR.mkdir(exist_ok=True)
+REPORT_DIR = Path("report-data")
+REPORT_DIR.mkdir(exist_ok=True)
+
+
+def convertName(question: str) -> str:
+    return re.sub(r"[^\w,\d]+", "-", question.lower().strip()).strip("-").strip()
+
 
 # ---------------------------------------------------------------------------
 # Request model
@@ -148,6 +157,11 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
 
     nodes_seen: dict[str, int] = {}
     retry_count = 0
+    question_dir = REPORT_DIR / convertName(question)
+    question_dir.mkdir(exist_ok=True)
+    (question_dir / "input.json").write_text(
+        json.dumps(GraphInput(question=question, csv_paths=csv_files), indent=2)
+    )
 
     try:
         async for event in graph.astream_events(
@@ -181,13 +195,6 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                 nodes_seen[name] += 1
                 output = data.get("output", {}) or {}
 
-                # Emit plots as soon as they appear in state.
-                # for plot in output.get("plots", []):
-                #     print(plot)
-                #     yield _emit(
-                #         "plot", title=plot["title"], figure_json=plot["figure_json"]
-                #     )
-
                 # Emit validation verdict.
                 if name == "validate":
                     vr = output.get("validation_result")
@@ -197,13 +204,16 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                             verdict=vr.verdict,
                             reasoning=vr.reasoning,
                         )
+                        (question_dir / f"validation-{retry_count}.json").write_text(
+                            vr.model_dump_json(indent=2)
+                        )
 
                 if name == "analytics_step":
                     steps: list = output.get("steps", [])
                     if steps:
                         latest = steps[-1]
                         index = (
-                            str(retry_count) + ":" + str(latest.get("step_index", 0))
+                            str(retry_count) + "." + str(latest.get("step_index", 0))
                         )
                         yield _emit(
                             "step",
@@ -218,6 +228,9 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                             stdout=ex.get("stdout", ""),
                             error=ex.get("error"),
                         )
+                        (question_dir / f"analytics-{index}.json").write_text(
+                            json.dumps(latest, indent=2)
+                        )
 
                 if name == "plan_execute":
                     plan_execute_result = output.get("plan_execute_result", {})
@@ -228,9 +241,15 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                         index = str(retry_count) + ":" + "Verify"
                         steps = plan.get("steps", [])
                         for trace in plan_execute_result.get("trace", {}):
-                            steps[trace.step_index]["step_index"] = str(trace.step_index)
-                            steps[trace.step_index]["input_shape"] = str(trace.input_shape)
-                            steps[trace.step_index]["output_shape"] = str(trace.output_shape)
+                            steps[trace.step_index]["step_index"] = str(
+                                trace.step_index
+                            )
+                            steps[trace.step_index]["input_shape"] = str(
+                                trace.input_shape
+                            )
+                            steps[trace.step_index]["output_shape"] = str(
+                                trace.output_shape
+                            )
                             steps[trace.step_index]["error"] = trace.error
 
                         yield _emit(
@@ -245,28 +264,62 @@ async def _event_stream(question: str, csv_files: list[str]) -> AsyncIterator[st
                             stdout=plan_execute_result.get("execution_result", ""),
                             error="",
                         )
-                        # yield _emit(
-                        #     "plan_result",
-                        #     index=index,
-                        #     stdout="\n".join(
-                        #         [
-                        #             json.dumps(
-                        #                 json.loads(trace.model_dump_json()), indent=None
-                        #             )
-                        #             for trace in plan_execute_result.get("trace", {})
-                        #         ]
-                        #     ),
-                        #     error="",
-                        # )
+                        plan["steps"] = steps
+                        (question_dir / f"plan_execute-{retry_count}.json").write_text(
+                            json.dumps(plan, indent=2)
+                        )
 
                 # Emit final answer + final plots from finalize_node.
                 if name == "finalize":
                     answer = output.get("answer", "")
                     if answer:
                         yield _emit("final_answer", answer=answer)
+                        (question_dir / "final_answer.md").write_text(answer)
+                    already_plotted = []
                     for plot in output.get("final_plots", []):
-                        yield _emit(
-                            "plot", title=plot["title"], figure_json=plot["figure_json"]
+                        if plot not in already_plotted:
+                            yield _emit(
+                                "plot",
+                                title=plot["title"],
+                                figure_json=plot["figure_json"],
+                            )
+                            (
+                                question_dir / f"plot-{convertName(plot["title"])}.json"
+                            ).write_text(json.dumps(plot["figure_json"], indent=2))
+                            fig = go.Figure(plot["figure_json"])
+                            fig.write_html(
+                                question_dir / f"plot-{convertName(plot["title"])}.html"
+                            )
+                            fig.write_image(
+                                format="png",
+                                scale=2,
+                                file=(
+                                    question_dir
+                                    / f"plot-{convertName(plot["title"])}.png"
+                                ),
+                            )
+                        already_plotted.append(plot)
+
+                if name == "analytics_answer":
+                    result = output.get("analytics_result", {})
+                    if result:
+                        (
+                            question_dir / f"analytics_answer-{retry_count}.md"
+                        ).write_text(result["final_answer"])
+                        (question_dir / f"analytics_code-{retry_count}.py").write_text(
+                            result["overall_plan"]
+                        )
+                if name == "plan_respond":
+                    result = output.get("plan_execute_result", {})
+                    if result:
+                        (question_dir / f"plan_answer-{retry_count}.md").write_text(
+                            result["final_answer"]
+                        )
+                if name == "generic_search":
+                    result = output.get("generic_result", {}).get("search_result", {})
+                    if result:
+                        (question_dir / f"generic-{retry_count}.json").write_text(
+                            json.dumps(result, indent=2)
                         )
 
             # ── LLM token streaming ───────────────────────────────────────
