@@ -4,20 +4,18 @@
 \pdfobjcompresslevel=\pdfcompresslevel
 
 \input{../ECE 157C Packages.tex}
+\usepackage{wrapfig}
 
 \title{ECE 157C/272C HW 04\break{\Large A Complete Dataset Analytics Agent}}
 \author{Caleb Harris}
 \date{May 31$^\text{st}$, 2026}
-
-\newcommand{\inputplan}[1]{
-  \inputminted[breaklines,autogobble,gobble=2,bgcolor=lightgray,fontsize=\footnotesize]{JSON}{report-data/#1.json}
-}
 
 \begin{document}
 \setcounter{tocdepth}{2}
 
 \input{../ECE 157C Title.tex}
 \clearpage
+\graphicspath{ {./} }
 
 %
 %
@@ -92,11 +90,15 @@
 
 \input{report-sections/05-example-generic-1}
 
+\break
+
 %
 \sect{Generic Question 2}
 %
 
 \input{report-sections/05-example-generic-2}
+
+\break
 
 %
 \sect{Analytics Question 1}
@@ -104,11 +106,15 @@
 
 \input{report-sections/05-example-analytics-1}
 
+\break
+
 %
 \sect{Analytics Question 2}
 %
 
 \input{report-sections/05-example-analytics-2}
+
+\break
 
 %
 \sect{Validator Retry Question 1}
@@ -116,11 +122,15 @@
 
 \input{report-sections/05-example-validator-retry}
 
+\break
+
 %
 \sect{Validator Retry Question 2}
 %
 
 \input{report-sections/05-example-validator-detection}
+
+\break
 
 %
 %
