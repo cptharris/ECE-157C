@@ -60,7 +60,7 @@ class DerivedColumn(BaseModel):
     )
     left_source_column: Optional[str] = Field(
         default=None,
-        description="Left-hand input column used in the operation. Not required for constant-valued derivations."
+        description="Left-hand input column used in the operation. Not required for constant-valued derivations.",
     )
     right_source: Union[str, int, float, bool, None] = Field(
         description="Right-hand input column name or scalar literal used in the operation."
@@ -89,15 +89,15 @@ class DerivedColumn(BaseModel):
     )
     true_value: Union[int, float, bool, str, None] = Field(
         default=1,
-        description="Value assigned when a comparison operation evaluates to true."
+        description="Value assigned when a comparison operation evaluates to true.",
     )
     false_value: Union[int, float, bool, str, None] = Field(
         default=0,
-        description="Value assigned when a comparison operation evaluates to false."
+        description="Value assigned when a comparison operation evaluates to false.",
     )
     skipna: bool = Field(
         default=True,
-        description="Whether row-wise aggregation operators should ignore missing values."
+        description="Whether row-wise aggregation operators should ignore missing values.",
     )
 
 
@@ -207,7 +207,7 @@ class ReduceColumnsStep(BaseModel):
 
     skipna: bool = Field(
         default=True,
-        description="Whether missing values should be ignored during reduction."
+        description="Whether missing values should be ignored during reduction.",
     )
 
 
@@ -236,12 +236,12 @@ class NormalizeColumnsStep(BaseModel):
 
     invert: bool = Field(
         default=False,
-        description="Whether to multiply normalized values by -1 after normalization."
+        description="Whether to multiply normalized values by -1 after normalization.",
     )
 
     skipna: bool = Field(
         default=True,
-        description="Whether missing values should be ignored in normalization statistics."
+        description="Whether missing values should be ignored in normalization statistics.",
     )
 
 
@@ -253,23 +253,16 @@ class RankStep(BaseModel):
         description="Operation identifier for ranking rows.",
     )
 
-    source_column: str = Field(
-        description="Column whose values are ranked."
-    )
+    source_column: str = Field(description="Column whose values are ranked.")
 
-    new_column: str = Field(
-        default="rank",
-        description="Output rank column name."
-    )
+    new_column: str = Field(default="rank", description="Output rank column name.")
 
     ascending: bool = Field(
-        default=False,
-        description="Whether smaller values receive better ranks."
+        default=False, description="Whether smaller values receive better ranks."
     )
 
     method: Literal["average", "min", "max", "first", "dense"] = Field(
-        default="dense",
-        description="Tie-breaking strategy passed to pandas rank()."
+        default="dense", description="Tie-breaking strategy passed to pandas rank()."
     )
 
 
@@ -444,12 +437,12 @@ class DisplayStep(BaseModel):
 
     op: Literal["display"] = Field(
         default="display",
-        description="Operation identifier for displaying a dataframe."
+        description="Operation identifier for displaying a dataframe.",
     )
     orient: Literal["dict", "list", "series", "split", "records", "index"] = Field(
-        default="records",
-        description="The orientation direction to display with."
+        default="records", description="The orientation direction to display with."
     )
+
 
 # ---------------------------------------------------------------------------
 # Step union  (the unified classes defining deterministic execution steps)

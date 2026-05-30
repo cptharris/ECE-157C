@@ -54,7 +54,7 @@ def plan_execute_node(
                     execution_result += str(df.to_dict(step.orient))
                 else:
                     df = dispatch_op(df, step)
-                
+
                 df = df.copy()
 
                 trace_entries.append(
