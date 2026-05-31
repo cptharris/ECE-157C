@@ -1,0 +1,26 @@
+The Orchestrator is the entry point in the data-question graph. It decides whether a given user question should be answered via the analytics/data-driven path or via a generic knowledge path, and it prepares the inputs for the downstream subgraphs.
+
+\begin{itemize}
+  \item \textbf{Python mapping}: \texttt{orchestrator.py}
+  \item \textbf{Key schemas}: GraphState, \texttt{OrchestrationDecision} (from \texttt{schemas.py})
+  \item \textbf{Role}: Route questions to the appropriate path, and prepare the initial CSV path list for fan-out.
+  \item \textbf{How it operates}:
+    \subitem Builds a minimal prompt from the incoming state:
+    \texttt{Question:} {state["question"]}
+    \subitem Calls the LLM with a response model of \texttt{\texttt{OrchestrationDecision}}. The LLM returns a structured decision indicating either the analytics path or the generic path, together with a brief justification.
+    \subitem Returns a dictionary containing:
+    \texttt{\{"csv\_paths": [...], "orchestration\_decision": orchestration\_decision, "retry\_count": 0\}}
+  \item \textbf{Inputs}:
+      \subitem \texttt{state["question"]}: the user query text
+      \subitem \texttt{state["csv\_paths"]}: list of CSV dataset paths to be considered downstream
+    \item \textbf{Outputs}:
+      \subitem \texttt{\{"csv\_paths": [...], \"orchestration\_decision\": decision, \"retry\_count\": 0\}}
+  \item \textbf{Prompts design / structure}:
+      \subitem System prompt: empty (delegates the routing decision to the LLM)
+      \subitem User prompt: a concise Question block:
+        \texttt{Question:} {state["question"]}
+      \subitem The LLM is expected to return a calibrated \texttt{OrchestrationDecision} object with fields such as:
+        \texttt{agent\_type}: \texttt{"analytics"} or \texttt{"generic"}
+        \texttt{reasoning}: a short justification for the routing decision
+      \subitem The implementation uses the \texttt{OrchestrationDecision} model to validate and parse the response.
+\end{itemize}

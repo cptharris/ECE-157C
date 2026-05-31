@@ -1,0 +1,21 @@
+\subsect{Analytics Agent Node (analytics\_agent.py)}
+The Analytics Agent node implements the data-driven exploration loop that iteratively reasons about the dataset and (optionally) generates executable Python to compute the answer.
+
+\begin{itemize}
+  \item \textbf{Python mapping}: analytics\_agent.py
+  \item \textbf{Key schemas}: Plot, GraphState, AnalyticsStep, AnalyticsReasoning, AnalyticsAction, AnalyticsFinalAnswer, AnalyticsResult, PLOTLY\_NAMESPACE\_KEY
+  \item \textbf{Role}: Drive the data-driven exploration loop, including: init step, iterative reasoning/code generation steps, and final answer synthesis.
+  \item \textbf{How it operates}:
+    \subitem analytics\_init\_node: runs a tiny Python snippet in the sandbox to reveal dataFrames keys; appends dataset schemas to stdout; returns initial AnalyticsStep with reasoning and code.
+    \subitem analytics\_step\_node: constructs a prompt from the question, prior steps, and any retry feedback; asks the LLM for AnalyticsReasoning. If the model indicates Python execution is required, it asks for AnalyticsAction (code), executes it in the sandbox, harvests any plots, and appends a new AnalyticsStep with code and execution results.
+    \subitem analytics\_answer\_node: prompts for final AnalyticsFinalAnswer after the last step; compiles an AnalyticsResult with final\_answer, overall\_plan, and the collected steps/plots.
+  \item \textbf{Inputs}: state including question, namespace, steps, plots, retry\_count, dataset\_thoughts, etc.
+  \item \textbf{Outputs}: {"analytics\_result": AnalyticsResult}
+  \item \textbf{Prompts design / structure}:
+    \subitem Three LLM prompts:
+  1) AnalyticsReasoning: outputs AnalyticsReasoning with reasoning and a flag requires\_python\_execution.
+  2) AnalyticsAction: outputs code to execute in the sandbox; code follows sandbox conventions (imports at top, print calls, and Plotly capture via \_plotly).
+  3) AnalyticsFinalAnswer: outputs final answer and overall plan.
+  \item \textbf{Sandbox conventions}:
+  \subitem namespace persists across steps; use print() for outputs; capture plots via: \_plotly["Title"] = fig.to\_json(); do not call fig.show().
+\end{itemize}

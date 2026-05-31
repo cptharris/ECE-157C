@@ -1,0 +1,22 @@
+\subsect{Dataset Understanding Node (dataset\_node.py)}
+The Dataset Understanding node performs the fan-out preparation by inspecting the provided CSV datasets, extracting basic schema information, and exposing a namespace for downstream analytics.
+
+\begin{itemize}
+  \item \textbf{Python mapping}: dataset\_node.py
+  \item \textbf{Key schemas}: DatasetThoughts (from schemas.py), PLOTLY\_NAMESPACE\_KEY (from schemas.py), GraphState
+  \item \textbf{Role}: Profile available datasets, build initial dataset schemas (shape and dtypes), and construct a sandbox namespace for analytics code execution.
+  \item \textbf{How it operates}:
+    \subitem Iterates over state["csv\_paths"], loads each CSV from the datasets/ directory into a pandas DataFrame, and records its shape and column types.
+    \subitem Constructs a per-dataset schema dictionary and a namespace containing dataFrames and a dedicated Plotly namespace for capturing plots.
+    \subitem Calls the LLM with a system prompt that instructs returning ONLY a JSON object with {
+    (note: two fields) reasoning and schemas } where:
+    \subitem reasoning: rationale for column selection and dataset approach
+    \subitem schemas: the dataset schemas to guide downstream processing
+    \subitem Validates the LLM response into a DatasetThoughts model.
+  \item \textbf{Inputs}: state["question"], state["csv\_paths"]
+  \item \textbf{Outputs}: {"dataset\_thoughts": DatasetThoughts, "namespace": {PLOTLY\_NAMESPACE\_KEY: {}, "dataFrames": dataFrames}}
+  \item \textbf{Prompts design / structure}:
+    \subitem System prompt explicitly requests a JSON with two fields: reasoning and schemas.
+    \subitem User prompt includes the Question and Unfiltered Dataset Specifications serialized as JSON.
+    \subitem The LLM return is parsed into the DatasetThoughts model so downstream components can rely on a typed structure.
+\end{itemize}

@@ -1,0 +1,14 @@
+The Validator node provides a safety check by comparing the analytics output with the plan-execute results and deciding whether to finalize or retry.
+
+\begin{itemize}
+  \item \textbf{Python mapping}: validator.py
+  \item \textbf{Key schemas}: ValidationDecision (from schemas.py)
+  \item \textbf{Role}: Validate results, trigger retries if needed, and preserve baseline state for stable retries.
+  \item \textbf{How it operates}:
+    \subitem validation\_node(state, config): Deep copies analytics\_result and plan\_execute\_result; strips nonessential fields; prompts the LLM with a concise comparison between Analytics final\_answer and Plan final\_answer, requesting a ValidationDecision.
+    \subitem retry\_node(state, config): When verdict is retry, increments retry\_count, preserves plan\_execute\_result, clears analytics\_result for re-run, and resets navigation state for a fresh analytics loop.
+  \item \textbf{Inputs}: state including question, analytics\_result, plan\_execute\_result, retry\_count, validation\_result.
+  \item \textbf{Outputs}: {"validation\_result": ValidationDecision} or a next-state dict in case of retry.
+  \item \textbf{Prompts design / structure}:
+    \subitem The prompt is a compact synthesis of the analytics vs plan results to drive the LLM verdict.
+\end{itemize}
