@@ -1,0 +1,16 @@
+The most fundamental limitation of the system is the structural mismatch between a fixed DSL and non-deterministic Python execution.
+The plan-and-execute agent is constrained to a finite, pre-specified operator set, while the iterative analytics agent is free to construct arbitrary Python logic at runtime.
+Even when both agents arrived at numerically comparable answers, the intermediate computations differed enough that the validator rejected valid results, producing a high rate of false negatives.
+This is not a failure of calibration but a category error: a DSL interpreter cannot faithfully reconstruct the behavior of a free-form code executor.
+
+A related limitation is the scalability ceiling of the DSL itself.
+Each new dataset quirk --- multi-table joins, provenance tracking across ticker files, edge cases in aggregation --- required the addition of new operators, causing the plan-and-execute system prompt to grow monotonically.
+Because the DSL specification must be presented in full for the agent to reason over it, there is no clean way to modularize or lazy-load operator definitions.
+In practice, I observed that larger prompts degraded both response latency and reasoning quality as the model's attention was distributed across an increasingly large instruction surface.
+
+Multi-dataset joins were a persistent source of failure in the plan-and-execute agent.
+The financial indicators dataset required concatenating per-ticker CSVs while preserving provenance, and early operator implementations produced malformed outputs due to key collisions, silent column drops, and ambiguous duplicate handling.
+Although I extended the DSL with join-aware operators to address these cases, the fixes were reactive rather than principled --- each new query pattern risked exposing a gap in the operator set.
+
+Finally, the validator's notion of correctness was underspecified in cases where both agents reached reasonable but numerically distinct answers due to differing assumptions --- for example, whether to drop or impute \texttt{NaN} values, which join key to use as the primary index, or whether to normalize before aggregating.
+The system had no mechanism for adjudicating these disagreements, so structurally valid but approach-divergent outputs were indistinguishable from genuine errors.

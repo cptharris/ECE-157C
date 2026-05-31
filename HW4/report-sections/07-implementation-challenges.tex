@@ -1,0 +1,13 @@
+The most significant early challenge was agent divergence.
+Initially, both the analytics agent and the plan-and-execute agent independently attempted to answer the user's query, producing valid but incompatible results that gave the validator no ground truth to arbitrate.
+I reframed the system so that the plan-and-execute agent's role is not to answer the question but to verify the analytics agent's answer --- specifically, to reproduce and validate the summarized Python script that the analytics agent emits at the end of its reasoning chain.
+This reframing resolved the fundamental comparison problem but introduced a new one: the plan-and-execute agent had to reconstruct a Python computation using only DSL operators, which remained an imperfect mapping.
+
+Schema alignment across agents was a non-obvious prerequisite.
+Without an explicit initialization step, the two agents would silently operate on different columns of the dataset, making any downstream comparison semantically meaningless even if the numeric outputs happened to agree.
+I addressed this by adding a schema-reasoning step at the start of the analytics agent's execution, producing a shared view of the relevant columns before either agent began task-specific reasoning.
+This step proved to be one of the highest-leverage additions to the system.
+
+Agent termination required careful design.
+A simple maximum-step limit was insufficient, as the iterative analytics agent needed a principled criterion for convergence --- a sense of when further refinement would not materially improve the answer.
+Defining this criterion without access to a ground truth signal is inherently difficult and remained partially heuristic throughout the project.

@@ -1,0 +1,16 @@
+The most general lesson is that verification and answering are distinct problems that require distinct architectures.
+Tasking two agents with independently answering the same question produces a comparison problem with no ground truth; tasking one agent with verifying the other's reasoning produces a tractable, asymmetric workflow.
+The shift from symmetric comparison to directed verification --- where the plan-and-execute agent follows the analytics agent's script rather than writing its own --- was the single most impactful architectural decision in the project.
+
+A related lesson is that non-deterministic agents resist deterministic verification.
+If the output under test is free-form Python, the verifier must operate at the same level of abstraction: either another code executor or an LLM judge capable of semantic reasoning.
+A DSL-based verifier can only confirm that a computation \emph{structurally resembles} the target; it cannot confirm that it is \emph{semantically equivalent}.
+For future work, replacing the plan-and-execute agent with an LLM-as-judge that reasons directly over the analytics agent's emitted script would likely produce a more reliable and less brittle verification signal.
+
+Schema grounding should be treated as a system-level contract, not an agent-level detail.
+In any multi-agent system operating on structured data, establishing a shared schema before task decomposition is a prerequisite for meaningful inter-agent comparison.
+Deferring this to individual agents produces silent misalignment that is difficult to diagnose.
+
+Finally, prompt size is a first-class engineering constraint.
+The cost and latency of large system prompts scale with context length in a way that compounds quickly when a DSL must be specified in full on every request.
+Any future design that requires agents to reason over a growing specification --- operators, schemas, constraints --- should budget for this cost explicitly and explore retrieval-augmented or modular prompt strategies to bound it.

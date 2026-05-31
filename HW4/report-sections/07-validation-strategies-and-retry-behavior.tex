@@ -1,0 +1,74 @@
+\subsect{Key Constants and State Lifecycle}
+
+\begin{itemize}[label=\textbullet]
+  \item \textbf{MAX\_ANALYTICS\_STEPS = 12:} Hard cap on the number of analytics loop iterations per run. The analytics loop should terminate after 12 iterations even if not fully resolved.
+  \item \textbf{MAX\_RETRY\_CYCLES = 2:} Hard cap on the number of validation $\rightarrow$ retry cycles before giving up or escalating. The orchestrator is expected to enforce this bound before each retry.
+\end{itemize}
+
+\paragraph{GraphState fields affecting retry/validation:}
+The state maintains specific fields: \texttt{retry\_count} (counts retries) and \texttt{validation\_feedback} (actionable feedback from the validator passed into the next analytics run). When a retry occurs, the following state transitions happen:
+\begin{enumerate}[label=(\roman*)]
+  \item \texttt{analytics\_result} is cleared.
+  \item \texttt{plan\_execute\_result} is cleared.
+  \item \texttt{current\_step\_index} is reset to 0.
+  \item \texttt{is\_complete} is set to \texttt{False}.
+  \item \texttt{retry\_count} is incremented.
+\end{enumerate}
+
+\subsect{Retry Behavior (What happens when a validation requests a retry)}
+
+\begin{itemize}[label=\textbullet]
+  \item \textbf{Trigger:} The validator returns a $\texttt{ValidationDecision}$ with \texttt{verdict =
+    'retry'}. The orchestrator then executes the $\texttt{retry\_node}$ to prepare for another analytics
+    cycle.
+  \item \textbf{Stateful changes in $\texttt{retry\_node}$:}
+    \begin{itemize}[label=$\rightarrow$]
+      \item \texttt{retry\_count} becomes $\texttt{state['retry\_count']} + 1$.
+      \item \texttt{validation\_feedback} is carried forward from the previous
+        $\texttt{validation\_result.feedback}$, guiding the next analytics iteration.
+      \item \texttt{analytics\_result} is set to \texttt{None}, forcing a fresh analytics computation.
+      \item \texttt{plan\_execute\_result} is cleared.
+      \item \texttt{current\_step\_index} is reset to 0; $\texttt{is\_complete}$ is set to
+        \texttt{False}.
+    \end{itemize}
+  \item \textbf{Effect:} The agent re-enters the analytics loop with a clean slate for execution, but critically retains the feedback from the validator.
+  \item \textbf{Cap Enforcement:} The retry cycle count is capped by $\texttt{MAX\_RETRY\_CYCLES}$. After reaching this cap, the orchestrator must halt retries.
+\end{itemize}
+
+\subsect{Validation Strategy and Control Flow Integration}
+
+\begin{itemize}[label=\textbullet]
+  \item \textbf{$\texttt{Validation node}$ (validator) purpose:} To compare the
+    $\texttt{analytics\_result.final\_answer}$ against the $\texttt{plan-execute\_result.final\_answer}$ and
+    determine if the analytics results are approved or require a retry.
+  \item \textbf{How validation is performed:}
+    \begin{enumerate}[label=\arabic*.]
+      \item It constructs a lightweight, JSON-like prompt using the current state:
+        \begin{itemize}[label=$\circ$]
+          \item Question: the original user question.
+          \item Analytics answer: $\texttt{final\_answer}$ from the analytics subgraph (overall\_plan
+            and plots are stripped).
+          \item Plan-execute answer: $\texttt{final\_answer}$ from the plan-execute subgraph,
+            similarly reduced.
+        \end{itemize}
+      \item It calls \texttt{call\_llm} with this prompt and uses the model response
+        $\texttt{ValidationDecision}$ to produce a verdict and metadata.
+      \item \textbf{$\texttt{ValidationDecision}$ Model:}
+        \begin{itemize}[label=$\bullet$]
+          \item \texttt{verdict}: Expected to be $\texttt{Literal["approved", "retry"]}$.
+          \item \texttt{reasoning}: Explanation of the verdict.
+          \item \texttt{feedback}: Optional, actionable instructions for alignment on retry (e.g.,
+            what to change or investigate).
+        \end{itemize}
+    \end{enumerate}
+  \item \textbf{How the verdict drives flow:}
+    \begin{itemize}[label=\textbullet]
+      \item \texttt{approved}: Both results are consistent; the orchestrator finalizes and presents
+        the answer.
+      \item \texttt{retry}: A retry is triggered using the $\texttt{retry\_node}$ logic, restarting the
+        analytics loop with guidance from the feedback.
+    \end{itemize}
+  \item \textbf{Data Hygiene in validation:} The validator copies results to prevent mutating the
+    originals and strips non-essential fields ($\texttt{overall\_plan}$, $\texttt{plots}$, $\texttt{trace}$)
+    from inputs to maintain focus.
+\end{itemize}

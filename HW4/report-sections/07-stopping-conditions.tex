@@ -1,0 +1,19 @@
+The process starts with \texttt{analytics\_init\_node}, which always returns \texttt{is\_complete}: False and sets \texttt{current\_step\_index} to 1. This indicates the analytics planning/execution loop should continue.
+
+In each \texttt{analytics\_step\_node} call, there are two branches governed by the LLM's reasoning output (\texttt{reasoning\_result.requires\_python\_execution}):
+\begin{enumerate}
+  \item \textbf{Terminal condition (no python execution required):}
+    \begin{itemize}
+      \item If \texttt{reasoning\_result.requires\_python\_execution} is False, a step is created with the current\_step\_index and the provided reasoning. The function then returns \texttt{is\_complete}: True and \texttt{current\_step\_index} incremented by 1. This signals that the analytics step loop should stop after this step. The code executed for the step is empty (\texttt{code: "" and empty execution data}).
+    \end{itemize}
+  \item \textbf{Non-terminal condition (python execution required):}
+    \begin{itemize}
+      \item If \texttt{reasoning\_result.requires\_python\_execution} is True, the system generates actionable code (\texttt{action.code\_generation}), executes it, harvests any plots, and appends a new step with that code and the execution result. It then returns \texttt{is\_complete}: False and \texttt{current\_step\_index} incremented by 1, signaling the loop to continue to the next step.
+    \end{itemize}
+\end{enumerate}
+
+\texttt{analytics\_answer\_node} is used to assemble the final \texttt{AnalyticsResult} after the steps are complete; this path does not itself set an \texttt{is\_complete} flag within \texttt{analytics\_agent.py}, but it is conceptually the next stage after completion.
+
+The stopping condition is therefore driven by the terminal path in \texttt{analytics\_step\_node} (\texttt{requires\_python\_execution == False}). The presence of the \texttt{MAX\_ANALYTICS\_STEPS} import suggests there is an external or higher-level limit, but this module does not enforce it directly.
+
+Additionally, \texttt{\_harvest\_plots} is a helper that collects plots from the namespace and clears them, ensuring stopping/continuation is not affected by duplicate plots.
