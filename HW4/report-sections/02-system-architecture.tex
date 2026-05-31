@@ -53,7 +53,7 @@ The following subsections summarize the core actors and their responsibilities.
 
   \item \textbf{Validator} (\texttt{validator.py}):
     Independently assesses the analytics and plan outputs for consistency. It returns a verdict
-    (pass/retry/flag) along with a rationale and optional missing items. Retries are handled by a
+    (approved/retry) along with a rationale and optional missing items. Retries are handled by a
     separate retry node that preserves baseline state.
 
   \item \textbf{Finalization and Frontend} (\texttt{finalize.py}, \texttt{server.py}, frontend.html):
