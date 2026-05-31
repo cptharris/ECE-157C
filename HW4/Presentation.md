@@ -326,4 +326,6 @@ Debt burdens rose nearly 20% over five years.
 ### 4. Balance Sheet Quality Matters
 The most resilient sectors combined earnings strength with disciplined leverage.
 
+---
+
 # End
