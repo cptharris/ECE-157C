@@ -1,1437 +1,2041 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ECE 272C &mdash; AI Agents Study Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:        #0d1117;
-    --bg-panel:  #161b27;
-    --bg-card:   #1c2333;
-    --bg-hover:  #232c3d;
-    --border:    #2a3348;
-    --border-hi: #3d4f6e;
-    --gold:      #e8aa3e;
-    --gold-dim:  #a07828;
-    --teal:      #4ecdc4;
-    --red:       #e05c5c;
-    --green:     #56c99a;
-    --text:      #d4daea;
-    --text-dim:  #8494b3;
-    --text-faint:#4a5878;
-    --active:    #243350;
-    --active-border: #4a78c0;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECE 272C &mdash; AI Agents Study Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-panel: #161b27;
+      --bg-card: #1c2333;
+      --bg-hover: #232c3d;
+      --border: #2a3348;
+      --border-hi: #3d4f6e;
+      --gold: #e8aa3e;
+      --gold-dim: #a07828;
+      --teal: #4ecdc4;
+      --red: #e05c5c;
+      --green: #56c99a;
+      --text: #d4daea;
+      --text-dim: #8494b3;
+      --text-faint: #4a5878;
+      --active: #243350;
+      --active-border: #4a78c0;
+    }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 15px;
-    line-height: 1.7;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-  /* ── TOP BAR ── */
-  header {
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 28px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    flex-shrink: 0;
-    z-index: 10;
-  }
-  .header-badge {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--gold);
-    background: rgba(232,170,62,0.1);
-    border: 1px solid rgba(232,170,62,0.3);
-    border-radius: 4px;
-    padding: 3px 9px;
-    letter-spacing: .06em;
-    flex-shrink: 0;
-  }
-  header h1 {
-    font-family: 'Spectral', serif;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: .01em;
-  }
-  header h1 span { color: var(--gold); }
-  .header-right {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  #search-input {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    padding: 6px 12px;
-    width: 220px;
-    outline: none;
-    transition: border-color .2s;
-  }
-  #search-input:focus { border-color: var(--active-border); }
-  #search-input::placeholder { color: var(--text-faint); }
-  .exam-badge {
-    font-size: 12px;
-    color: var(--red);
-    background: rgba(224,92,92,.12);
-    border: 1px solid rgba(224,92,92,.3);
-    border-radius: 4px;
-    padding: 4px 10px;
-    flex-shrink: 0;
-  }
+    /* ── TOP BAR ── */
+    header {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
 
-  /* ── LAYOUT ── */
-  .layout {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
+    .header-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gold);
+      background: rgba(232, 170, 62, 0.1);
+      border: 1px solid rgba(232, 170, 62, 0.3);
+      border-radius: 4px;
+      padding: 3px 9px;
+      letter-spacing: .06em;
+      flex-shrink: 0;
+    }
 
-  /* ── SIDEBAR ── */
-  nav {
-    width: 15%;
-    background: var(--bg-panel);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    flex-shrink: 0;
-    padding: 12px 0 24px;
-  }
-  nav::-webkit-scrollbar { width: 4px; }
-  nav::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+    header h1 {
+      font-family: 'Spectral', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: .01em;
+    }
 
-  .nav-group-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .1em;
-    color: var(--text-faint);
-    text-transform: uppercase;
-    padding: 16px 18px 6px;
-  }
+    header h1 span {
+      color: var(--gold);
+    }
 
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 18px;
-    cursor: pointer;
-    border-left: 2px solid transparent;
-    transition: background .15s, border-color .15s;
-    font-size: 13.5px;
-    color: var(--text-dim);
-    line-height: 1.3;
-  }
-  .nav-item:hover { background: var(--bg-hover); color: var(--text); }
-  .nav-item.active {
-    background: var(--active);
-    border-left-color: var(--active-border);
-    color: var(--text);
-  }
-  .nav-icon {
-    font-size: 15px;
-    flex-shrink: 0;
-    opacity: .8;
-    width: 20px;
-    text-align: center;
-  }
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-  /* ── CONTENT ── */
-  main {
-    flex: 1;
-    overflow-y: auto;
-    padding: 36px 48px 80px;
-    zoom: 1.3;
-  }
-  main::-webkit-scrollbar { width: 6px; }
-  main::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+    #search-input {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      padding: 6px 12px;
+      width: 220px;
+      outline: none;
+      transition: border-color .2s;
+    }
 
-  .section { display: none; animation: fadeIn .25s ease; }
-  .section.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    #search-input:focus {
+      border-color: var(--active-border);
+    }
 
-  h2.section-title {
-    font-family: 'Spectral', serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 6px;
-    letter-spacing: -.01em;
-  }
-  .section-subtitle {
-    color: var(--text-dim);
-    font-size: 14px;
-    margin-bottom: 30px;
-    font-weight: 300;
-  }
-  .section-subtitle em { color: var(--gold); font-style: normal; }
+    #search-input::placeholder {
+      color: var(--text-faint);
+    }
 
-  /* cards */
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 26px;
-    margin-bottom: 18px;
-    transition: border-color .2s;
-  }
-  .card:hover { border-color: var(--border-hi); }
+    .exam-badge {
+      font-size: 12px;
+      color: var(--red);
+      background: rgba(224, 92, 92, .12);
+      border: 1px solid rgba(224, 92, 92, .3);
+      border-radius: 4px;
+      padding: 4px 10px;
+      flex-shrink: 0;
+    }
 
-  .card-title {
-    font-family: 'Spectral', serif;
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--gold);
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card-title .icon { font-size: 16px; }
+    /* ── LAYOUT ── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
 
-  .card p { color: var(--text); margin-bottom: 10px; line-height: 1.75; }
-  .card p:last-child { margin-bottom: 0; }
+    /* ── SIDEBAR ── */
+    nav {
+      width: 15%;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      padding: 12px 0 24px;
+    }
 
-  /* comparison table */
-  .compare {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 18px;
-  }
-  .compare-col {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .compare-col h4 {
-    font-family: 'Spectral', serif;
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 10px;
-  }
-  .compare-col.left h4 { color: var(--teal); }
-  .compare-col.right h4 { color: var(--gold); }
+    nav::-webkit-scrollbar {
+      width: 4px;
+    }
 
-  /* definition */
-  .definition {
-    border-left: 3px solid var(--active-border);
-    background: rgba(74,120,192,.07);
-    border-radius: 0 8px 8px 0;
-    padding: 14px 20px;
-    margin: 12px 0;
-  }
-  .definition .term {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--teal);
-    margin-bottom: 4px;
-  }
-  .definition p { color: var(--text-dim); font-size: 14px; margin: 0; }
+    nav::-webkit-scrollbar-thumb {
+      background: var(--border-hi);
+      border-radius: 4px;
+    }
 
-  /* callout */
-  .callout {
-    border-radius: 8px;
-    padding: 14px 18px;
-    margin: 14px 0;
-    font-size: 14px;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-  }
-  .callout.gold { background: rgba(232,170,62,.08); border: 1px solid rgba(232,170,62,.25); }
-  .callout.teal { background: rgba(78,205,196,.07); border: 1px solid rgba(78,205,196,.22); }
-  .callout.red  { background: rgba(224,92,92,.07);  border: 1px solid rgba(224,92,92,.22); }
-  .callout.green{ background: rgba(86,201,154,.07); border: 1px solid rgba(86,201,154,.22); }
-  .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
-  .callout p { margin: 0; color: var(--text-dim); line-height: 1.6; }
-  .callout strong { color: var(--text); }
+    .nav-group-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .1em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      padding: 16px 18px 6px;
+    }
 
-  /* step list */
-  .steps { list-style: none; }
-  .steps li {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 14px;
-    align-items: flex-start;
-  }
-  .step-num {
-    background: var(--active);
-    border: 1px solid var(--active-border);
-    color: #7aa4e0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 500;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-  .steps li p { margin: 0; }
-  .steps li strong { color: var(--text); }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 18px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background .15s, border-color .15s;
+      font-size: 13.5px;
+      color: var(--text-dim);
+      line-height: 1.3;
+    }
 
-  /* tag pills */
-  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .tag {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 4px;
-    border: 1px solid;
-  }
-  .tag.gold  { color: var(--gold); border-color: rgba(232,170,62,.35); background: rgba(232,170,62,.07); }
-  .tag.teal  { color: var(--teal); border-color: rgba(78,205,196,.35); background: rgba(78,205,196,.07); }
-  .tag.green { color: var(--green); border-color: rgba(86,201,154,.35); background: rgba(86,201,154,.07); }
-  .tag.red   { color: var(--red);  border-color: rgba(224,92,92,.35); background: rgba(224,92,92,.07); }
-  .tag.blue  { color: #7aa4e0; border-color: rgba(122,164,224,.35); background: rgba(122,164,224,.07); }
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
 
-  /* timeline */
-  .timeline { border-left: 2px solid var(--border); padding-left: 24px; }
-  .timeline-item { position: relative; margin-bottom: 22px; }
-  .timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 6px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--gold);
-    border: 2px solid var(--bg);
-    box-shadow: 0 0 0 2px var(--gold-dim);
-  }
-  .timeline-date {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--gold);
-    margin-bottom: 4px;
-  }
-  .timeline-name { font-weight: 600; color: var(--text); margin-bottom: 4px; font-size: 15px; }
-  .timeline-desc { color: var(--text-dim); font-size: 13.5px; line-height: 1.65; }
+    .nav-item.active {
+      background: var(--active);
+      border-left-color: var(--active-border);
+      color: var(--text);
+    }
 
-  /* grid for glossary */
-  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .gloss-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 18px;
-    transition: border-color .2s;
-  }
-  .gloss-card:hover { border-color: var(--border-hi); }
-  .gloss-term {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--teal);
-    margin-bottom: 6px;
-  }
-  .gloss-def { color: var(--text-dim); font-size: 13.5px; line-height: 1.6; }
+    .nav-icon {
+      font-size: 15px;
+      flex-shrink: 0;
+      opacity: .8;
+      width: 20px;
+      text-align: center;
+    }
 
-  /* divider */
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 24px 0;
-  }
+    /* ── CONTENT ── */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 36px 48px 80px;
+      zoom: 1.3;
+    }
 
-  /* search highlight */
-  mark { background: rgba(232,170,62,.3); color: var(--gold); border-radius: 2px; }
+    main::-webkit-scrollbar {
+      width: 6px;
+    }
 
-  /* no-result */
-  #no-results {
-    display: none;
-    text-align: center;
-    padding: 80px 0;
-    color: var(--text-faint);
-  }
-  #no-results .big { font-size: 40px; margin-bottom: 10px; }
+    main::-webkit-scrollbar-thumb {
+      background: var(--border-hi);
+      border-radius: 4px;
+    }
 
-  /* flow diagram (css-only) */
-  .flow {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    flex-wrap: wrap;
-    margin: 16px 0;
-  }
-  .flow-step {
-    background: var(--bg-card);
-    border: 1px solid var(--active-border);
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text);
-    white-space: nowrap;
-  }
-  .flow-arrow {
-    color: var(--gold);
-    font-size: 18px;
-    padding: 0 6px;
-    flex-shrink: 0;
-  }
+    .section {
+      display: none;
+      animation: fadeIn .25s ease;
+    }
 
-  /* table */
-  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 12px 0; }
-  th {
-    background: var(--active);
-    color: var(--text);
-    font-weight: 600;
-    padding: 10px 14px;
-    text-align: left;
-    border: 1px solid var(--border);
-    font-family: 'IBM Plex Sans', sans-serif;
-  }
-  td {
-    padding: 9px 14px;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    vertical-align: top;
-    line-height: 1.6;
-  }
-  tr:hover td { background: rgba(255,255,255,.02); color: var(--text); }
+    .section.active {
+      display: block;
+    }
 
-  @media (max-width: 900px) {
-    nav { width: 220px; }
-    main { padding: 24px 24px 60px; }
-    .glossary-grid { grid-template-columns: 1fr; }
-    .compare { grid-template-columns: 1fr; }
-  }
-</style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h2.section-title {
+      font-family: 'Spectral', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -.01em;
+    }
+
+    .section-subtitle {
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-bottom: 30px;
+      font-weight: 300;
+    }
+
+    .section-subtitle em {
+      color: var(--gold);
+      font-style: normal;
+    }
+
+    /* cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: 18px;
+      transition: border-color .2s;
+    }
+
+    .card:hover {
+      border-color: var(--border-hi);
+    }
+
+    .card-title {
+      font-family: 'Spectral', serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .icon {
+      font-size: 16px;
+    }
+
+    .card p {
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1.75;
+    }
+
+    .card p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* comparison table */
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .compare-col {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .compare-col h4 {
+      font-family: 'Spectral', serif;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .compare-col.left h4 {
+      color: var(--teal);
+    }
+
+    .compare-col.right h4 {
+      color: var(--gold);
+    }
+
+    /* definition */
+    .definition {
+      border-left: 3px solid var(--active-border);
+      background: rgba(74, 120, 192, .07);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 20px;
+      margin: 12px 0;
+    }
+
+    .definition .term {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--teal);
+      margin-bottom: 4px;
+    }
+
+    .definition p {
+      color: var(--text-dim);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    /* callout */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout.gold {
+      background: rgba(232, 170, 62, .08);
+      border: 1px solid rgba(232, 170, 62, .25);
+    }
+
+    .callout.teal {
+      background: rgba(78, 205, 196, .07);
+      border: 1px solid rgba(78, 205, 196, .22);
+    }
+
+    .callout.red {
+      background: rgba(224, 92, 92, .07);
+      border: 1px solid rgba(224, 92, 92, .22);
+    }
+
+    .callout.green {
+      background: rgba(86, 201, 154, .07);
+      border: 1px solid rgba(86, 201, 154, .22);
+    }
+
+    .callout-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .callout p {
+      margin: 0;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .callout strong {
+      color: var(--text);
+    }
+
+    /* step list */
+    .steps {
+      list-style: none;
+    }
+
+    .steps li {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      background: var(--active);
+      border: 1px solid var(--active-border);
+      color: #7aa4e0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .steps li p {
+      margin: 0;
+    }
+
+    .steps li strong {
+      color: var(--text);
+    }
+
+    /* tag pills */
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      border: 1px solid;
+    }
+
+    .tag.gold {
+      color: var(--gold);
+      border-color: rgba(232, 170, 62, .35);
+      background: rgba(232, 170, 62, .07);
+    }
+
+    .tag.teal {
+      color: var(--teal);
+      border-color: rgba(78, 205, 196, .35);
+      background: rgba(78, 205, 196, .07);
+    }
+
+    .tag.green {
+      color: var(--green);
+      border-color: rgba(86, 201, 154, .35);
+      background: rgba(86, 201, 154, .07);
+    }
+
+    .tag.red {
+      color: var(--red);
+      border-color: rgba(224, 92, 92, .35);
+      background: rgba(224, 92, 92, .07);
+    }
+
+    .tag.blue {
+      color: #7aa4e0;
+      border-color: rgba(122, 164, 224, .35);
+      background: rgba(122, 164, 224, .07);
+    }
+
+    /* timeline */
+    .timeline {
+      border-left: 2px solid var(--border);
+      padding-left: 24px;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 22px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -30px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 2px var(--gold-dim);
+    }
+
+    .timeline-date {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+
+    .timeline-name {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+
+    .timeline-desc {
+      color: var(--text-dim);
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    /* grid for glossary */
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .gloss-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      transition: border-color .2s;
+    }
+
+    .gloss-card:hover {
+      border-color: var(--border-hi);
+    }
+
+    .gloss-term {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--teal);
+      margin-bottom: 6px;
+    }
+
+    .gloss-def {
+      color: var(--text-dim);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    /* divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* search highlight */
+    mark {
+      background: rgba(232, 170, 62, .3);
+      color: var(--gold);
+      border-radius: 2px;
+    }
+
+    /* no-result */
+    #no-results {
+      display: none;
+      text-align: center;
+      padding: 80px 0;
+      color: var(--text-faint);
+    }
+
+    #no-results .big {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+
+    /* flow diagram (css-only) */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    .flow-step {
+      background: var(--bg-card);
+      border: 1px solid var(--active-border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .flow-arrow {
+      color: var(--gold);
+      font-size: 18px;
+      padding: 0 6px;
+      flex-shrink: 0;
+    }
+
+    /* table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      margin: 12px 0;
+    }
+
+    th {
+      background: var(--active);
+      color: var(--text);
+      font-weight: 600;
+      padding: 10px 14px;
+      text-align: left;
+      border: 1px solid var(--border);
+      font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    td {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, .02);
+      color: var(--text);
+    }
+
+    @media (max-width: 900px) {
+      nav {
+        width: 220px;
+      }
+
+      main {
+        padding: 24px 24px 60px;
+      }
+
+      .glossary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .compare {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<header>
-  <div class="header-badge">ECE 272C</div>
-  <h1>AI Agents for <span>Semiconductor Industry</span> &mdash; Midterm Study Guide</h1>
-  <div class="header-right">
-    <input type="text" id="search-input" placeholder="&#128269; Search concepts&hellip;" oninput="handleSearch(this.value)">
-    <div class="exam-badge">&#128197; Exam: May 11</div>
-  </div>
-</header>
-
-<div class="layout">
-
-<!-- ── SIDEBAR ── -->
-<nav id="sidebar">
-  <div class="nav-group-label">Foundations</div>
-  <div class="nav-item active" onclick="show('agents')" id="nav-agents">
-    <span class="nav-icon">&#129302;</span>What Is an AI Agent?
-  </div>
-  <div class="nav-item" onclick="show('llm-agent')" id="nav-llm-agent">
-    <span class="nav-icon">&#129504;</span>LLM as Agent
-  </div>
-  <div class="nav-item" onclick="show('context')" id="nav-context">
-    <span class="nav-icon">&#127890;</span>Context Engineering
-  </div>
-  <div class="nav-item" onclick="show('memory')" id="nav-memory">
-    <span class="nav-icon">&#128190;</span>Memory &amp; RAG
-  </div>
-
-  <div class="nav-group-label">Reasoning &amp; Action</div>
-  <div class="nav-item" onclick="show('cot')" id="nav-cot">
-    <span class="nav-icon">&#128173;</span>Chain of Thought
-  </div>
-  <div class="nav-item" onclick="show('agentic-evo')" id="nav-agentic-evo">
-    <span class="nav-icon">&#9881;</span>Agentic AI Evolution
-  </div>
-
-  <div class="nav-group-label">Training</div>
-  <div class="nav-item" onclick="show('training')" id="nav-training">
-    <span class="nav-icon">&#127981;</span>LLM Training Pipeline
-  </div>
-  <div class="nav-item" onclick="show('meta')" id="nav-meta">
-    <span class="nav-icon">&#128200;</span>Meta-Learning &amp; ICL
-  </div>
-
-  <div class="nav-group-label">Generative Models</div>
-  <div class="nav-item" onclick="show('density')" id="nav-density">
-    <span class="nav-icon">&#128202;</span>Density Estimation
-  </div>
-  <div class="nav-item" onclick="show('latent')" id="nav-latent">
-    <span class="nav-icon">&#128307;</span>Latent Variables &amp; VAE
-  </div>
-  <div class="nav-item" onclick="show('gan')" id="nav-gan">
-    <span class="nav-icon">&#9876;</span>GANs
-  </div>
-  <div class="nav-item" onclick="show('emergence')" id="nav-emergence">
-    <span class="nav-icon">&#10024;</span>Emergence &amp; Compression
-  </div>
-
-  <div class="nav-group-label">Reference</div>
-  <div class="nav-item" onclick="show('timeline')" id="nav-timeline">
-    <span class="nav-icon">&#128336;</span>LLM History Timeline
-  </div>
-  <div class="nav-item" onclick="show('glossary')" id="nav-glossary">
-    <span class="nav-icon">&#128214;</span>Key Definitions
-  </div>
-</nav>
-
-<!-- ── MAIN ── -->
-<main id="main-content">
-
-<!-- ═══════════════════════════════ AGENTS ═══════════════════════════════ -->
-<section class="section active" id="section-agents">
-  <h2 class="section-title">What Is an AI Agent?</h2>
-  <p class="section-subtitle">Lectures 00 &amp; 01 &bull; Core concept &mdash; <em>know this cold</em></p>
-
-  <div class="compare">
-    <div class="compare-col left">
-      <h4>&#128172; Chatbot / Instruction-Based</h4>
-      <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-        <li>Human gives <strong style="color:var(--text)">clear instructions</strong></li>
-        <li>AI executes a <strong style="color:var(--text)">single command</strong></li>
-        <li>One-step action, no loop</li>
-        <li>Example: &ldquo;Translate this sentence&rdquo;</li>
-      </ul>
+  <header>
+    <div class="header-badge">ECE 272C</div>
+    <h1>AI Agents for <span>Semiconductor Industry</span> &mdash; Midterm Study Guide</h1>
+    <div class="header-right">
+      <input type="text" id="search-input" placeholder="&#128269; Search concepts&hellip;"
+        oninput="handleSearch(this.value)">
+      <div class="exam-badge">&#128197; Exam: May 11</div>
     </div>
-    <div class="compare-col right">
-      <h4>&#129302; AI Agent / Goal-Based</h4>
-      <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-        <li>Human gives a <strong style="color:var(--text)">goal</strong></li>
-        <li>AI figures out <em>how</em> to achieve it</li>
-        <li><strong style="color:var(--text)">Multi-step reasoning</strong> loop</li>
-        <li>Example: &ldquo;Research X and write a report&rdquo;</li>
-      </ul>
-    </div>
-  </div>
+  </header>
 
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128260;</span>The Perceive &rarr; Think &rarr; Act &rarr; Learn Loop</div>
-    <div class="flow">
-      <div class="flow-step">&#128065; Perceive</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">&#129504; Think &amp; Plan</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">&#128295; Act</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">&#128161; Observe</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">&#128190; Learn</div>
-      <div class="flow-arrow">&#8635;</div>
-    </div>
-    <p><strong>Perceive</strong> &mdash; Gather information about the current state of the environment. What is happening right now?</p>
-    <p><strong>Think &amp; Plan</strong> &mdash; Reason about the situation. Analyze, break the problem into steps, decide on a plan. The LLM is the &ldquo;brain&rdquo; here. Powered by language model reasoning.</p>
-    <p><strong>Act</strong> &mdash; Take an action that changes the environment: call an API, run code, send a response, use a tool.</p>
-    <p><strong>Observe</strong> &mdash; Receive feedback from the environment. This becomes the next observation, feeding back into perceive.</p>
-    <p><strong>Learn</strong> &mdash; Update memory. Improve future decisions. Note: LLMs do not actually update their weights during agent execution&mdash;learning here means updating working memory/context.</p>
-  </div>
+  <div class="layout">
 
-  <div class="card">
-    <div class="card-title"><span class="icon">&#129302;</span>Agent Architecture Components</div>
-    <table>
-      <tr><th>Component</th><th>Role</th></tr>
-      <tr><td><strong>Planner</strong></td><td>Decides what steps are needed to achieve the goal; decomposes complex tasks</td></tr>
-      <tr><td><strong>Tools</strong></td><td>Software the agent can invoke: search engines, Python scripts, APIs, databases</td></tr>
-      <tr><td><strong>Memory</strong></td><td>Short-term (context window), long-term (vector store / RAG), episodic (past trajectories)</td></tr>
-      <tr><td><strong>Inputs</strong></td><td>User prompts, observations from environment, tool results</td></tr>
-      <tr><td><strong>Outputs</strong></td><td>Actions, text responses, tool calls, plans</td></tr>
-    </table>
-  </div>
-
-  <div class="callout gold">
-    <span class="callout-icon">&#128161;</span>
-    <p><strong>Professor&rsquo;s framing:</strong> Building an agent is like <em>building a small organization/company</em>. Every agent is a person (engineer) with a specific function. Divide up the task, ensure proper communication, orchestrate to form an independent entity. Understanding how people work and organizations function is key to good agent design.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128663;</span>Self-Driving Car as the Classic Agent Example</div>
-    <p><strong>Goal:</strong> Get from point A to point B &bull; <strong>Actions:</strong> Steer, brake, accelerate &bull; <strong>Environment:</strong> The road/world &bull; <strong>Observations:</strong> Sensor readings (stationary &amp; moving objects)</p>
-    <p>Components: <strong>Sensing</strong> (perceive raw data) &rarr; <strong>Perception</strong> (interpret data into a world model) &rarr; <strong>Reasoning &amp; Control</strong> (path planning, speed control). The system maintains a <em>world view</em>&mdash;a representation of the environment that enables simulation-based planning.</p>
-    <div class="tags"><span class="tag teal">DARPA Challenge 2004</span><span class="tag gold">Stanford completes 2005</span><span class="tag blue">Velodyne lidar key enabler</span></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ LLM AGENT ═══════════════════════════════ -->
-<section class="section" id="section-llm-agent">
-  <h2 class="section-title">LLM as Agent</h2>
-  <p class="section-subtitle">Lectures 01 &amp; 02 &bull; Why LLMs fit naturally into the agentic framework</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#129300;</span>The Core Insight: Sequence-to-Sequence</div>
-    <p>An LLM is fundamentally a <strong>sequence-to-sequence model</strong>: given an input token sequence, it generates the next token. This maps perfectly to an agent loop:</p>
-    <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin-top:8px">
-      <li><strong style="color:var(--text)">Goal</strong> &rarr; described as text</li>
-      <li><strong style="color:var(--text)">Observation</strong> &rarr; also text</li>
-      <li><strong style="color:var(--text)">Action</strong> &rarr; generated text (which can invoke tools, APIs, code)</li>
-    </ul>
-    <p style="margin-top:10px">As long as something can be described in text, an LLM agent can work with it. This gives LLM agents <em>virtually unlimited capability scope</em> compared to traditional RL agents.</p>
-  </div>
-
-  <div class="compare">
-    <div class="compare-col left">
-      <h4>&#127919; RL Agent</h4>
-      <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-        <li>Highly optimized for its specific task</li>
-        <li>Limited capability scope</li>
-        <li>Requires explicit reward function</li>
-        <li>Cannot explain itself in natural language</li>
-        <li>Example: AlphaGo</li>
-      </ul>
-    </div>
-    <div class="compare-col right">
-      <h4>&#129504; LLM Agent</h4>
-      <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-        <li>Virtually unlimited capability (text-describable)</li>
-        <li>Diverse scenarios without retraining</li>
-        <li>Reasoning limited by &ldquo;token reasoning&rdquo;</li>
-        <li>Can call external tools for things it can&rsquo;t do alone</li>
-        <li>No deep search like chess engines</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#9881;</span>Tool Use in LLM Agents</div>
-    <p>An LLM agent can decide that to complete a planned action it needs to call an external tool. Tools can be:</p>
-    <div class="tags" style="margin-bottom:12px">
-      <span class="tag gold">Python scripts</span>
-      <span class="tag blue">Search engines</span>
-      <span class="tag teal">Database queries</span>
-      <span class="tag green">API calls</span>
-      <span class="tag red">Code executors</span>
-    </div>
-    <p>The agent&rsquo;s tool library itself can be managed with an AI retrieval system &mdash; query a &ldquo;toolbox AI&rdquo; for the top-N most relevant tools for the current task. This is called <strong>RAG-MCP</strong> (retrieval-augmented tool selection).</p>
-  </div>
-
-  <div class="callout teal">
-    <span class="callout-icon">&#128203;</span>
-    <p><strong>LLM as Python programmer:</strong> With RL, an execution error gives reward &minus;1 and retraining is needed. With an LLM agent, you just send it the error log and have it fix the error automatically&mdash;no retraining required. This illustrates the power of natural language as an interface for error handling.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128203;</span>Knowledge Trade-off in Agent Design</div>
-    <p>When designing an agentic system, a key architectural decision is: <strong>how much knowledge to put explicitly into the system vs. leaving to the LLM?</strong></p>
-    <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin-top:8px">
-      <li>More knowledge in the system context &rarr; less reliance on LLM&rsquo;s internal knowledge</li>
-      <li>Less knowledge in context &rarr; agent must rely more on what the LLM learned during training</li>
-    </ul>
-    <p style="margin-top:8px">This trade-off matters especially for domain-specific (e.g., semiconductor) data that the LLM was never trained on.</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ CONTEXT ═══════════════════════════════ -->
-<section class="section" id="section-context">
-  <h2 class="section-title">Context Engineering</h2>
-  <p class="section-subtitle">Lecture 02 &bull; The modern evolution of prompt engineering</p>
-
-  <div class="callout gold">
-    <span class="callout-icon">&#9888;</span>
-    <p><strong>Key Distinction:</strong> <strong>Prompt engineering</strong> is about finding magic words or phrasing that improves LLM output. <strong>Context engineering</strong> is the <em>automatic management and curation</em> of everything in the context window&mdash;selecting, compressing, and organizing information so the LLM receives the right input without being overloaded.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128196;</span>What Goes Into the Context?</div>
-    <table>
-      <tr><th>Component</th><th>Description</th></tr>
-      <tr><td><strong>System Prompt</strong></td><td>Identity, instructions, attitude, rules, formatting, safety constraints. Set by developers. Always the first part of the sequence. Defines behavior for every conversation.</td></tr>
-      <tr><td><strong>User Prompt</strong></td><td>The actual request, including any in-context examples (few-shot)</td></tr>
-      <tr><td><strong>Dialogue History</strong></td><td>Prior turns in the conversation</td></tr>
-      <tr><td><strong>Memory</strong></td><td>Long-term saved facts; retrieved episodic memories</td></tr>
-      <tr><td><strong>Retrieved Info</strong></td><td>Internet search results, database results, documents (via RAG)</td></tr>
-      <tr><td><strong>Tool Results</strong></td><td>Output from tools the agent has called</td></tr>
-      <tr><td><strong>Reasoning</strong></td><td>Chain-of-thought scratchpad; planning steps (often hidden from user)</td></tr>
-    </table>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128289;</span>Three Strategies for Context Engineering</div>
-    <ul class="steps">
-      <li><div class="step-num">1</div><p><strong>Select (RAG)</strong> &mdash; Don&rsquo;t dump everything into context. Use a retrieval system to pick only the most relevant documents, memories, or tools. A small LLM can score relevance sentence-by-sentence before passing to the main agent.</p></li>
-      <li><div class="step-num">2</div><p><strong>Compress</strong> &mdash; Turn long conversation history into a continuously updated summary. Feed an LLM its own context and ask it to summarize; that shorter summary becomes the new history. Lossy: store the full version in a vector DB and retrieve when needed.</p></li>
-      <li><div class="step-num">3</div><p><strong>Multi-Agent Decomposition</strong> &mdash; Divide work among multiple agents, each with a smaller, focused context. A leader agent coordinates; sub-agents execute specific tasks. Minimizes communication complexity and prevents context explosion in any single agent.</p></li>
-    </ul>
-  </div>
-
-  <div class="callout teal">
-    <span class="callout-icon">&#128161;</span>
-    <p><strong>Aptitude vs. Reliability:</strong> <strong>Aptitude</strong> is the best-case ability to solve the task in N runs. <strong>Reliability</strong> is how consistently that performance is achieved across different multi-turn conversations. Reading millions of tokens does not equal understanding millions of tokens. When an LLM makes a wrong assumption early in a long conversation, it often fails to recover.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128172;</span>Agentic Workflow vs. AI Agent</div>
-    <div class="compare">
-      <div class="compare-col left">
-        <h4>Agentic Workflow</h4>
-        <p style="color:var(--text-dim);font-size:14px">Follows a <strong style="color:var(--text)">fixed SOP</strong> (Standard Operating Procedure). Steps are predetermined. Less flexibility; more predictable.</p>
+    <!-- ── SIDEBAR ── -->
+    <nav id="sidebar">
+      <div class="nav-group-label">Foundations</div>
+      <div class="nav-item active" onclick="show('agents')" id="nav-agents">
+        <span class="nav-icon">&#129302;</span>What Is an AI Agent?
       </div>
-      <div class="compare-col right">
-        <h4>AI Agent</h4>
-        <p style="color:var(--text-dim);font-size:14px"><strong style="color:var(--text)">Self-decision-making</strong>. Plans its own steps. Interacts with environment iteratively until it reaches a satisfactory result.</p>
+      <div class="nav-item" onclick="show('llm-agent')" id="nav-llm-agent">
+        <span class="nav-icon">&#129504;</span>LLM as Agent
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ MEMORY ═══════════════════════════════ -->
-<section class="section" id="section-memory">
-  <h2 class="section-title">Memory &amp; RAG</h2>
-  <p class="section-subtitle">Lecture 01 &amp; 02 &bull; How agents manage past experience without overloading context</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128190;</span>The Memory Problem</div>
-    <p>An LLM&rsquo;s context window is finite. Including all past experience is infeasible (and harmful&mdash;performance degrades when context is overloaded). But forgetting everything is also bad. The solution draws an analogy to <strong>HSAM (Highly Superior Autobiographical Memory)</strong>: counterintuitively, <em>forgetting</em> allows normal function. The agent needs selective, relevant recall.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128269;</span>RAG &mdash; Retrieval-Augmented Generation</div>
-    <p>Rather than storing all memory in the context, store observations and experiences in a <strong>vector database</strong>. At query time, embed the current context and retrieve only the most semantically similar past experiences.</p>
-    <div class="flow" style="margin:16px 0">
-      <div class="flow-step">User Input</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">Embed Query</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">Vector Search</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">Retrieved Context</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">LLM + Context</div>
-    </div>
-    <p>RAG is the architectural solution to the &ldquo;digital HSAM&rdquo; problem: give the agent a large memory bank but only surface what&rsquo;s relevant.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128203;</span>Write &rarr; Reflect &rarr; Read</div>
-    <p>Before invoking RAG, the agent should <strong>reflect</strong>: given the current query, what do I actually need from memory? Key reflection questions:</p>
-    <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin:8px 0">
-      <li>Is this goal aligned with past experience?</li>
-      <li>Have I identified a previously-failed pattern?</li>
-      <li>Have I synthesized alternative actions?</li>
-      <li>Should I revise my future plan based on this?</li>
-    </ul>
-    <p>This reflection-before-retrieval step improves the quality of what gets pulled from memory.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#127760;</span>Knowledge Graphs vs. Flat Vectors</div>
-    <p>A flat vector store is good at finding similar items, but misses <strong>relational structure</strong>. A <strong>knowledge graph</strong> captures connections between concepts: retrieving a hotel booking experience should also surface related restaurant booking experiences. Google published a foundational paper on knowledge graphs for search in 2012.</p>
-    <div class="definition">
-      <div class="term">Knowledge Graph</div>
-      <p>A graph-structured representation of entities and their relationships. Enables relational retrieval beyond simple similarity&mdash;following edges to find contextually related information.</p>
-    </div>
-  </div>
-
-  <div class="callout green">
-    <span class="callout-icon">&#128267;</span>
-    <p><strong>ChatGPT Memory types:</strong> <strong>Persistent memory</strong>&mdash;explicitly saved from user request, stored across conversations, used for personalization. <strong>Contextual memory</strong>&mdash;inferred from the current conversation without explicit user instruction.</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ COT ═══════════════════════════════ -->
-<section class="section" id="section-cot">
-  <h2 class="section-title">Chain of Thought &amp; Reasoning</h2>
-  <p class="section-subtitle">Lecture 03 &bull; How prompting unlocks multi-step reasoning</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128173;</span>Chain of Thought (CoT) Prompting</div>
-    <p><strong>Problem:</strong> Standard few-shot prompting (just input/output examples) fails on multi-step reasoning problems. The model guesses rather than reasons.</p>
-    <p><strong>Solution:</strong> Include <em>intermediate reasoning steps</em> in the examples. The model learns to generate its own reasoning chain before producing an answer.</p>
-    <div class="callout gold" style="margin-top:12px">
-      <span class="callout-icon">&#9888;</span>
-      <p><strong>Critical finding:</strong> CoT only yields gains on models with <strong>&sim;100B+ parameters</strong>. Below that threshold, the model lacks sufficient capacity to actually reason; CoT provides no benefit. This is an emergent capability.</p>
-    </div>
-    <p style="margin-top:10px"><strong>Ablation results</strong> confirm it&rsquo;s the semantics that matter, not the length:</p>
-    <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-      <li>Equations only (no words) &rarr; no gain over standard</li>
-      <li>Placeholder tokens matching length &rarr; no gain (length alone doesn&rsquo;t help)</li>
-      <li>CoT placed <em>after</em> the answer &rarr; no gain (must come <em>before</em> the answer to guide reasoning)</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128101;</span>Self-Consistency (SC)</div>
-    <p>Complex reasoning tasks often have multiple valid reasoning paths. Rather than taking a single answer, <strong>sample multiple reasoning paths</strong> (using higher temperature) and take a <strong>majority vote</strong> over the final answers.</p>
-    <p>Why it works: Correct reasoning paths are more likely to reach the correct answer. Incorrect paths tend to scatter across wrong answers. The correct answer emerges as the mode.</p>
-    <div class="callout teal" style="margin-top:12px">
-      <span class="callout-icon">&#128161;</span>
-      <p><strong>Temperature</strong> controls how &ldquo;relaxed&rdquo; the sampling is&mdash;higher temperature = more diversity in reasoning paths. SC requires higher temperature to sample diverse paths, then aggregates them.</p>
-    </div>
-    <p style="margin-top:10px"><strong>Limitations:</strong> SC only works for problems with a single correct answer. For free-form answers, use <strong>Universal Self-Consistency (USC)</strong>: generate multiple responses, concatenate them, ask the LLM itself to identify the most consistent answer.</p>
-    <p><strong>Cost:</strong> SC is expensive (multiple LLM calls), but you can pay more for a better answer.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#127795;</span>ReAct: Reason + Act</div>
-    <p>Interleaves reasoning (<strong>Thought</strong>) with external action (<strong>Act</strong>) and its result (<strong>Observation</strong>):</p>
-    <div class="flow">
-      <div class="flow-step">Thought</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">Action</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">Observation</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">Thought</div>
-      <div class="flow-arrow">&#8635;</div>
-    </div>
-    <p style="margin-top:12px"><strong>Why it beats pure CoT:</strong> CoT is fully internal&mdash;if the model hallucinations a fact, it just reasons incorrectly from that hallucination. ReAct fetches real information via search/tools, grounding reasoning in external reality.</p>
-    <div class="callout red" style="margin-top:12px">
-      <span class="callout-icon">&#9888;</span>
-      <p><strong>Failure mode:</strong> If an action returns no information (non-informative action), the agent has nothing to reason from. Recovery is very difficult&mdash;the model has no new token input to work with.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ AGENTIC EVO ═══════════════════════════════ -->
-<section class="section" id="section-agentic-evo">
-  <h2 class="section-title">Agentic AI Evolution</h2>
-  <p class="section-subtitle">Lecture 03 &bull; From prompting techniques to full agent frameworks</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128295;</span>Toolformer</div>
-    <p><strong>Problem ReAct solved partially:</strong> ReAct searched key phrases but wasn&rsquo;t general. LLMs still struggled with up-to-date factual lookup, precise arithmetic, and date calculations.</p>
-    <p><strong>Toolformer&rsquo;s insight:</strong> Train the model via self-supervision to learn <em>which</em> API to call and <em>when</em> to invoke it. The model proposes API calls during generation; the call is kept only if it improves next-token prediction accuracy. The model learns to use tools as a natural part of generation, not as a special mode.</p>
-    <div class="tags"><span class="tag gold">Self-supervised tool learning</span><span class="tag teal">When to call = key question</span></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128260;</span>Reflexion</div>
-    <p>Based on ReAct. Adds a dedicated <strong>self-reflection step</strong> as verbal reinforcement learning. Four components:</p>
-    <table>
-      <tr><th>Component</th><th>Role</th></tr>
-      <tr><td><strong>Actor</strong></td><td>Generates actions using state observations stored in memory</td></tr>
-      <tr><td><strong>Evaluator</strong></td><td>Assesses the quality of outputs produced by the actor</td></tr>
-      <tr><td><strong>Self-Reflection</strong></td><td>Generates verbal self-reflections on what went wrong/right</td></tr>
-      <tr><td><strong>Memory</strong></td><td>Short-term (recent trial trajectory) + Long-term (accumulated experience)</td></tr>
-    </table>
-    <p style="margin-top:10px">Demonstrates that a sequence-to-sequence LLM can improve its performance gradually through verbal self-critique, without parameter updates. This is <strong>verbal RL</strong>&mdash;reinforcement via language rather than gradient descent.</p>
-    <div class="callout green"><span class="callout-icon">&#128161;</span><p>Reflexion is the starting point where the <strong>agentic concept</strong> as we know it today emerged (2023).</p></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#129504;</span>HuggingGPT (Task Planning with Specialist Models)</div>
-    <p><strong>Problem:</strong> Text-only LLMs can&rsquo;t handle vision, audio, multi-modal tasks. Specialized expert models exist for these but have no unified interface.</p>
-    <p><strong>Solution:</strong> Use the LLM as a <strong>central brain / controller</strong>. Treat every expert model&rsquo;s API as describable in plain language. The LLM:</p>
-    <ul class="steps" style="margin-top:12px">
-      <li><div class="step-num">1</div><p><strong>Task Planning</strong> &mdash; Decompose the task using demonstration-based parsing</p></li>
-      <li><div class="step-num">2</div><p><strong>Model Selection</strong> &mdash; Filter Hugging Face models by task type, rank by download count, select top-K candidates</p></li>
-      <li><div class="step-num">3</div><p><strong>Task Execution</strong> &mdash; Invoke selected models and collect results</p></li>
-      <li><div class="step-num">4</div><p><strong>Response Generation</strong> &mdash; Integrate results into a coherent reply</p></li>
-    </ul>
-    <p style="margin-top:8px">Key idea: <strong>language as a generic interface</strong>. The LLM doesn&rsquo;t need to know every model&rsquo;s internals&mdash;it just needs natural language descriptions of what each model does.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128279;</span>LangChain / LangGraph Mapping</div>
-    <table>
-      <tr><th>Architecture</th><th>Maps To</th></tr>
-      <tr><td>Plan-and-Execute</td><td>CoT-style planner + tool calls</td></tr>
-      <tr><td>ReAct Agent</td><td>Thought &rarr; Action &rarr; Observation loop</td></tr>
-      <tr><td>Multi-Agent &amp; Critique-Revise</td><td>HuggingGPT&rsquo;s controller + specialist agents (mirrors Reflexion)</td></tr>
-      <tr><td>Self-Asked Q&amp;A</td><td>Automatic sub-question generation + retrieval</td></tr>
-    </table>
-    <p style="margin-top:10px">LangChain provides the software infrastructure to connect LLMs with tools, APIs, memory, and other agents. Tool management involves: <strong>creation &rarr; binding &rarr; calling &rarr; execution</strong>.</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ TRAINING ═══════════════════════════════ -->
-<section class="section" id="section-training">
-  <h2 class="section-title">LLM Training Pipeline</h2>
-  <p class="section-subtitle">Lecture 04 &bull; Pre-training &rarr; SFT &rarr; RLHF</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#127981;</span>The Three-Stage Pipeline</div>
-    <div class="flow">
-      <div class="flow-step">Pre-training</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">SFT</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">RLHF</div>
-    </div>
-    <p style="margin-top:14px">Each stage uses the previous stage&rsquo;s parameters as initialization. The professor&rsquo;s analogy: Pre-training = undergrad (study every major), SFT = graduate school (specialize and apply), RLHF = real-world feedback (align with what people actually want).</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128218;</span>Stage 1: Pre-training</div>
-    <p><strong>Task:</strong> Predict the next token (the &ldquo;word chain game&rdquo;). Self-supervised: the training signal is derived from the data itself by masking/removing tokens.</p>
-    <p><strong>Data:</strong> Massive internet text (e.g., FineWeb: 15 trillion tokens, 44TB). Reading at one page per 10 seconds would take ~4,756 years. Models are trained on everything they can possibly scrape.</p>
-    <p><strong>Purpose:</strong> Build a broad world model. The LLM absorbs language patterns, facts, reasoning structures, causal relationships. It doesn&rsquo;t yet know how to answer questions helpfully.</p>
-    <div class="callout gold" style="margin-top:12px">
-      <span class="callout-icon">&#128161;</span>
-      <p><strong>Scale matters:</strong> More data and more parameters generally improve performance, but there is an <em>optimal model size for a given data size</em>. Increasing model capacity without adding data leads to diminishing or negative returns. Data quality also matters significantly&mdash;cleaning internet data substantially improves performance. LLMs can be used to help clean training data (bootstrapping).</p>
-    </div>
-    <p style="margin-top:10px"><strong>Why couldn&rsquo;t early pre-trained LLMs answer questions?</strong> Internet data doesn&rsquo;t teach Q&amp;A. The text &ldquo;The highest mountain in the world is&hellip;&rdquo; doesn&rsquo;t immediately follow in training data. The model has the knowledge but doesn&rsquo;t know how to retrieve/express it as an answer.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#127979;</span>Stage 2: Supervised Fine-Tuning (SFT)</div>
-    <p><strong>Purpose:</strong> Teach the model the reasoning process to find and express knowledge&mdash;<em>not</em> to inject new knowledge. Very small dataset compared to pre-training (tens of thousands of examples).</p>
-    <p><strong>Critical insight:</strong> SFT by itself is ineffective without pre-training. And SFT doesn&rsquo;t work by teaching new facts&mdash;it works by unlocking the <em>structure</em> of knowledge already embedded in the pre-trained model.</p>
-    <div class="callout teal" style="margin-top:12px">
-      <span class="callout-icon">&#128161;</span>
-      <p><strong>Why redundancy in pre-training matters:</strong> If a fact appeared in pre-training in only one form, SFT can&rsquo;t easily surface it. If the same knowledge appeared in many different linguistic forms, the model built a <em>graph</em> of that knowledge&mdash;SFT can then tap into this graph to generalize. Pre-training requires lots of data partly for this reason.</p>
-    </div>
-    <p style="margin-top:10px"><strong>What data works best for alignment?</strong></p>
-    <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-      <li>Questions where the model <em>might</em> know the answer (not too easy, not unknown)</li>
-      <li>Diverse tasks, moderately difficult</li>
-      <li>Long examples (short examples lack sufficient information)</li>
-      <li>Non-redundant (representative, not repeated)</li>
-      <li>Inconsistent examples actually <em>hurt</em> performance</li>
-    </ul>
-    <div class="callout gold" style="margin-top:10px"><span class="callout-icon">&#9888;</span><p><strong>Key principle:</strong> Alignment is a data curation problem, not just a training problem.</p></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#127919;</span>Stage 3: RLHF &mdash; Reinforcement Learning with Human Feedback</div>
-    <p>Unlike Stages 1 &amp; 2 where loss is calculated per-token, RLHF calculates a <strong>reward for the entire answer</strong>. Human raters compare model outputs; their preferences train a <strong>reward model</strong>.</p>
-    <p>The main LLM is then fine-tuned using <strong>PPO (Proximal Policy Optimization)</strong>&mdash;a policy gradient algorithm&mdash;to maximize the reward model&rsquo;s score.</p>
-    <p><strong>RLAIF:</strong> Instead of human raters, use another AI model as the reward judge. Cheaper and scalable, but introduces alignment concerns about the judge model.</p>
-    <p><strong>Why RL?</strong> We want to optimize for the whole response, not just each token. Correctness is often only determinable at the end of a response (like Go, where the outcome is known only at game end).</p>
-    <div class="definition" style="margin-top:12px">
-      <div class="term">PPO (Proximal Policy Optimization)</div>
-      <p>A policy gradient RL algorithm that updates model parameters to maximize expected reward while keeping the updated policy close (proximal) to the original policy&mdash;preventing catastrophic forgetting or destabilization.</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128203;</span>Do LLMs Use Logic or Probability?</div>
-    <p>Evidence suggests LLMs primarily follow <strong>probability</strong>, not pure logical reasoning. Example: GPT answers Rot13 cipher correctly (widely used in training data) but fails on Rot8 (rarely seen). If it were truly reasoning logically, both should be equally solvable. The model is pattern-matching from training distribution, not computing.</p>
-    <div class="callout red" style="margin-top:10px"><span class="callout-icon">&#9888;</span><p>This has profound implications for reliability: LLMs can make errors on tasks that are logically identical to tasks they can solve, simply because the surface form looks different.</p></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ META ═══════════════════════════════ -->
-<section class="section" id="section-meta">
-  <h2 class="section-title">Meta-Learning &amp; In-Context Learning</h2>
-  <p class="section-subtitle">Lecture 04 &bull; Learning to learn; learning without gradient updates</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128200;</span>What Is Meta-Learning?</div>
-    <p><strong>Regular learning:</strong> Given a dataset, train a model to perform a specific task. Architecture, initialization, and update rules are all defined by humans.</p>
-    <p><strong>Meta-learning:</strong> Train a model not just on data, but on a <em>family of tasks</em>, so it learns <strong>how to learn</strong>&mdash;the underlying strategy for rapidly adapting to new tasks. The loss function is the sum of losses across many tasks.</p>
-    <div class="definition">
-      <div class="term">Meta-Learning (Learning to Learn)</div>
-      <p>Training a model across a distribution of tasks so it develops general learning strategies. At inference time, the model can rapidly adapt to a new task from just a few examples, without retraining.</p>
-    </div>
-    <p style="margin-top:10px">This is the conceptual precursor to in-context learning. Meta-learning developed before 2020; in-context learning emerged as its realization at scale in LLMs.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128203;</span>Siamese Networks (Support &amp; Query)</div>
-    <p>A key meta-learning architecture. Uses a CNN to map inputs (images) to an embedding space. A <strong>support set</strong> (training examples) and a <strong>query</strong> (test input) are both embedded; the model checks whether their embeddings are similar.</p>
-    <p>In the embedding/code space, similarity = same class. This is related to BERT: encode inputs into abstract representations, then reason about similarity in that space. This maps to RAG: embed queries and memories, retrieve similar ones.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128173;</span>In-Context Learning (ICL)</div>
-    <p>The modern realization of meta-learning in LLMs. Provide examples directly in the prompt; the model adapts to the task without any parameter updates.</p>
-    <div class="compare">
-      <div class="compare-col left">
-        <h4>Fine-Tuning (Old Way)</h4>
-        <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-          <li>Requires labeled dataset</li>
-          <li>Updates model weights</li>
-          <li>Time-consuming</li>
-          <li>Risk of overfitting</li>
-        </ul>
+      <div class="nav-item" onclick="show('context')" id="nav-context">
+        <span class="nav-icon">&#127890;</span>Context Engineering
       </div>
-      <div class="compare-col right">
-        <h4>In-Context Learning (ICL)</h4>
-        <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-          <li>Examples in prompt only</li>
-          <li>No weight updates</li>
-          <li>Instant adaptation</li>
-          <li>Limited by context size</li>
-        </ul>
+      <div class="nav-item" onclick="show('memory')" id="nav-memory">
+        <span class="nav-icon">&#128190;</span>Memory &amp; RAG
       </div>
-    </div>
-    <div class="callout teal" style="margin-top:12px">
-      <span class="callout-icon">&#128161;</span>
-      <p><strong>Scale matters for ICL too:</strong> In-context learning abilities improve dramatically with model scale. A small model cannot leverage demonstrations effectively; a large model can generalize from very few examples.</p>
-    </div>
-  </div>
-</section>
 
-<!-- ═══════════════════════════════ DENSITY ═══════════════════════════════ -->
-<section class="section" id="section-density">
-  <h2 class="section-title">Density Estimation</h2>
-  <p class="section-subtitle">Lecture 05 &bull; The mathematical foundation behind generative models</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128202;</span>The Core Problem</div>
-    <p>Given a set of observed data samples, estimate the probability distribution p(x) that generated them. Or better: estimate the <em>generator</em> that produces that distribution.</p>
-    <div class="definition">
-      <div class="term">Density Estimation</div>
-      <p>The task of estimating the underlying probability distribution of observed data. Enables generating new samples, detecting anomalies, and understanding data structure.</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#127895;</span>Parzen Windows (Non-Parametric)</div>
-    <p>Treat every data point as the center of a small Gaussian distribution. Sum all Gaussians; normalize. Points clustered together produce high density; spread points produce lower density. Works in multiple dimensions.</p>
-    <p><strong>Critical limitation:</strong> This is <em>modeling</em>, not <em>learning</em>. It can only describe data it has seen. It cannot extrapolate to unseen regions of the input space. True learning requires generalization&mdash;the ability to assign probabilities to points never seen in training.</p>
-    <div class="callout red" style="margin-top:10px">
-      <span class="callout-icon">&#9888;</span>
-      <p><strong>Professor&rsquo;s distinction:</strong> <em>Modeling</em> = creating a description of seen data. <em>Learning</em> = generalizing to unseen data. Don&rsquo;t confuse them. Applying a Gaussian assumption and computing sample mean/variance is modeling&mdash;it assumes normality without checking.</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128200;</span>Maximum Likelihood Estimation (MLE)</div>
-    <p>Assume p(x) = f&theta;(x) parameterized by &theta;. Find the &theta; that maximizes the probability of observing the training data. Because the joint probability of all samples is tiny, we maximize the <strong>log-likelihood</strong> instead (log converts products to sums).</p>
-    <p>Example: Assuming Gaussian distribution, MLE gives us the sample mean and sample variance. <em>But</em> this bakes in the Gaussian assumption&mdash;you must first verify the distribution looks Gaussian.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128307;</span>Latent Variables: Learning the Generator</div>
-    <p>Instead of directly modeling p(x), model the <em>mechanism that generates</em> p(x). Introduce latent variables z (unobserved causes) that drive the data generator.</p>
-    <div class="definition">
-      <div class="term">Gaussian Mixture Model (GMM)</div>
-      <p>A generative model where: (1) sample a component m from a multinomial distribution, (2) sample x from a Gaussian conditioned on m. The observed data is a mixture of multiple Gaussian sources. p(x) = &Sigma; P(m) P(x|m). More Gaussian components = greater modeling capacity.</p>
-    </div>
-    <p style="margin-top:10px">Moving from flat density estimation to latent variable models is the key step toward deep generative models (VAE, GAN, diffusion, LLMs).</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ LATENT ═══════════════════════════════ -->
-<section class="section" id="section-latent">
-  <h2 class="section-title">Latent Variables &amp; VAE</h2>
-  <p class="section-subtitle">Lecture 05 &bull; Variational inference and the evidence lower bound</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128307;</span>Variational Inference</div>
-    <p>To infer latent z from observed x, we want p(z|x). This is intractable to compute directly. <strong>Variational inference</strong> finds an approximation q(z) from a tractable family of distributions by minimizing the <strong>KL divergence</strong> between q(z) and p(z|x).</p>
-    <div class="definition">
-      <div class="term">KL Divergence (Relative Entropy)</div>
-      <p>A measure of how different two probability distributions are. KL(q||p) = 0 when q = p. Asymmetric: KL(q||p) &ne; KL(p||q). Used to measure how well an approximating distribution q matches the true distribution p.</p>
-    </div>
-    <p style="margin-top:10px">This converts a <em>function calculation problem</em> (find p(z|x)) into an <em>optimization problem</em> (minimize KL divergence over a parameterized family). That makes it tractable for neural networks.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128200;</span>Evidence Lower Bound (ELBO)</div>
-    <p>We want to maximize log p(x) (the probability of our data). This decomposes as:</p>
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--teal);background:var(--bg);padding:10px 14px;border-radius:6px;margin:10px 0">
-      log p(x) = ELBO(q) + KL(q(z) || p(z|x))
-    </p>
-    <p>Since KL &ge; 0, ELBO &le; log p(x)&mdash;it&rsquo;s a lower bound. Maximizing ELBO simultaneously: (1) makes the generated data more likely, and (2) makes q(z) closer to the true posterior p(z|x). We can maximize ELBO without computing the intractable p(z|x) directly.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128260;</span>Variational Autoencoder (VAE)</div>
-    <p><strong>Variational Principle</strong> &rarr; <strong>Variational Method</strong> &rarr; <strong>Variational Inference</strong> &rarr; <strong>VAE (amortized with NN)</strong></p>
-    <p>A VAE uses neural networks to implement variational inference at scale:</p>
-    <ul class="steps" style="margin-top:12px">
-      <li><div class="step-num">1</div><p><strong>Encoder:</strong> q(z|x) &mdash; Maps input x to parameters &mu;(x), &Sigma;(x) of a Gaussian in latent space</p></li>
-      <li><div class="step-num">2</div><p><strong>Sampling:</strong> Sample z from N(&mu;, &Sigma;). Reparameterization trick: z = &mu; + &Sigma;&middot;&epsilon; where &epsilon; ~ N(0,1). Enables backprop through the sampling step.</p></li>
-      <li><div class="step-num">3</div><p><strong>Decoder:</strong> p(x|z) &mdash; Reconstructs x from sampled z. The actual learning happens here.</p></li>
-    </ul>
-    <p style="margin-top:10px">ELBO for VAE = reconstruction accuracy (decoder loss) &minus; KL(q(z|x) || p(z)). Simultaneously optimize reconstruction quality and keep the latent distribution close to a Gaussian prior.</p>
-    <div class="callout teal" style="margin-top:12px">
-      <span class="callout-icon">&#128161;</span>
-      <p><strong>Key difference from plain autoencoder:</strong> A regular AE compresses to a specific code. A VAE compresses to a <em>distribution</em> over codes, then samples from it&mdash;enabling generation of new samples by sampling from the prior.</p>
-    </div>
-    <p style="margin-top:10px"><strong>Reparameterization trick:</strong> Sampling is non-differentiable. Rewrite z = &mu;(x) + &Sigma;(x) &middot; &epsilon; (&epsilon; is a fixed noise input). Now gradients can flow through &mu; and &Sigma; during backprop.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#127760;</span>Connection to LLM Training</div>
-    <p>The professor draws a deep analogy: LLM training can be understood as <strong>variational inference over a latent world state</strong>.</p>
-    <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin:8px 0">
-      <li>The latent variable z = the &ldquo;world state&rdquo; underlying the language (never explicitly modeled)</li>
-      <li>The Transformer is forced to infer this latent state internally</li>
-      <li>The world model is stored in the <strong>parameters &theta;</strong> (the decoder/transformation), not in z</li>
-      <li>Randomness (z) is just a seed; knowledge is in the transformation</li>
-    </ul>
-    <div class="callout gold" style="margin-top:10px"><span class="callout-icon">&#128161;</span><p><strong>In VAE, learning happens in the decoder.</strong> Starting from maximum entropy (pure randomness), the VAE learns how to generate from nothing. If you can generate from pure randomness, you have learned the world. Knowledge is stored in the transformation, not the input.</p></div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ GAN ═══════════════════════════════ -->
-<section class="section" id="section-gan">
-  <h2 class="section-title">Generative Adversarial Networks (GANs)</h2>
-  <p class="section-subtitle">Lecture 05 &bull; Adversarial training for generation</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#9876;</span>The Core Idea</div>
-    <p>Two networks compete: a <strong>Generator</strong> and a <strong>Discriminator</strong>.</p>
-    <div class="compare">
-      <div class="compare-col left">
-        <h4>Generator</h4>
-        <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-          <li>Input: random latent vector z</li>
-          <li>Output: synthetic image/data</li>
-          <li>Goal: fool the discriminator</li>
-          <li>Architecture: transposed CNN</li>
-          <li>More complex; trains longer</li>
-        </ul>
+      <div class="nav-group-label">Reasoning &amp; Action</div>
+      <div class="nav-item" onclick="show('cot')" id="nav-cot">
+        <span class="nav-icon">&#128173;</span>Chain of Thought
       </div>
-      <div class="compare-col right">
-        <h4>Discriminator</h4>
-        <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
-          <li>Input: real or generated sample</li>
-          <li>Output: real or fake label</li>
-          <li>Goal: correctly classify samples</li>
-          <li>Architecture: CNN with sigmoid</li>
-          <li>Simpler; trained fewer epochs</li>
-        </ul>
+      <div class="nav-item" onclick="show('agentic-evo')" id="nav-agentic-evo">
+        <span class="nav-icon">&#9881;</span>Agentic AI Evolution
       </div>
-    </div>
+
+      <div class="nav-group-label">Training</div>
+      <div class="nav-item" onclick="show('training')" id="nav-training">
+        <span class="nav-icon">&#127981;</span>LLM Training Pipeline
+      </div>
+      <div class="nav-item" onclick="show('meta')" id="nav-meta">
+        <span class="nav-icon">&#128200;</span>Meta-Learning &amp; ICL
+      </div>
+
+      <div class="nav-group-label">Generative Models</div>
+      <div class="nav-item" onclick="show('density')" id="nav-density">
+        <span class="nav-icon">&#128202;</span>Density Estimation
+      </div>
+      <div class="nav-item" onclick="show('latent')" id="nav-latent">
+        <span class="nav-icon">&#128307;</span>Latent Variables &amp; VAE
+      </div>
+      <div class="nav-item" onclick="show('gan')" id="nav-gan">
+        <span class="nav-icon">&#9876;</span>GANs
+      </div>
+      <div class="nav-item" onclick="show('emergence')" id="nav-emergence">
+        <span class="nav-icon">&#10024;</span>Emergence &amp; Compression
+      </div>
+
+      <div class="nav-group-label">Reference</div>
+      <div class="nav-item" onclick="show('timeline')" id="nav-timeline">
+        <span class="nav-icon">&#128336;</span>LLM History Timeline
+      </div>
+      <div class="nav-item" onclick="show('glossary')" id="nav-glossary">
+        <span class="nav-icon">&#128214;</span>Key Definitions
+      </div>
+    </nav>
+
+    <!-- ── MAIN ── -->
+    <main id="main-content">
+
+      <!-- ═══════════════════════════════ AGENTS ═══════════════════════════════ -->
+      <section class="section active" id="section-agents">
+        <h2 class="section-title">What Is an AI Agent?</h2>
+        <p class="section-subtitle">Lectures 00 &amp; 01 &bull; Core concept &mdash; <em>know this cold</em></p>
+
+        <div class="compare">
+          <div class="compare-col left">
+            <h4>&#128172; Chatbot / Instruction-Based</h4>
+            <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+              <li>Human gives <strong style="color:var(--text)">clear instructions</strong></li>
+              <li>AI executes a <strong style="color:var(--text)">single command</strong></li>
+              <li>One-step action, no loop</li>
+              <li>Example: &ldquo;Translate this sentence&rdquo;</li>
+            </ul>
+          </div>
+          <div class="compare-col right">
+            <h4>&#129302; AI Agent / Goal-Based</h4>
+            <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+              <li>Human gives a <strong style="color:var(--text)">goal</strong></li>
+              <li>AI figures out <em>how</em> to achieve it</li>
+              <li><strong style="color:var(--text)">Multi-step reasoning</strong> loop</li>
+              <li>Example: &ldquo;Research X and write a report&rdquo;</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128260;</span>The Perceive &rarr; Think &rarr; Act &rarr; Learn
+            Loop</div>
+          <div class="flow">
+            <div class="flow-step">&#128065; Perceive</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">&#129504; Think &amp; Plan</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">&#128295; Act</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">&#128161; Observe</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">&#128190; Learn</div>
+            <div class="flow-arrow">&#8635;</div>
+          </div>
+          <p><strong>Perceive</strong> &mdash; Gather information about the current state of the environment. What is
+            happening right now?</p>
+          <p><strong>Think &amp; Plan</strong> &mdash; Reason about the situation. Analyze, break the problem into
+            steps, decide on a plan. The LLM is the &ldquo;brain&rdquo; here. Powered by language model reasoning.</p>
+          <p><strong>Act</strong> &mdash; Take an action that changes the environment: call an API, run code, send a
+            response, use a tool.</p>
+          <p><strong>Observe</strong> &mdash; Receive feedback from the environment. This becomes the next observation,
+            feeding back into perceive.</p>
+          <p><strong>Learn</strong> &mdash; Update memory. Improve future decisions. Note: LLMs do not actually update
+            their weights during agent execution&mdash;learning here means updating working memory/context.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#129302;</span>Agent Architecture Components</div>
+          <table>
+            <tr>
+              <th>Component</th>
+              <th>Role</th>
+            </tr>
+            <tr>
+              <td><strong>Planner</strong></td>
+              <td>Decides what steps are needed to achieve the goal; decomposes complex tasks</td>
+            </tr>
+            <tr>
+              <td><strong>Tools</strong></td>
+              <td>Software the agent can invoke: search engines, Python scripts, APIs, databases</td>
+            </tr>
+            <tr>
+              <td><strong>Memory</strong></td>
+              <td>Short-term (context window), long-term (vector store / RAG), episodic (past trajectories)</td>
+            </tr>
+            <tr>
+              <td><strong>Inputs</strong></td>
+              <td>User prompts, observations from environment, tool results</td>
+            </tr>
+            <tr>
+              <td><strong>Outputs</strong></td>
+              <td>Actions, text responses, tool calls, plans</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="callout gold">
+          <span class="callout-icon">&#128161;</span>
+          <p><strong>Professor&rsquo;s framing:</strong> Building an agent is like <em>building a small
+              organization/company</em>. Every agent is a person (engineer) with a specific function. Divide up the
+            task, ensure proper communication, orchestrate to form an independent entity. Understanding how people work
+            and organizations function is key to good agent design.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128663;</span>Self-Driving Car as the Classic Agent Example</div>
+          <p><strong>Goal:</strong> Get from point A to point B &bull; <strong>Actions:</strong> Steer, brake,
+            accelerate &bull; <strong>Environment:</strong> The road/world &bull; <strong>Observations:</strong> Sensor
+            readings (stationary &amp; moving objects)</p>
+          <p>Components: <strong>Sensing</strong> (perceive raw data) &rarr; <strong>Perception</strong> (interpret data
+            into a world model) &rarr; <strong>Reasoning &amp; Control</strong> (path planning, speed control). The
+            system maintains a <em>world view</em>&mdash;a representation of the environment that enables
+            simulation-based planning.</p>
+          <div class="tags"><span class="tag teal">DARPA Challenge 2004</span><span class="tag gold">Stanford completes
+              2005</span><span class="tag blue">Velodyne lidar key enabler</span></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ LLM AGENT ═══════════════════════════════ -->
+      <section class="section" id="section-llm-agent">
+        <h2 class="section-title">LLM as Agent</h2>
+        <p class="section-subtitle">Lectures 01 &amp; 02 &bull; Why LLMs fit naturally into the agentic framework</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#129300;</span>The Core Insight: Sequence-to-Sequence</div>
+          <p>An LLM is fundamentally a <strong>sequence-to-sequence model</strong>: given an input token sequence, it
+            generates the next token. This maps perfectly to an agent loop:</p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin-top:8px">
+            <li><strong style="color:var(--text)">Goal</strong> &rarr; described as text</li>
+            <li><strong style="color:var(--text)">Observation</strong> &rarr; also text</li>
+            <li><strong style="color:var(--text)">Action</strong> &rarr; generated text (which can invoke tools, APIs,
+              code)</li>
+          </ul>
+          <p style="margin-top:10px">As long as something can be described in text, an LLM agent can work with it. This
+            gives LLM agents <em>virtually unlimited capability scope</em> compared to traditional RL agents.</p>
+        </div>
+
+        <div class="compare">
+          <div class="compare-col left">
+            <h4>&#127919; RL Agent</h4>
+            <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+              <li>Highly optimized for its specific task</li>
+              <li>Limited capability scope</li>
+              <li>Requires explicit reward function</li>
+              <li>Cannot explain itself in natural language</li>
+              <li>Example: AlphaGo</li>
+            </ul>
+          </div>
+          <div class="compare-col right">
+            <h4>&#129504; LLM Agent</h4>
+            <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+              <li>Virtually unlimited capability (text-describable)</li>
+              <li>Diverse scenarios without retraining</li>
+              <li>Reasoning limited by &ldquo;token reasoning&rdquo;</li>
+              <li>Can call external tools for things it can&rsquo;t do alone</li>
+              <li>No deep search like chess engines</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#9881;</span>Tool Use in LLM Agents</div>
+          <p>An LLM agent can decide that to complete a planned action it needs to call an external tool. Tools can be:
+          </p>
+          <div class="tags" style="margin-bottom:12px">
+            <span class="tag gold">Python scripts</span>
+            <span class="tag blue">Search engines</span>
+            <span class="tag teal">Database queries</span>
+            <span class="tag green">API calls</span>
+            <span class="tag red">Code executors</span>
+          </div>
+          <p>The agent&rsquo;s tool library itself can be managed with an AI retrieval system &mdash; query a
+            &ldquo;toolbox AI&rdquo; for the top-N most relevant tools for the current task. This is called
+            <strong>RAG-MCP</strong> (retrieval-augmented tool selection).</p>
+        </div>
+
+        <div class="callout teal">
+          <span class="callout-icon">&#128203;</span>
+          <p><strong>LLM as Python programmer:</strong> With RL, an execution error gives reward &minus;1 and retraining
+            is needed. With an LLM agent, you just send it the error log and have it fix the error
+            automatically&mdash;no retraining required. This illustrates the power of natural language as an interface
+            for error handling.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128203;</span>Knowledge Trade-off in Agent Design</div>
+          <p>When designing an agentic system, a key architectural decision is: <strong>how much knowledge to put
+              explicitly into the system vs. leaving to the LLM?</strong></p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin-top:8px">
+            <li>More knowledge in the system context &rarr; less reliance on LLM&rsquo;s internal knowledge</li>
+            <li>Less knowledge in context &rarr; agent must rely more on what the LLM learned during training</li>
+          </ul>
+          <p style="margin-top:8px">This trade-off matters especially for domain-specific (e.g., semiconductor) data
+            that the LLM was never trained on.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ CONTEXT ═══════════════════════════════ -->
+      <section class="section" id="section-context">
+        <h2 class="section-title">Context Engineering</h2>
+        <p class="section-subtitle">Lecture 02 &bull; The modern evolution of prompt engineering</p>
+
+        <div class="callout gold">
+          <span class="callout-icon">&#9888;</span>
+          <p><strong>Key Distinction:</strong> <strong>Prompt engineering</strong> is about finding magic words or
+            phrasing that improves LLM output. <strong>Context engineering</strong> is the <em>automatic management and
+              curation</em> of everything in the context window&mdash;selecting, compressing, and organizing information
+            so the LLM receives the right input without being overloaded.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128196;</span>What Goes Into the Context?</div>
+          <table>
+            <tr>
+              <th>Component</th>
+              <th>Description</th>
+            </tr>
+            <tr>
+              <td><strong>System Prompt</strong></td>
+              <td>Identity, instructions, attitude, rules, formatting, safety constraints. Set by developers. Always the
+                first part of the sequence. Defines behavior for every conversation.</td>
+            </tr>
+            <tr>
+              <td><strong>User Prompt</strong></td>
+              <td>The actual request, including any in-context examples (few-shot)</td>
+            </tr>
+            <tr>
+              <td><strong>Dialogue History</strong></td>
+              <td>Prior turns in the conversation</td>
+            </tr>
+            <tr>
+              <td><strong>Memory</strong></td>
+              <td>Long-term saved facts; retrieved episodic memories</td>
+            </tr>
+            <tr>
+              <td><strong>Retrieved Info</strong></td>
+              <td>Internet search results, database results, documents (via RAG)</td>
+            </tr>
+            <tr>
+              <td><strong>Tool Results</strong></td>
+              <td>Output from tools the agent has called</td>
+            </tr>
+            <tr>
+              <td><strong>Reasoning</strong></td>
+              <td>Chain-of-thought scratchpad; planning steps (often hidden from user)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128289;</span>Three Strategies for Context Engineering</div>
+          <ul class="steps">
+            <li>
+              <div class="step-num">1</div>
+              <p><strong>Select (RAG)</strong> &mdash; Don&rsquo;t dump everything into context. Use a retrieval system
+                to pick only the most relevant documents, memories, or tools. A small LLM can score relevance
+                sentence-by-sentence before passing to the main agent.</p>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <p><strong>Compress</strong> &mdash; Turn long conversation history into a continuously updated summary.
+                Feed an LLM its own context and ask it to summarize; that shorter summary becomes the new history.
+                Lossy: store the full version in a vector DB and retrieve when needed.</p>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <p><strong>Multi-Agent Decomposition</strong> &mdash; Divide work among multiple agents, each with a
+                smaller, focused context. A leader agent coordinates; sub-agents execute specific tasks. Minimizes
+                communication complexity and prevents context explosion in any single agent.</p>
+            </li>
+          </ul>
+        </div>
+
+        <div class="callout teal">
+          <span class="callout-icon">&#128161;</span>
+          <p><strong>Aptitude vs. Reliability:</strong> <strong>Aptitude</strong> is the best-case ability to solve the
+            task in N runs. <strong>Reliability</strong> is how consistently that performance is achieved across
+            different multi-turn conversations. Reading millions of tokens does not equal understanding millions of
+            tokens. When an LLM makes a wrong assumption early in a long conversation, it often fails to recover.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128172;</span>Agentic Workflow vs. AI Agent</div>
+          <div class="compare">
+            <div class="compare-col left">
+              <h4>Agentic Workflow</h4>
+              <p style="color:var(--text-dim);font-size:14px">Follows a <strong style="color:var(--text)">fixed
+                  SOP</strong> (Standard Operating Procedure). Steps are predetermined. Less flexibility; more
+                predictable.</p>
+            </div>
+            <div class="compare-col right">
+              <h4>AI Agent</h4>
+              <p style="color:var(--text-dim);font-size:14px"><strong
+                  style="color:var(--text)">Self-decision-making</strong>. Plans its own steps. Interacts with
+                environment iteratively until it reaches a satisfactory result.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ MEMORY ═══════════════════════════════ -->
+      <section class="section" id="section-memory">
+        <h2 class="section-title">Memory &amp; RAG</h2>
+        <p class="section-subtitle">Lecture 01 &amp; 02 &bull; How agents manage past experience without overloading
+          context</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128190;</span>The Memory Problem</div>
+          <p>An LLM&rsquo;s context window is finite. Including all past experience is infeasible (and
+            harmful&mdash;performance degrades when context is overloaded). But forgetting everything is also bad. The
+            solution draws an analogy to <strong>HSAM (Highly Superior Autobiographical Memory)</strong>:
+            counterintuitively, <em>forgetting</em> allows normal function. The agent needs selective, relevant recall.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128269;</span>RAG &mdash; Retrieval-Augmented Generation</div>
+          <p>Rather than storing all memory in the context, store observations and experiences in a <strong>vector
+              database</strong>. At query time, embed the current context and retrieve only the most semantically
+            similar past experiences.</p>
+          <div class="flow" style="margin:16px 0">
+            <div class="flow-step">User Input</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Embed Query</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Vector Search</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Retrieved Context</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">LLM + Context</div>
+          </div>
+          <p>RAG is the architectural solution to the &ldquo;digital HSAM&rdquo; problem: give the agent a large memory
+            bank but only surface what&rsquo;s relevant.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128203;</span>Write &rarr; Reflect &rarr; Read</div>
+          <p>Before invoking RAG, the agent should <strong>reflect</strong>: given the current query, what do I actually
+            need from memory? Key reflection questions:</p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin:8px 0">
+            <li>Is this goal aligned with past experience?</li>
+            <li>Have I identified a previously-failed pattern?</li>
+            <li>Have I synthesized alternative actions?</li>
+            <li>Should I revise my future plan based on this?</li>
+          </ul>
+          <p>This reflection-before-retrieval step improves the quality of what gets pulled from memory.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127760;</span>Knowledge Graphs vs. Flat Vectors</div>
+          <p>A flat vector store is good at finding similar items, but misses <strong>relational structure</strong>. A
+            <strong>knowledge graph</strong> captures connections between concepts: retrieving a hotel booking
+            experience should also surface related restaurant booking experiences. Google published a foundational paper
+            on knowledge graphs for search in 2012.</p>
+          <div class="definition">
+            <div class="term">Knowledge Graph</div>
+            <p>A graph-structured representation of entities and their relationships. Enables relational retrieval
+              beyond simple similarity&mdash;following edges to find contextually related information.</p>
+          </div>
+        </div>
+
+        <div class="callout green">
+          <span class="callout-icon">&#128267;</span>
+          <p><strong>ChatGPT Memory types:</strong> <strong>Persistent memory</strong>&mdash;explicitly saved from user
+            request, stored across conversations, used for personalization. <strong>Contextual
+              memory</strong>&mdash;inferred from the current conversation without explicit user instruction.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ COT ═══════════════════════════════ -->
+      <section class="section" id="section-cot">
+        <h2 class="section-title">Chain of Thought &amp; Reasoning</h2>
+        <p class="section-subtitle">Lecture 03 &bull; How prompting unlocks multi-step reasoning</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128173;</span>Chain of Thought (CoT) Prompting</div>
+          <p><strong>Problem:</strong> Standard few-shot prompting (just input/output examples) fails on multi-step
+            reasoning problems. The model guesses rather than reasons.</p>
+          <p><strong>Solution:</strong> Include <em>intermediate reasoning steps</em> in the examples. The model learns
+            to generate its own reasoning chain before producing an answer.</p>
+          <div class="callout gold" style="margin-top:12px">
+            <span class="callout-icon">&#9888;</span>
+            <p><strong>Critical finding:</strong> CoT only yields gains on models with <strong>&sim;100B+
+                parameters</strong>. Below that threshold, the model lacks sufficient capacity to actually reason; CoT
+              provides no benefit. This is an emergent capability.</p>
+          </div>
+          <p style="margin-top:10px"><strong>Ablation results</strong> confirm it&rsquo;s the semantics that matter, not
+            the length:</p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+            <li>Equations only (no words) &rarr; no gain over standard</li>
+            <li>Placeholder tokens matching length &rarr; no gain (length alone doesn&rsquo;t help)</li>
+            <li>CoT placed <em>after</em> the answer &rarr; no gain (must come <em>before</em> the answer to guide
+              reasoning)</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128101;</span>Self-Consistency (SC)</div>
+          <p>Complex reasoning tasks often have multiple valid reasoning paths. Rather than taking a single answer,
+            <strong>sample multiple reasoning paths</strong> (using higher temperature) and take a <strong>majority
+              vote</strong> over the final answers.</p>
+          <p>Why it works: Correct reasoning paths are more likely to reach the correct answer. Incorrect paths tend to
+            scatter across wrong answers. The correct answer emerges as the mode.</p>
+          <div class="callout teal" style="margin-top:12px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Temperature</strong> controls how &ldquo;relaxed&rdquo; the sampling is&mdash;higher temperature
+              = more diversity in reasoning paths. SC requires higher temperature to sample diverse paths, then
+              aggregates them.</p>
+          </div>
+          <p style="margin-top:10px"><strong>Limitations:</strong> SC only works for problems with a single correct
+            answer. For free-form answers, use <strong>Universal Self-Consistency (USC)</strong>: generate multiple
+            responses, concatenate them, ask the LLM itself to identify the most consistent answer.</p>
+          <p><strong>Cost:</strong> SC is expensive (multiple LLM calls), but you can pay more for a better answer.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127795;</span>ReAct: Reason + Act</div>
+          <p>Interleaves reasoning (<strong>Thought</strong>) with external action (<strong>Act</strong>) and its result
+            (<strong>Observation</strong>):</p>
+          <div class="flow">
+            <div class="flow-step">Thought</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Action</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Observation</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Thought</div>
+            <div class="flow-arrow">&#8635;</div>
+          </div>
+          <p style="margin-top:12px"><strong>Why it beats pure CoT:</strong> CoT is fully internal&mdash;if the model
+            hallucinations a fact, it just reasons incorrectly from that hallucination. ReAct fetches real information
+            via search/tools, grounding reasoning in external reality.</p>
+          <div class="callout red" style="margin-top:12px">
+            <span class="callout-icon">&#9888;</span>
+            <p><strong>Failure mode:</strong> If an action returns no information (non-informative action), the agent
+              has nothing to reason from. Recovery is very difficult&mdash;the model has no new token input to work
+              with.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ AGENTIC EVO ═══════════════════════════════ -->
+      <section class="section" id="section-agentic-evo">
+        <h2 class="section-title">Agentic AI Evolution</h2>
+        <p class="section-subtitle">Lecture 03 &bull; From prompting techniques to full agent frameworks</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128295;</span>Toolformer</div>
+          <p><strong>Problem ReAct solved partially:</strong> ReAct searched key phrases but wasn&rsquo;t general. LLMs
+            still struggled with up-to-date factual lookup, precise arithmetic, and date calculations.</p>
+          <p><strong>Toolformer&rsquo;s insight:</strong> Train the model via self-supervision to learn <em>which</em>
+            API to call and <em>when</em> to invoke it. The model proposes API calls during generation; the call is kept
+            only if it improves next-token prediction accuracy. The model learns to use tools as a natural part of
+            generation, not as a special mode.</p>
+          <div class="tags"><span class="tag gold">Self-supervised tool learning</span><span class="tag teal">When to
+              call = key question</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128260;</span>Reflexion</div>
+          <p>Based on ReAct. Adds a dedicated <strong>self-reflection step</strong> as verbal reinforcement learning.
+            Four components:</p>
+          <table>
+            <tr>
+              <th>Component</th>
+              <th>Role</th>
+            </tr>
+            <tr>
+              <td><strong>Actor</strong></td>
+              <td>Generates actions using state observations stored in memory</td>
+            </tr>
+            <tr>
+              <td><strong>Evaluator</strong></td>
+              <td>Assesses the quality of outputs produced by the actor</td>
+            </tr>
+            <tr>
+              <td><strong>Self-Reflection</strong></td>
+              <td>Generates verbal self-reflections on what went wrong/right</td>
+            </tr>
+            <tr>
+              <td><strong>Memory</strong></td>
+              <td>Short-term (recent trial trajectory) + Long-term (accumulated experience)</td>
+            </tr>
+          </table>
+          <p style="margin-top:10px">Demonstrates that a sequence-to-sequence LLM can improve its performance gradually
+            through verbal self-critique, without parameter updates. This is <strong>verbal
+              RL</strong>&mdash;reinforcement via language rather than gradient descent.</p>
+          <div class="callout green"><span class="callout-icon">&#128161;</span>
+            <p>Reflexion is the starting point where the <strong>agentic concept</strong> as we know it today emerged
+              (2023).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#129504;</span>HuggingGPT (Task Planning with Specialist Models)
+          </div>
+          <p><strong>Problem:</strong> Text-only LLMs can&rsquo;t handle vision, audio, multi-modal tasks. Specialized
+            expert models exist for these but have no unified interface.</p>
+          <p><strong>Solution:</strong> Use the LLM as a <strong>central brain / controller</strong>. Treat every expert
+            model&rsquo;s API as describable in plain language. The LLM:</p>
+          <ul class="steps" style="margin-top:12px">
+            <li>
+              <div class="step-num">1</div>
+              <p><strong>Task Planning</strong> &mdash; Decompose the task using demonstration-based parsing</p>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <p><strong>Model Selection</strong> &mdash; Filter Hugging Face models by task type, rank by download
+                count, select top-K candidates</p>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <p><strong>Task Execution</strong> &mdash; Invoke selected models and collect results</p>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <p><strong>Response Generation</strong> &mdash; Integrate results into a coherent reply</p>
+            </li>
+          </ul>
+          <p style="margin-top:8px">Key idea: <strong>language as a generic interface</strong>. The LLM doesn&rsquo;t
+            need to know every model&rsquo;s internals&mdash;it just needs natural language descriptions of what each
+            model does.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128279;</span>LangChain / LangGraph Mapping</div>
+          <table>
+            <tr>
+              <th>Architecture</th>
+              <th>Maps To</th>
+            </tr>
+            <tr>
+              <td>Plan-and-Execute</td>
+              <td>CoT-style planner + tool calls</td>
+            </tr>
+            <tr>
+              <td>ReAct Agent</td>
+              <td>Thought &rarr; Action &rarr; Observation loop</td>
+            </tr>
+            <tr>
+              <td>Multi-Agent &amp; Critique-Revise</td>
+              <td>HuggingGPT&rsquo;s controller + specialist agents (mirrors Reflexion)</td>
+            </tr>
+            <tr>
+              <td>Self-Asked Q&amp;A</td>
+              <td>Automatic sub-question generation + retrieval</td>
+            </tr>
+          </table>
+          <p style="margin-top:10px">LangChain provides the software infrastructure to connect LLMs with tools, APIs,
+            memory, and other agents. Tool management involves: <strong>creation &rarr; binding &rarr; calling &rarr;
+              execution</strong>.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ TRAINING ═══════════════════════════════ -->
+      <section class="section" id="section-training">
+        <h2 class="section-title">LLM Training Pipeline</h2>
+        <p class="section-subtitle">Lecture 04 &bull; Pre-training &rarr; SFT &rarr; RLHF</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127981;</span>The Three-Stage Pipeline</div>
+          <div class="flow">
+            <div class="flow-step">Pre-training</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">SFT</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">RLHF</div>
+          </div>
+          <p style="margin-top:14px">Each stage uses the previous stage&rsquo;s parameters as initialization. The
+            professor&rsquo;s analogy: Pre-training = undergrad (study every major), SFT = graduate school (specialize
+            and apply), RLHF = real-world feedback (align with what people actually want).</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128218;</span>Stage 1: Pre-training</div>
+          <p><strong>Task:</strong> Predict the next token (the &ldquo;word chain game&rdquo;). Self-supervised: the
+            training signal is derived from the data itself by masking/removing tokens.</p>
+          <p><strong>Data:</strong> Massive internet text (e.g., FineWeb: 15 trillion tokens, 44TB). Reading at one page
+            per 10 seconds would take ~4,756 years. Models are trained on everything they can possibly scrape.</p>
+          <p><strong>Purpose:</strong> Build a broad world model. The LLM absorbs language patterns, facts, reasoning
+            structures, causal relationships. It doesn&rsquo;t yet know how to answer questions helpfully.</p>
+          <div class="callout gold" style="margin-top:12px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Scale matters:</strong> More data and more parameters generally improve performance, but there is
+              an <em>optimal model size for a given data size</em>. Increasing model capacity without adding data leads
+              to diminishing or negative returns. Data quality also matters significantly&mdash;cleaning internet data
+              substantially improves performance. LLMs can be used to help clean training data (bootstrapping).</p>
+          </div>
+          <p style="margin-top:10px"><strong>Why couldn&rsquo;t early pre-trained LLMs answer questions?</strong>
+            Internet data doesn&rsquo;t teach Q&amp;A. The text &ldquo;The highest mountain in the world
+            is&hellip;&rdquo; doesn&rsquo;t immediately follow in training data. The model has the knowledge but
+            doesn&rsquo;t know how to retrieve/express it as an answer.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127979;</span>Stage 2: Supervised Fine-Tuning (SFT)</div>
+          <p><strong>Purpose:</strong> Teach the model the reasoning process to find and express
+            knowledge&mdash;<em>not</em> to inject new knowledge. Very small dataset compared to pre-training (tens of
+            thousands of examples).</p>
+          <p><strong>Critical insight:</strong> SFT by itself is ineffective without pre-training. And SFT doesn&rsquo;t
+            work by teaching new facts&mdash;it works by unlocking the <em>structure</em> of knowledge already embedded
+            in the pre-trained model.</p>
+          <div class="callout teal" style="margin-top:12px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Why redundancy in pre-training matters:</strong> If a fact appeared in pre-training in only one
+              form, SFT can&rsquo;t easily surface it. If the same knowledge appeared in many different linguistic
+              forms, the model built a <em>graph</em> of that knowledge&mdash;SFT can then tap into this graph to
+              generalize. Pre-training requires lots of data partly for this reason.</p>
+          </div>
+          <p style="margin-top:10px"><strong>What data works best for alignment?</strong></p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+            <li>Questions where the model <em>might</em> know the answer (not too easy, not unknown)</li>
+            <li>Diverse tasks, moderately difficult</li>
+            <li>Long examples (short examples lack sufficient information)</li>
+            <li>Non-redundant (representative, not repeated)</li>
+            <li>Inconsistent examples actually <em>hurt</em> performance</li>
+          </ul>
+          <div class="callout gold" style="margin-top:10px"><span class="callout-icon">&#9888;</span>
+            <p><strong>Key principle:</strong> Alignment is a data curation problem, not just a training problem.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127919;</span>Stage 3: RLHF &mdash; Reinforcement Learning with
+            Human Feedback</div>
+          <p>Unlike Stages 1 &amp; 2 where loss is calculated per-token, RLHF calculates a <strong>reward for the entire
+              answer</strong>. Human raters compare model outputs; their preferences train a <strong>reward
+              model</strong>.</p>
+          <p>The main LLM is then fine-tuned using <strong>PPO (Proximal Policy Optimization)</strong>&mdash;a policy
+            gradient algorithm&mdash;to maximize the reward model&rsquo;s score.</p>
+          <p><strong>RLAIF:</strong> Instead of human raters, use another AI model as the reward judge. Cheaper and
+            scalable, but introduces alignment concerns about the judge model.</p>
+          <p><strong>Why RL?</strong> We want to optimize for the whole response, not just each token. Correctness is
+            often only determinable at the end of a response (like Go, where the outcome is known only at game end).</p>
+          <div class="definition" style="margin-top:12px">
+            <div class="term">PPO (Proximal Policy Optimization)</div>
+            <p>A policy gradient RL algorithm that updates model parameters to maximize expected reward while keeping
+              the updated policy close (proximal) to the original policy&mdash;preventing catastrophic forgetting or
+              destabilization.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128203;</span>Do LLMs Use Logic or Probability?</div>
+          <p>Evidence suggests LLMs primarily follow <strong>probability</strong>, not pure logical reasoning. Example:
+            GPT answers Rot13 cipher correctly (widely used in training data) but fails on Rot8 (rarely seen). If it
+            were truly reasoning logically, both should be equally solvable. The model is pattern-matching from training
+            distribution, not computing.</p>
+          <div class="callout red" style="margin-top:10px"><span class="callout-icon">&#9888;</span>
+            <p>This has profound implications for reliability: LLMs can make errors on tasks that are logically
+              identical to tasks they can solve, simply because the surface form looks different.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ META ═══════════════════════════════ -->
+      <section class="section" id="section-meta">
+        <h2 class="section-title">Meta-Learning &amp; In-Context Learning</h2>
+        <p class="section-subtitle">Lecture 04 &bull; Learning to learn; learning without gradient updates</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>What Is Meta-Learning?</div>
+          <p><strong>Regular learning:</strong> Given a dataset, train a model to perform a specific task. Architecture,
+            initialization, and update rules are all defined by humans.</p>
+          <p><strong>Meta-learning:</strong> Train a model not just on data, but on a <em>family of tasks</em>, so it
+            learns <strong>how to learn</strong>&mdash;the underlying strategy for rapidly adapting to new tasks. The
+            loss function is the sum of losses across many tasks.</p>
+          <div class="definition">
+            <div class="term">Meta-Learning (Learning to Learn)</div>
+            <p>Training a model across a distribution of tasks so it develops general learning strategies. At inference
+              time, the model can rapidly adapt to a new task from just a few examples, without retraining.</p>
+          </div>
+          <p style="margin-top:10px">This is the conceptual precursor to in-context learning. Meta-learning developed
+            before 2020; in-context learning emerged as its realization at scale in LLMs.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128203;</span>Siamese Networks (Support &amp; Query)</div>
+          <p>A key meta-learning architecture. Uses a CNN to map inputs (images) to an embedding space. A
+            <strong>support set</strong> (training examples) and a <strong>query</strong> (test input) are both
+            embedded; the model checks whether their embeddings are similar.</p>
+          <p>In the embedding/code space, similarity = same class. This is related to BERT: encode inputs into abstract
+            representations, then reason about similarity in that space. This maps to RAG: embed queries and memories,
+            retrieve similar ones.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128173;</span>In-Context Learning (ICL)</div>
+          <p>The modern realization of meta-learning in LLMs. Provide examples directly in the prompt; the model adapts
+            to the task without any parameter updates.</p>
+          <div class="compare">
+            <div class="compare-col left">
+              <h4>Fine-Tuning (Old Way)</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Requires labeled dataset</li>
+                <li>Updates model weights</li>
+                <li>Time-consuming</li>
+                <li>Risk of overfitting</li>
+              </ul>
+            </div>
+            <div class="compare-col right">
+              <h4>In-Context Learning (ICL)</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Examples in prompt only</li>
+                <li>No weight updates</li>
+                <li>Instant adaptation</li>
+                <li>Limited by context size</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout teal" style="margin-top:12px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Scale matters for ICL too:</strong> In-context learning abilities improve dramatically with model
+              scale. A small model cannot leverage demonstrations effectively; a large model can generalize from very
+              few examples.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ DENSITY ═══════════════════════════════ -->
+      <section class="section" id="section-density">
+        <h2 class="section-title">Density Estimation</h2>
+        <p class="section-subtitle">Lecture 05 &bull; The mathematical foundation behind generative models</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128202;</span>The Core Problem</div>
+          <p>Given a set of observed data samples, estimate the probability distribution p(x) that generated them. Or
+            better: estimate the <em>generator</em> that produces that distribution.</p>
+          <div class="definition">
+            <div class="term">Density Estimation</div>
+            <p>The task of estimating the underlying probability distribution of observed data. Enables generating new
+              samples, detecting anomalies, and understanding data structure.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127895;</span>Parzen Windows (Non-Parametric)</div>
+          <p>Treat every data point as the center of a small Gaussian distribution. Sum all Gaussians; normalize. Points
+            clustered together produce high density; spread points produce lower density. Works in multiple dimensions.
+          </p>
+          <p><strong>Critical limitation:</strong> This is <em>modeling</em>, not <em>learning</em>. It can only
+            describe data it has seen. It cannot extrapolate to unseen regions of the input space. True learning
+            requires generalization&mdash;the ability to assign probabilities to points never seen in training.</p>
+          <div class="callout red" style="margin-top:10px">
+            <span class="callout-icon">&#9888;</span>
+            <p><strong>Professor&rsquo;s distinction:</strong> <em>Modeling</em> = creating a description of seen data.
+              <em>Learning</em> = generalizing to unseen data. Don&rsquo;t confuse them. Applying a Gaussian assumption
+              and computing sample mean/variance is modeling&mdash;it assumes normality without checking.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>Maximum Likelihood Estimation (MLE)</div>
+          <p>Assume p(x) = f&theta;(x) parameterized by &theta;. Find the &theta; that maximizes the probability of
+            observing the training data. Because the joint probability of all samples is tiny, we maximize the
+            <strong>log-likelihood</strong> instead (log converts products to sums).</p>
+          <p>Example: Assuming Gaussian distribution, MLE gives us the sample mean and sample variance. <em>But</em>
+            this bakes in the Gaussian assumption&mdash;you must first verify the distribution looks Gaussian.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128307;</span>Latent Variables: Learning the Generator</div>
+          <p>Instead of directly modeling p(x), model the <em>mechanism that generates</em> p(x). Introduce latent
+            variables z (unobserved causes) that drive the data generator.</p>
+          <div class="definition">
+            <div class="term">Gaussian Mixture Model (GMM)</div>
+            <p>A generative model where: (1) sample a component m from a multinomial distribution, (2) sample x from a
+              Gaussian conditioned on m. The observed data is a mixture of multiple Gaussian sources. p(x) = &Sigma;
+              P(m) P(x|m). More Gaussian components = greater modeling capacity.</p>
+          </div>
+          <p style="margin-top:10px">Moving from flat density estimation to latent variable models is the key step
+            toward deep generative models (VAE, GAN, diffusion, LLMs).</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ LATENT ═══════════════════════════════ -->
+      <section class="section" id="section-latent">
+        <h2 class="section-title">Latent Variables &amp; VAE</h2>
+        <p class="section-subtitle">Lecture 05 &bull; Variational inference and the evidence lower bound</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128307;</span>Variational Inference</div>
+          <p>To infer latent z from observed x, we want p(z|x). This is intractable to compute directly.
+            <strong>Variational inference</strong> finds an approximation q(z) from a tractable family of distributions
+            by minimizing the <strong>KL divergence</strong> between q(z) and p(z|x).</p>
+          <div class="definition">
+            <div class="term">KL Divergence (Relative Entropy)</div>
+            <p>A measure of how different two probability distributions are. KL(q||p) = 0 when q = p. Asymmetric:
+              KL(q||p) &ne; KL(p||q). Used to measure how well an approximating distribution q matches the true
+              distribution p.</p>
+          </div>
+          <p style="margin-top:10px">This converts a <em>function calculation problem</em> (find p(z|x)) into an
+            <em>optimization problem</em> (minimize KL divergence over a parameterized family). That makes it tractable
+            for neural networks.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>Evidence Lower Bound (ELBO)</div>
+          <p>We want to maximize log p(x) (the probability of our data). This decomposes as:</p>
+          <p
+            style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--teal);background:var(--bg);padding:10px 14px;border-radius:6px;margin:10px 0">
+            log p(x) = ELBO(q) + KL(q(z) || p(z|x))
+          </p>
+          <p>Since KL &ge; 0, ELBO &le; log p(x)&mdash;it&rsquo;s a lower bound. Maximizing ELBO simultaneously: (1)
+            makes the generated data more likely, and (2) makes q(z) closer to the true posterior p(z|x). We can
+            maximize ELBO without computing the intractable p(z|x) directly.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128260;</span>Variational Autoencoder (VAE)</div>
+          <p><strong>Variational Principle</strong> &rarr; <strong>Variational Method</strong> &rarr;
+            <strong>Variational Inference</strong> &rarr; <strong>VAE (amortized with NN)</strong></p>
+          <p>A VAE uses neural networks to implement variational inference at scale:</p>
+          <ul class="steps" style="margin-top:12px">
+            <li>
+              <div class="step-num">1</div>
+              <p><strong>Encoder:</strong> q(z|x) &mdash; Maps input x to parameters &mu;(x), &Sigma;(x) of a Gaussian
+                in latent space</p>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <p><strong>Sampling:</strong> Sample z from N(&mu;, &Sigma;). Reparameterization trick: z = &mu; +
+                &Sigma;&middot;&epsilon; where &epsilon; ~ N(0,1). Enables backprop through the sampling step.</p>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <p><strong>Decoder:</strong> p(x|z) &mdash; Reconstructs x from sampled z. The actual learning happens
+                here.</p>
+            </li>
+          </ul>
+          <p style="margin-top:10px">ELBO for VAE = reconstruction accuracy (decoder loss) &minus; KL(q(z|x) || p(z)).
+            Simultaneously optimize reconstruction quality and keep the latent distribution close to a Gaussian prior.
+          </p>
+          <div class="callout teal" style="margin-top:12px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Key difference from plain autoencoder:</strong> A regular AE compresses to a specific code. A VAE
+              compresses to a <em>distribution</em> over codes, then samples from it&mdash;enabling generation of new
+              samples by sampling from the prior.</p>
+          </div>
+          <p style="margin-top:10px"><strong>Reparameterization trick:</strong> Sampling is non-differentiable. Rewrite
+            z = &mu;(x) + &Sigma;(x) &middot; &epsilon; (&epsilon; is a fixed noise input). Now gradients can flow
+            through &mu; and &Sigma; during backprop.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127760;</span>Connection to LLM Training</div>
+          <p>The professor draws a deep analogy: LLM training can be understood as <strong>variational inference over a
+              latent world state</strong>.</p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin:8px 0">
+            <li>The latent variable z = the &ldquo;world state&rdquo; underlying the language (never explicitly modeled)
+            </li>
+            <li>The Transformer is forced to infer this latent state internally</li>
+            <li>The world model is stored in the <strong>parameters &theta;</strong> (the decoder/transformation), not
+              in z</li>
+            <li>Randomness (z) is just a seed; knowledge is in the transformation</li>
+          </ul>
+          <div class="callout gold" style="margin-top:10px"><span class="callout-icon">&#128161;</span>
+            <p><strong>In VAE, learning happens in the decoder.</strong> Starting from maximum entropy (pure
+              randomness), the VAE learns how to generate from nothing. If you can generate from pure randomness, you
+              have learned the world. Knowledge is stored in the transformation, not the input.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ GAN ═══════════════════════════════ -->
+      <section class="section" id="section-gan">
+        <h2 class="section-title">Generative Adversarial Networks (GANs)</h2>
+        <p class="section-subtitle">Lecture 05 &bull; Adversarial training for generation</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#9876;</span>The Core Idea</div>
+          <p>Two networks compete: a <strong>Generator</strong> and a <strong>Discriminator</strong>.</p>
+          <div class="compare">
+            <div class="compare-col left">
+              <h4>Generator</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Input: random latent vector z</li>
+                <li>Output: synthetic image/data</li>
+                <li>Goal: fool the discriminator</li>
+                <li>Architecture: transposed CNN</li>
+                <li>More complex; trains longer</li>
+              </ul>
+            </div>
+            <div class="compare-col right">
+              <h4>Discriminator</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Input: real or generated sample</li>
+                <li>Output: real or fake label</li>
+                <li>Goal: correctly classify samples</li>
+                <li>Architecture: CNN with sigmoid</li>
+                <li>Simpler; trained fewer epochs</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#9881;</span>Training Process</div>
+          <ul class="steps">
+            <li>
+              <div class="step-num">1</div>
+              <p><strong>Train Discriminator:</strong> Feed real data (label=1) and generated data (label=0). Minimize
+                classification error.</p>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <p><strong>Train Generator:</strong> Generate samples; pass through (frozen) discriminator; minimize the
+                discriminator&rsquo;s ability to detect fakes. Gradient flows backward through discriminator into
+                generator.</p>
+            </li>
+          </ul>
+          <p style="margin-top:8px"><strong>Stopping criterion:</strong> When the discriminator can no longer
+            distinguish real from generated data (outputs ~0.5 for everything). Training is inherently unstable because
+            the target keeps moving.</p>
+          <div class="callout red" style="margin-top:12px">
+            <span class="callout-icon">&#9888;</span>
+            <p><strong>Failure mode:</strong> If the discriminator becomes too strong too fast, the generator receives
+              vanishing gradients and cannot improve. Engineering tricks needed: batch normalization, Leaky ReLU, proper
+              learning rate scheduling.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>Evolution of Image Generators</div>
+          <div class="flow">
+            <div class="flow-step">Autoencoder (AE)</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">VAE</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">GAN</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Diffusion Models</div>
+          </div>
+          <p style="margin-top:12px">Each step improved generation quality. Diffusion models currently achieve
+            near-ideal performance overall, overtaking GANs.</p>
+        </div>
+
+        <div class="definition" style="margin-top:4px">
+          <div class="term">Amortized Variational Inference (in VAE/GAN context)</div>
+          <p>Instead of solving a separate optimization problem for each data point (expensive), train a neural network
+            to perform approximate inference for all data points at once. &ldquo;Amortized&rdquo; = the optimization
+            cost is spread across all examples.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ EMERGENCE ═══════════════════════════════ -->
+      <section class="section" id="section-emergence">
+        <h2 class="section-title">Emergence &amp; Compression</h2>
+        <p class="section-subtitle">Lecture 05 &bull; Why LLMs are so much more than next-token predictors</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#10024;</span>Where Does Intelligence Come From?</div>
+          <p>From a traditional ML view, maximizing likelihood (next-token prediction) should just produce a good
+            density estimator&mdash;not an intelligent reasoner. So where does the intelligence come from?</p>
+          <div class="callout gold" style="margin-top:10px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Key shift:</strong> The data distribution is <strong>natural language</strong>, and natural
+              language is a <em>projection of everything in the real world</em>. When a model learns p(next token |
+              context), it must implicitly learn:</p>
+          </div>
+          <div class="tags" style="margin:12px 0">
+            <span class="tag gold">Causality</span>
+            <span class="tag teal">Physical Reasoning</span>
+            <span class="tag green">Human Intent</span>
+            <span class="tag blue">Social Rules</span>
+            <span class="tag red">Logic Patterns</span>
+          </div>
+          <p>These are all encoded in language. Language is the most compressed representation of human knowledge.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>Emergent Capabilities</div>
+          <p>Capabilities that appear suddenly and discontinuously as model size or training scale increases. They are
+            not present in smaller models and cannot be predicted by extrapolating smaller-model performance.</p>
+          <p>Examples of emergent capabilities: Chain-of-thought reasoning (emerges at ~100B parameters), multi-step
+            arithmetic, code generation, zero-day vulnerability discovery (in Anthropic models&mdash;never explicitly
+            trained on this).</p>
+          <div class="callout red" style="margin-top:12px">
+            <span class="callout-icon">&#9888;</span>
+            <p>There is a large <strong>gap between what we can explain and what we have observed</strong> in LLM
+              capabilities. Studying emergent behavior is difficult because it requires experimenting at large scale.
+              The boundary of capabilities is blurry and continuously changing.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128204;</span>Kolmogorov Complexity View</div>
+          <p><strong>Kolmogorov complexity</strong> of data = the length of the shortest program that generates it. Data
+            can look complex, but if you learn the generator (via latent variables), you find a short program that
+            produces the data distribution.</p>
+          <p>In the limit: <strong>learning everything = finding a short program that generates reality</strong>. That
+            program takes a simple random seed as input. All knowledge is stored in the <em>transformation</em> (the
+            model parameters), not the input.</p>
+          <div class="callout gold" style="margin-top:12px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>The professor&rsquo;s insight on learning:</strong> True learning is not memorization
+              (autoencoder-style). True learning means internalizing the transformation so completely that you can
+              <em>forget</em> the original data and regenerate knowledge from &ldquo;random.&rdquo; Knowledge is in the
+              transformation, not the input. When studying: don&rsquo;t try to remember slides&mdash;learn the
+              underlying principle and regenerate from first principles.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ TIMELINE ═══════════════════════════════ -->
+      <section class="section" id="section-timeline">
+        <h2 class="section-title">LLM History Timeline</h2>
+        <p class="section-subtitle">Lecture 03 &amp; 04 &bull; Evolution of language models toward agentic AI</p>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-date">June 2020</div>
+            <div class="timeline-name">GPT-3</div>
+            <div class="timeline-desc">First LLM with enough parameters for interesting emergent results. Debut of
+              few-shot / in-context learning: provide 5&ndash;10 examples in prompt instead of fine-tuning. Early
+              capabilities: chats, semantic parsing, equivalence checking.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">August 2021</div>
+            <div class="timeline-name">Codex</div>
+            <div class="timeline-desc">GPT-3 fine-tuned on public code. Primary use cases: code completion, function
+              generation from natural language, debugging. Foundation for GitHub Copilot.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">March 2022</div>
+            <div class="timeline-name">InstructGPT</div>
+            <div class="timeline-desc">Trained with RLHF (PPO) and human feedback. Addressed the misalignment between
+              &ldquo;predict next token&rdquo; and &ldquo;follow instructions helpfully and safely.&rdquo; Explicitly
+              trained on diverse human-written instructions. Reduces hallucination and off-topic behavior.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">November 2022</div>
+            <div class="timeline-name">GPT-3.5 / ChatGPT</div>
+            <div class="timeline-desc">Merged with Codex, improved instruction-following with RLHF. Introduced
+              system/user/assistant roles. Chain-of-thought prompt (&ldquo;let&rsquo;s think step-by-step&rdquo;)
+              discovered to unlock multi-step reasoning.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">2022&ndash;2023</div>
+            <div class="timeline-name">ReAct, Toolformer, Reflexion, HuggingGPT</div>
+            <div class="timeline-desc">Foundational agentic AI papers. Established the patterns of reasoning, tool use,
+              self-reflection, and multi-model orchestration that underpin modern agent frameworks.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">March 2023</div>
+            <div class="timeline-name">GPT-4</div>
+            <div class="timeline-desc">Built-in chain-of-thought support. Plugin ecosystem (web browsing, code
+              execution, data retrieval). Agent framework infrastructure built into the model and wrapper. Multi-modal
+              (vision). Significantly improved reasoning.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-date">2023+</div>
+            <div class="timeline-name">LangChain / LangGraph &amp; Modern Agent Frameworks</div>
+            <div class="timeline-desc">Software platforms implementing agent patterns (ReAct, Plan-and-Execute,
+              Multi-Agent). Tools for connecting LLMs to APIs, databases, memory, and other agents. Context engineering
+              becomes a core discipline.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ GLOSSARY ═══════════════════════════════ -->
+      <section class="section" id="section-glossary">
+        <h2 class="section-title">Key Definitions</h2>
+        <p class="section-subtitle">All Lectures &bull; Core vocabulary the professor expects you to know precisely</p>
+
+        <div class="glossary-grid">
+          <div class="gloss-card">
+            <div class="gloss-term">AI Agent</div>
+            <div class="gloss-def">A system that perceives an environment, reasons about it, takes actions to achieve a
+              goal, and learns from feedback&mdash;in a loop. Distinct from a chatbot: agents plan multi-step
+              strategies, not just respond to single commands.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Sequence-to-Sequence (S2S)</div>
+            <div class="gloss-def">A model that takes an input sequence and produces an output sequence. LLMs are S2S
+              models: given token history, predict next token. All LLM reasoning is fundamentally S2S generation.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Context Engineering</div>
+            <div class="gloss-def">The practice of automatically managing, selecting, and compressing what goes into an
+              LLM&rsquo;s context window to optimize performance and avoid overload. Evolved from prompt engineering.
+            </div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">RAG (Retrieval-Augmented Generation)</div>
+            <div class="gloss-def">Architecture where a retrieval system selects relevant documents/memories from a
+              large store and injects them into the context before generation. Enables long-term memory without
+              overloading context.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Chain of Thought (CoT)</div>
+            <div class="gloss-def">A prompting technique where intermediate reasoning steps are included in examples or
+              generated by the model before the final answer. Unlocks multi-step reasoning in large models (&ge;100B
+              params).</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Self-Consistency (SC)</div>
+            <div class="gloss-def">Sample multiple reasoning paths from an LLM and take a majority vote over final
+              answers. Improves accuracy on tasks with fixed answers. Acts like an unsupervised self-ensemble.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">ReAct</div>
+            <div class="gloss-def">Prompting framework that interleaves Thought (internal reasoning) with Action
+              (external tool call) and Observation (result), enabling grounded reasoning that avoids hallucination.
+            </div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Hallucination</div>
+            <div class="gloss-def">When an LLM generates plausible-sounding but factually incorrect text. Occurs because
+              the model follows probability, not verified truth. Chain-of-thought can amplify hallucinations if a wrong
+              fact is accepted early.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Pre-training</div>
+            <div class="gloss-def">First stage of LLM training. Self-supervised next-token prediction on massive
+              internet text. Builds broad world knowledge and language understanding. Does not directly teach Q&amp;A or
+              instruction-following.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">SFT (Supervised Fine-Tuning)</div>
+            <div class="gloss-def">Second training stage. Small curated dataset of instruction-answer pairs. Teaches the
+              model to express its pre-trained knowledge in a helpful, instruction-following way. Does NOT inject new
+              knowledge&mdash;unlocks existing structure.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">RLHF</div>
+            <div class="gloss-def">Reinforcement Learning with Human Feedback. Third training stage. Humans rate model
+              outputs; ratings train a reward model; PPO optimizes the LLM against that reward. Reward is for the whole
+              answer, not per-token.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">PPO (Proximal Policy Optimization)</div>
+            <div class="gloss-def">Policy gradient RL algorithm used in RLHF. Updates model parameters to maximize
+              reward while keeping updates bounded (proximal), preventing catastrophic forgetting or training
+              instability.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">In-Context Learning (ICL)</div>
+            <div class="gloss-def">Learning a new task from examples provided directly in the prompt, without updating
+              model weights. The model&rsquo;s behavior adapts purely from the context. Emerges at large scale.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Meta-Learning</div>
+            <div class="gloss-def">Training a model on a family of tasks so it learns <em>how to
+                learn</em>&mdash;developing general strategies for rapid adaptation to new tasks from few examples.
+              Conceptual precursor to ICL.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Emergence</div>
+            <div class="gloss-def">Capabilities that appear suddenly at scale and cannot be predicted from smaller
+              models. Examples: CoT reasoning, code generation, zero-day vulnerability discovery. Result of the model
+              internalizing complex world structure.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Variational Inference</div>
+            <div class="gloss-def">Approximate Bayesian inference that turns intractable posterior computation into an
+              optimization problem. Find the distribution q(z) closest (in KL divergence) to the true posterior p(z|x)
+              within a tractable family.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">KL Divergence</div>
+            <div class="gloss-def">Kullback&ndash;Leibler divergence. Measures how much distribution q differs from
+              distribution p. KL(q||p) &ge; 0; equals 0 only when q=p. Asymmetric. Used in VAE training to keep latent
+              distribution near a Gaussian prior.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">ELBO (Evidence Lower Bound)</div>
+            <div class="gloss-def">A tractable lower bound on log p(x). Maximizing ELBO simultaneously improves data
+              reconstruction and minimizes KL divergence between the approximate and true posteriors. Core objective of
+              VAE training.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Latent Variable</div>
+            <div class="gloss-def">An unobserved variable that causally generates the observed data. Introducing latent
+              variables moves from directly modeling data to learning the generative process. Enables extrapolation to
+              unseen data.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">VAE (Variational Autoencoder)</div>
+            <div class="gloss-def">A generative model using amortized variational inference. Encoder maps input to
+              latent Gaussian parameters; reparameterization allows backprop through sampling; decoder reconstructs.
+              Trained to maximize ELBO.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">GAN (Generative Adversarial Network)</div>
+            <div class="gloss-def">Two-network framework: Generator produces samples from random noise; Discriminator
+              classifies real vs. generated. Training is adversarial. Stops when Discriminator can no longer distinguish
+              real from fake.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Kolmogorov Complexity</div>
+            <div class="gloss-def">The length of the shortest program that generates a given piece of data. A
+              theoretical measure of information content. Insight: learning = finding the short program (in model
+              weights) that generates the data distribution from a random seed.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Reflexion</div>
+            <div class="gloss-def">Agentic framework adding verbal self-reflection to ReAct. Actor generates actions;
+              Evaluator scores outputs; Self-Reflection generates verbal critique; Memory stores trajectory. Enables
+              iterative improvement without retraining.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">System Prompt</div>
+            <div class="gloss-def">Instructions given to an LLM before any user interaction. Defines identity, rules,
+              tone, formatting, and domain knowledge. Always the first part of the input sequence. Hidden from users;
+              set by developers.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- no results -->
+      <div id="no-results">
+        <div class="big">&#128269;</div>
+        <div>No matching concepts found.<br>Try a different search term.</div>
+      </div>
+
+    </main>
   </div>
 
-  <div class="card">
-    <div class="card-title"><span class="icon">&#9881;</span>Training Process</div>
-    <ul class="steps">
-      <li><div class="step-num">1</div><p><strong>Train Discriminator:</strong> Feed real data (label=1) and generated data (label=0). Minimize classification error.</p></li>
-      <li><div class="step-num">2</div><p><strong>Train Generator:</strong> Generate samples; pass through (frozen) discriminator; minimize the discriminator&rsquo;s ability to detect fakes. Gradient flows backward through discriminator into generator.</p></li>
-    </ul>
-    <p style="margin-top:8px"><strong>Stopping criterion:</strong> When the discriminator can no longer distinguish real from generated data (outputs ~0.5 for everything). Training is inherently unstable because the target keeps moving.</p>
-    <div class="callout red" style="margin-top:12px">
-      <span class="callout-icon">&#9888;</span>
-      <p><strong>Failure mode:</strong> If the discriminator becomes too strong too fast, the generator receives vanishing gradients and cannot improve. Engineering tricks needed: batch normalization, Leaky ReLU, proper learning rate scheduling.</p>
-    </div>
-  </div>
+  <script>
+    const sections = ['agents', 'llm-agent', 'context', 'memory', 'cot', 'agentic-evo', 'training', 'meta', 'density', 'latent', 'gan', 'emergence', 'timeline', 'glossary'];
 
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128200;</span>Evolution of Image Generators</div>
-    <div class="flow">
-      <div class="flow-step">Autoencoder (AE)</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">VAE</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">GAN</div>
-      <div class="flow-arrow">&#8594;</div>
-      <div class="flow-step">Diffusion Models</div>
-    </div>
-    <p style="margin-top:12px">Each step improved generation quality. Diffusion models currently achieve near-ideal performance overall, overtaking GANs.</p>
-  </div>
-
-  <div class="definition" style="margin-top:4px">
-    <div class="term">Amortized Variational Inference (in VAE/GAN context)</div>
-    <p>Instead of solving a separate optimization problem for each data point (expensive), train a neural network to perform approximate inference for all data points at once. &ldquo;Amortized&rdquo; = the optimization cost is spread across all examples.</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ EMERGENCE ═══════════════════════════════ -->
-<section class="section" id="section-emergence">
-  <h2 class="section-title">Emergence &amp; Compression</h2>
-  <p class="section-subtitle">Lecture 05 &bull; Why LLMs are so much more than next-token predictors</p>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#10024;</span>Where Does Intelligence Come From?</div>
-    <p>From a traditional ML view, maximizing likelihood (next-token prediction) should just produce a good density estimator&mdash;not an intelligent reasoner. So where does the intelligence come from?</p>
-    <div class="callout gold" style="margin-top:10px">
-      <span class="callout-icon">&#128161;</span>
-      <p><strong>Key shift:</strong> The data distribution is <strong>natural language</strong>, and natural language is a <em>projection of everything in the real world</em>. When a model learns p(next token | context), it must implicitly learn:</p>
-    </div>
-    <div class="tags" style="margin:12px 0">
-      <span class="tag gold">Causality</span>
-      <span class="tag teal">Physical Reasoning</span>
-      <span class="tag green">Human Intent</span>
-      <span class="tag blue">Social Rules</span>
-      <span class="tag red">Logic Patterns</span>
-    </div>
-    <p>These are all encoded in language. Language is the most compressed representation of human knowledge.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128200;</span>Emergent Capabilities</div>
-    <p>Capabilities that appear suddenly and discontinuously as model size or training scale increases. They are not present in smaller models and cannot be predicted by extrapolating smaller-model performance.</p>
-    <p>Examples of emergent capabilities: Chain-of-thought reasoning (emerges at ~100B parameters), multi-step arithmetic, code generation, zero-day vulnerability discovery (in Anthropic models&mdash;never explicitly trained on this).</p>
-    <div class="callout red" style="margin-top:12px">
-      <span class="callout-icon">&#9888;</span>
-      <p>There is a large <strong>gap between what we can explain and what we have observed</strong> in LLM capabilities. Studying emergent behavior is difficult because it requires experimenting at large scale. The boundary of capabilities is blurry and continuously changing.</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="icon">&#128204;</span>Kolmogorov Complexity View</div>
-    <p><strong>Kolmogorov complexity</strong> of data = the length of the shortest program that generates it. Data can look complex, but if you learn the generator (via latent variables), you find a short program that produces the data distribution.</p>
-    <p>In the limit: <strong>learning everything = finding a short program that generates reality</strong>. That program takes a simple random seed as input. All knowledge is stored in the <em>transformation</em> (the model parameters), not the input.</p>
-    <div class="callout gold" style="margin-top:12px">
-      <span class="callout-icon">&#128161;</span>
-      <p><strong>The professor&rsquo;s insight on learning:</strong> True learning is not memorization (autoencoder-style). True learning means internalizing the transformation so completely that you can <em>forget</em> the original data and regenerate knowledge from &ldquo;random.&rdquo; Knowledge is in the transformation, not the input. When studying: don&rsquo;t try to remember slides&mdash;learn the underlying principle and regenerate from first principles.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ TIMELINE ═══════════════════════════════ -->
-<section class="section" id="section-timeline">
-  <h2 class="section-title">LLM History Timeline</h2>
-  <p class="section-subtitle">Lecture 03 &amp; 04 &bull; Evolution of language models toward agentic AI</p>
-
-  <div class="timeline">
-    <div class="timeline-item">
-      <div class="timeline-date">June 2020</div>
-      <div class="timeline-name">GPT-3</div>
-      <div class="timeline-desc">First LLM with enough parameters for interesting emergent results. Debut of few-shot / in-context learning: provide 5&ndash;10 examples in prompt instead of fine-tuning. Early capabilities: chats, semantic parsing, equivalence checking.</div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-date">August 2021</div>
-      <div class="timeline-name">Codex</div>
-      <div class="timeline-desc">GPT-3 fine-tuned on public code. Primary use cases: code completion, function generation from natural language, debugging. Foundation for GitHub Copilot.</div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-date">March 2022</div>
-      <div class="timeline-name">InstructGPT</div>
-      <div class="timeline-desc">Trained with RLHF (PPO) and human feedback. Addressed the misalignment between &ldquo;predict next token&rdquo; and &ldquo;follow instructions helpfully and safely.&rdquo; Explicitly trained on diverse human-written instructions. Reduces hallucination and off-topic behavior.</div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-date">November 2022</div>
-      <div class="timeline-name">GPT-3.5 / ChatGPT</div>
-      <div class="timeline-desc">Merged with Codex, improved instruction-following with RLHF. Introduced system/user/assistant roles. Chain-of-thought prompt (&ldquo;let&rsquo;s think step-by-step&rdquo;) discovered to unlock multi-step reasoning.</div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-date">2022&ndash;2023</div>
-      <div class="timeline-name">ReAct, Toolformer, Reflexion, HuggingGPT</div>
-      <div class="timeline-desc">Foundational agentic AI papers. Established the patterns of reasoning, tool use, self-reflection, and multi-model orchestration that underpin modern agent frameworks.</div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-date">March 2023</div>
-      <div class="timeline-name">GPT-4</div>
-      <div class="timeline-desc">Built-in chain-of-thought support. Plugin ecosystem (web browsing, code execution, data retrieval). Agent framework infrastructure built into the model and wrapper. Multi-modal (vision). Significantly improved reasoning.</div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-date">2023+</div>
-      <div class="timeline-name">LangChain / LangGraph &amp; Modern Agent Frameworks</div>
-      <div class="timeline-desc">Software platforms implementing agent patterns (ReAct, Plan-and-Execute, Multi-Agent). Tools for connecting LLMs to APIs, databases, memory, and other agents. Context engineering becomes a core discipline.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ GLOSSARY ═══════════════════════════════ -->
-<section class="section" id="section-glossary">
-  <h2 class="section-title">Key Definitions</h2>
-  <p class="section-subtitle">All Lectures &bull; Core vocabulary the professor expects you to know precisely</p>
-
-  <div class="glossary-grid">
-    <div class="gloss-card">
-      <div class="gloss-term">AI Agent</div>
-      <div class="gloss-def">A system that perceives an environment, reasons about it, takes actions to achieve a goal, and learns from feedback&mdash;in a loop. Distinct from a chatbot: agents plan multi-step strategies, not just respond to single commands.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Sequence-to-Sequence (S2S)</div>
-      <div class="gloss-def">A model that takes an input sequence and produces an output sequence. LLMs are S2S models: given token history, predict next token. All LLM reasoning is fundamentally S2S generation.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Context Engineering</div>
-      <div class="gloss-def">The practice of automatically managing, selecting, and compressing what goes into an LLM&rsquo;s context window to optimize performance and avoid overload. Evolved from prompt engineering.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">RAG (Retrieval-Augmented Generation)</div>
-      <div class="gloss-def">Architecture where a retrieval system selects relevant documents/memories from a large store and injects them into the context before generation. Enables long-term memory without overloading context.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Chain of Thought (CoT)</div>
-      <div class="gloss-def">A prompting technique where intermediate reasoning steps are included in examples or generated by the model before the final answer. Unlocks multi-step reasoning in large models (&ge;100B params).</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Self-Consistency (SC)</div>
-      <div class="gloss-def">Sample multiple reasoning paths from an LLM and take a majority vote over final answers. Improves accuracy on tasks with fixed answers. Acts like an unsupervised self-ensemble.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">ReAct</div>
-      <div class="gloss-def">Prompting framework that interleaves Thought (internal reasoning) with Action (external tool call) and Observation (result), enabling grounded reasoning that avoids hallucination.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Hallucination</div>
-      <div class="gloss-def">When an LLM generates plausible-sounding but factually incorrect text. Occurs because the model follows probability, not verified truth. Chain-of-thought can amplify hallucinations if a wrong fact is accepted early.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Pre-training</div>
-      <div class="gloss-def">First stage of LLM training. Self-supervised next-token prediction on massive internet text. Builds broad world knowledge and language understanding. Does not directly teach Q&amp;A or instruction-following.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">SFT (Supervised Fine-Tuning)</div>
-      <div class="gloss-def">Second training stage. Small curated dataset of instruction-answer pairs. Teaches the model to express its pre-trained knowledge in a helpful, instruction-following way. Does NOT inject new knowledge&mdash;unlocks existing structure.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">RLHF</div>
-      <div class="gloss-def">Reinforcement Learning with Human Feedback. Third training stage. Humans rate model outputs; ratings train a reward model; PPO optimizes the LLM against that reward. Reward is for the whole answer, not per-token.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">PPO (Proximal Policy Optimization)</div>
-      <div class="gloss-def">Policy gradient RL algorithm used in RLHF. Updates model parameters to maximize reward while keeping updates bounded (proximal), preventing catastrophic forgetting or training instability.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">In-Context Learning (ICL)</div>
-      <div class="gloss-def">Learning a new task from examples provided directly in the prompt, without updating model weights. The model&rsquo;s behavior adapts purely from the context. Emerges at large scale.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Meta-Learning</div>
-      <div class="gloss-def">Training a model on a family of tasks so it learns <em>how to learn</em>&mdash;developing general strategies for rapid adaptation to new tasks from few examples. Conceptual precursor to ICL.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Emergence</div>
-      <div class="gloss-def">Capabilities that appear suddenly at scale and cannot be predicted from smaller models. Examples: CoT reasoning, code generation, zero-day vulnerability discovery. Result of the model internalizing complex world structure.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Variational Inference</div>
-      <div class="gloss-def">Approximate Bayesian inference that turns intractable posterior computation into an optimization problem. Find the distribution q(z) closest (in KL divergence) to the true posterior p(z|x) within a tractable family.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">KL Divergence</div>
-      <div class="gloss-def">Kullback&ndash;Leibler divergence. Measures how much distribution q differs from distribution p. KL(q||p) &ge; 0; equals 0 only when q=p. Asymmetric. Used in VAE training to keep latent distribution near a Gaussian prior.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">ELBO (Evidence Lower Bound)</div>
-      <div class="gloss-def">A tractable lower bound on log p(x). Maximizing ELBO simultaneously improves data reconstruction and minimizes KL divergence between the approximate and true posteriors. Core objective of VAE training.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Latent Variable</div>
-      <div class="gloss-def">An unobserved variable that causally generates the observed data. Introducing latent variables moves from directly modeling data to learning the generative process. Enables extrapolation to unseen data.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">VAE (Variational Autoencoder)</div>
-      <div class="gloss-def">A generative model using amortized variational inference. Encoder maps input to latent Gaussian parameters; reparameterization allows backprop through sampling; decoder reconstructs. Trained to maximize ELBO.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">GAN (Generative Adversarial Network)</div>
-      <div class="gloss-def">Two-network framework: Generator produces samples from random noise; Discriminator classifies real vs. generated. Training is adversarial. Stops when Discriminator can no longer distinguish real from fake.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Kolmogorov Complexity</div>
-      <div class="gloss-def">The length of the shortest program that generates a given piece of data. A theoretical measure of information content. Insight: learning = finding the short program (in model weights) that generates the data distribution from a random seed.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">Reflexion</div>
-      <div class="gloss-def">Agentic framework adding verbal self-reflection to ReAct. Actor generates actions; Evaluator scores outputs; Self-Reflection generates verbal critique; Memory stores trajectory. Enables iterative improvement without retraining.</div>
-    </div>
-    <div class="gloss-card">
-      <div class="gloss-term">System Prompt</div>
-      <div class="gloss-def">Instructions given to an LLM before any user interaction. Defines identity, rules, tone, formatting, and domain knowledge. Always the first part of the input sequence. Hidden from users; set by developers.</div>
-    </div>
-  </div>
-</section>
-
-<!-- no results -->
-<div id="no-results">
-  <div class="big">&#128269;</div>
-  <div>No matching concepts found.<br>Try a different search term.</div>
-</div>
-
-</main>
-</div>
-
-<script>
-const sections = ['agents','llm-agent','context','memory','cot','agentic-evo','training','meta','density','latent','gan','emergence','timeline','glossary'];
-
-function show(id) {
-  updateQueryParam("section", id);
-  sections.forEach(s => {
-    document.getElementById('section-' + s).classList.remove('active');
-    document.getElementById('nav-' + s).classList.remove('active');
-  });
-  document.getElementById('section-' + id).classList.add('active');
-  document.getElementById('nav-' + id).classList.add('active');
-  document.getElementById('main-content').scrollTop = 0;
-  clearSearch();
-}
-
-function clearSearch() {
-  document.getElementById('search-input').value = '';
-  document.getElementById('no-results').style.display = 'none';
-}
-
-let searchTimeout;
-function handleSearch(query) {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => performSearch(query.trim()), 200);
-}
-
-function performSearch(query) {
-  // Remove previous highlights
-  document.querySelectorAll('mark').forEach(m => {
-    const parent = m.parentNode;
-    parent.replaceChild(document.createTextNode(m.textContent), m);
-    parent.normalize();
-  });
-
-  if (!query) {
-    document.getElementById('no-results').style.display = 'none';
-    return;
-  }
-
-  const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-  let found = false;
-  let firstSection = null;
-
-  sections.forEach(sId => {
-    const sec = document.getElementById('section-' + sId);
-    const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, null, false);
-    const matches = [];
-    let node;
-    while ((node = walker.nextNode())) {
-      if (regex.test(node.textContent)) matches.push(node);
-      regex.lastIndex = 0;
-    }
-    if (matches.length > 0) {
-      found = true;
-      if (!firstSection) firstSection = sId;
-      matches.forEach(node => {
-        const span = document.createElement('span');
-        span.innerHTML = node.textContent.replace(regex, '<mark>$&</mark>');
-        const frag = document.createDocumentFragment();
-        while (span.firstChild) frag.appendChild(span.firstChild);
-        node.parentNode.replaceChild(frag, node);
-        regex.lastIndex = 0;
+    function show(id) {
+      updateQueryParam("section", id);
+      sections.forEach(s => {
+        document.getElementById('section-' + s).classList.remove('active');
+        document.getElementById('nav-' + s).classList.remove('active');
       });
+      document.getElementById('section-' + id).classList.add('active');
+      document.getElementById('nav-' + id).classList.add('active');
+      document.getElementById('main-content').scrollTop = 0;
+      clearSearch();
     }
-  });
 
-  if (found && firstSection) {
-    show(firstSection);
-    document.getElementById('no-results').style.display = 'none';
-    // Scroll to first mark
-    setTimeout(() => {
-      const firstMark = document.querySelector('mark');
-      if (firstMark) firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-  } else {
-    document.getElementById('no-results').style.display = 'block';
-    sections.forEach(s => document.getElementById('section-' + s).classList.remove('active'));
-  }
-}
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('no-results').style.display = 'none';
+    }
 
-// Keyboard shortcut: Cmd/Ctrl+K to focus search
-document.addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault();
-    document.getElementById('search-input').focus();
-  }
-  if (e.key === 'Escape') {
-    clearSearch();
-  }
-});
+    let searchTimeout;
+    function handleSearch(query) {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => performSearch(query.trim()), 200);
+    }
 
-const url = new URL(window.location);
+    function performSearch(query) {
+      // Remove previous highlights
+      document.querySelectorAll('mark').forEach(m => {
+        const parent = m.parentNode;
+        parent.replaceChild(document.createTextNode(m.textContent), m);
+        parent.normalize();
+      });
 
-function updateQueryParam(key, value) {
-  url.searchParams.set(key, value);
-  window.history.replaceState({}, "", url);
-}
+      if (!query) {
+        document.getElementById('no-results').style.display = 'none';
+        return;
+      }
 
-if (url.searchParams.has("section")) {
-  show(url.searchParams.get("section"))
-}
-</script>
+      const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      let found = false;
+      let firstSection = null;
+
+      sections.forEach(sId => {
+        const sec = document.getElementById('section-' + sId);
+        const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, null, false);
+        const matches = [];
+        let node;
+        while ((node = walker.nextNode())) {
+          if (regex.test(node.textContent)) matches.push(node);
+          regex.lastIndex = 0;
+        }
+        if (matches.length > 0) {
+          found = true;
+          if (!firstSection) firstSection = sId;
+          matches.forEach(node => {
+            const span = document.createElement('span');
+            span.innerHTML = node.textContent.replace(regex, '<mark>$&</mark>');
+            const frag = document.createDocumentFragment();
+            while (span.firstChild) frag.appendChild(span.firstChild);
+            node.parentNode.replaceChild(frag, node);
+            regex.lastIndex = 0;
+          });
+        }
+      });
+
+      if (found && firstSection) {
+        show(firstSection);
+        document.getElementById('no-results').style.display = 'none';
+        // Scroll to first mark
+        setTimeout(() => {
+          const firstMark = document.querySelector('mark');
+          if (firstMark) firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      } else {
+        document.getElementById('no-results').style.display = 'block';
+        sections.forEach(s => document.getElementById('section-' + s).classList.remove('active'));
+      }
+    }
+
+    // Keyboard shortcut: Cmd/Ctrl+K to focus search
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('search-input').focus();
+      }
+      if (e.key === 'Escape') {
+        clearSearch();
+      }
+    });
+
+    const url = new URL(window.location);
+
+    function updateQueryParam(key, value) {
+      url.searchParams.set(key, value);
+      window.history.replaceState({}, "", url);
+    }
+
+    if (url.searchParams.has("section")) {
+      show(url.searchParams.get("section"))
+    }
+  </script>
 </body>
+
 </html>
