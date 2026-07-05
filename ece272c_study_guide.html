@@ -664,7 +664,7 @@
     <div class="header-right">
       <input type="text" id="search-input" placeholder="&#128269; Search concepts&hellip;"
         oninput="handleSearch(this.value)">
-      <div class="exam-badge">&#128197; Exam: May 11</div>
+      <div class="exam-badge">&#128197; Exam: June 9</div>
     </div>
   </header>
 
@@ -714,6 +714,14 @@
       </div>
       <div class="nav-item" onclick="show('emergence')" id="nav-emergence">
         <span class="nav-icon">&#10024;</span>Emergence &amp; Compression
+      </div>
+
+      <div class="nav-group-label">Semiconductor Domain</div>
+      <div class="nav-item" onclick="show('ic-design')" id="nav-ic-design">
+        <span class="nav-icon">&#127981;</span>IC Design Views &amp; Flow
+      </div>
+      <div class="nav-item" onclick="show('testing')" id="nav-testing">
+        <span class="nav-icon">&#128202;</span>Testing &amp; Fault Models
       </div>
 
       <div class="nav-group-label">Reference</div>
@@ -888,7 +896,8 @@
           </div>
           <p>The agent&rsquo;s tool library itself can be managed with an AI retrieval system &mdash; query a
             &ldquo;toolbox AI&rdquo; for the top-N most relevant tools for the current task. This is called
-            <strong>RAG-MCP</strong> (retrieval-augmented tool selection).</p>
+            <strong>RAG-MCP</strong> (retrieval-augmented tool selection).
+          </p>
         </div>
 
         <div class="callout teal">
@@ -1068,7 +1077,8 @@
           <p>A flat vector store is good at finding similar items, but misses <strong>relational structure</strong>. A
             <strong>knowledge graph</strong> captures connections between concepts: retrieving a hotel booking
             experience should also surface related restaurant booking experiences. Google published a foundational paper
-            on knowledge graphs for search in 2012.</p>
+            on knowledge graphs for search in 2012.
+          </p>
           <div class="definition">
             <div class="term">Knowledge Graph</div>
             <p>A graph-structured representation of entities and their relationships. Enables relational retrieval
@@ -1115,7 +1125,8 @@
           <div class="card-title"><span class="icon">&#128101;</span>Self-Consistency (SC)</div>
           <p>Complex reasoning tasks often have multiple valid reasoning paths. Rather than taking a single answer,
             <strong>sample multiple reasoning paths</strong> (using higher temperature) and take a <strong>majority
-              vote</strong> over the final answers.</p>
+              vote</strong> over the final answers.
+          </p>
           <p>Why it works: Correct reasoning paths are more likely to reach the correct answer. Incorrect paths tend to
             scatter across wrong answers. The correct answer emerges as the mode.</p>
           <div class="callout teal" style="margin-top:12px">
@@ -1395,7 +1406,8 @@
           <div class="card-title"><span class="icon">&#128203;</span>Siamese Networks (Support &amp; Query)</div>
           <p>A key meta-learning architecture. Uses a CNN to map inputs (images) to an embedding space. A
             <strong>support set</strong> (training examples) and a <strong>query</strong> (test input) are both
-            embedded; the model checks whether their embeddings are similar.</p>
+            embedded; the model checks whether their embeddings are similar.
+          </p>
           <p>In the embedding/code space, similarity = same class. This is related to BERT: encode inputs into abstract
             representations, then reason about similarity in that space. This maps to RAG: embed queries and memories,
             retrieve similar ones.</p>
@@ -1462,7 +1474,8 @@
             <span class="callout-icon">&#9888;</span>
             <p><strong>Professor&rsquo;s distinction:</strong> <em>Modeling</em> = creating a description of seen data.
               <em>Learning</em> = generalizing to unseen data. Don&rsquo;t confuse them. Applying a Gaussian assumption
-              and computing sample mean/variance is modeling&mdash;it assumes normality without checking.</p>
+              and computing sample mean/variance is modeling&mdash;it assumes normality without checking.
+            </p>
           </div>
         </div>
 
@@ -1470,7 +1483,8 @@
           <div class="card-title"><span class="icon">&#128200;</span>Maximum Likelihood Estimation (MLE)</div>
           <p>Assume p(x) = f&theta;(x) parameterized by &theta;. Find the &theta; that maximizes the probability of
             observing the training data. Because the joint probability of all samples is tiny, we maximize the
-            <strong>log-likelihood</strong> instead (log converts products to sums).</p>
+            <strong>log-likelihood</strong> instead (log converts products to sums).
+          </p>
           <p>Example: Assuming Gaussian distribution, MLE gives us the sample mean and sample variance. <em>But</em>
             this bakes in the Gaussian assumption&mdash;you must first verify the distribution looks Gaussian.</p>
         </div>
@@ -1499,7 +1513,8 @@
           <div class="card-title"><span class="icon">&#128307;</span>Variational Inference</div>
           <p>To infer latent z from observed x, we want p(z|x). This is intractable to compute directly.
             <strong>Variational inference</strong> finds an approximation q(z) from a tractable family of distributions
-            by minimizing the <strong>KL divergence</strong> between q(z) and p(z|x).</p>
+            by minimizing the <strong>KL divergence</strong> between q(z) and p(z|x).
+          </p>
           <div class="definition">
             <div class="term">KL Divergence (Relative Entropy)</div>
             <p>A measure of how different two probability distributions are. KL(q||p) = 0 when q = p. Asymmetric:
@@ -1508,7 +1523,8 @@
           </div>
           <p style="margin-top:10px">This converts a <em>function calculation problem</em> (find p(z|x)) into an
             <em>optimization problem</em> (minimize KL divergence over a parameterized family). That makes it tractable
-            for neural networks.</p>
+            for neural networks.
+          </p>
         </div>
 
         <div class="card">
@@ -1526,7 +1542,8 @@
         <div class="card">
           <div class="card-title"><span class="icon">&#128260;</span>Variational Autoencoder (VAE)</div>
           <p><strong>Variational Principle</strong> &rarr; <strong>Variational Method</strong> &rarr;
-            <strong>Variational Inference</strong> &rarr; <strong>VAE (amortized with NN)</strong></p>
+            <strong>Variational Inference</strong> &rarr; <strong>VAE (amortized with NN)</strong>
+          </p>
           <p>A VAE uses neural networks to implement variational inference at scale:</p>
           <ul class="steps" style="margin-top:12px">
             <li>
@@ -1714,7 +1731,8 @@
               (autoencoder-style). True learning means internalizing the transformation so completely that you can
               <em>forget</em> the original data and regenerate knowledge from &ldquo;random.&rdquo; Knowledge is in the
               transformation, not the input. When studying: don&rsquo;t try to remember slides&mdash;learn the
-              underlying principle and regenerate from first principles.</p>
+              underlying principle and regenerate from first principles.
+            </p>
           </div>
         </div>
       </section>
@@ -1925,7 +1943,540 @@
         </div>
       </section>
 
-      <!-- no results -->
+      <!-- ═══════════════════════════════ IC DESIGN ═══════════════════════════════ -->
+      <section class="section" id="section-ic-design">
+        <h2 class="section-title">IC Design Views &amp; Flow</h2>
+        <p class="section-subtitle">Lecture 06 &bull; How chips go from idea to silicon &mdash; the domain context for
+          AI agents</p>
+
+        <div class="callout gold">
+          <span class="callout-icon">&#128161;</span>
+          <p><strong>Professor&rsquo;s engineering principle:</strong> Create a representation &rarr; solve the problem
+            within that view &rarr; apply the solution &rarr; carry over to the next view. This is how all engineering
+            works. The same principle applies when building AI agents: choose the right abstraction level for the task
+            at hand.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128275;</span>The Four Design Views (Representations)</div>
+          <p>A chip design exists in multiple simultaneous representations. Each view is suited to different analyses.
+            Crucially, all views must represent <em>the same design</em> &mdash; ensuring this is the
+            <strong>equivalence checking problem</strong>.
+          </p>
+          <table>
+            <tr>
+              <th>View</th>
+              <th>Description</th>
+              <th>Primary Use</th>
+            </tr>
+            <tr>
+              <td><strong>Behavioral</strong></td>
+              <td>Abstract description of functionality; not cycle-accurate</td>
+              <td>Architecture performance estimation; not used for synthesis</td>
+            </tr>
+            <tr>
+              <td><strong>RTL (Register Transfer Level)</strong></td>
+              <td>Cycle-accurate, dataflow between registers; written in Verilog/VHDL</td>
+              <td>Functional verification; synthesis input; timing analysis starting point</td>
+            </tr>
+            <tr>
+              <td><strong>Gate / Cell Level</strong></td>
+              <td>Netlist of standard cells (AND, OR, flip-flops&hellip;)</td>
+              <td>Static Timing Analysis (STA); scan insertion; ATPG (test pattern generation)</td>
+            </tr>
+            <tr>
+              <td><strong>Transistor (Schematic)</strong></td>
+              <td>SPICE-level circuit description</td>
+              <td>High-speed analog blocks, memory cells, detailed power/noise modeling</td>
+            </tr>
+            <tr>
+              <td><strong>Layout (LEF/DEF, GDS-2)</strong></td>
+              <td>Geometric description of physical shapes</td>
+              <td>Area optimization; accurate timing/noise/power; DRC; tape-out (manufacturing)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128172;</span>Behavioral vs. RTL: A Critical Distinction</div>
+          <div class="compare">
+            <div class="compare-col left">
+              <h4>Behavioral Model</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Describes <strong style="color:var(--text)">what</strong> the design does abstractly</li>
+                <li>Not cycle-accurate</li>
+                <li>Fast simulation &rarr; useful for architectural exploration</li>
+                <li>Used to answer: &ldquo;How big should the cache be?&rdquo;</li>
+                <li>Cannot be synthesized directly for timing-critical paths</li>
+              </ul>
+            </div>
+            <div class="compare-col right">
+              <h4>RTL Model</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Describes <strong style="color:var(--text)">how</strong> data flows between registers each cycle
+                </li>
+                <li>Cycle-accurate; number of flip-flops is <strong style="color:var(--text)">fixed</strong></li>
+                <li>Defines FF-to-FF transfer functions</li>
+                <li>Used for functional verification and as synthesis input</li>
+                <li>Required for high-performance design (controls timing)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout teal" style="margin-top:4px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Why RTL matters for timing:</strong> In high-performance design, logic must be synthesized from
+              RTL (not behavioral) because RTL explicitly specifies which logic sits between which
+              flip-flops&mdash;directly controlling propagation delay. Balancing the transfer function ensures
+              computation from one state to the next is evenly distributed in time.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#9881;</span>Synthesis: Translation + Optimization</div>
+          <p><strong>Logical synthesis:</strong> Converts RTL (Verilog) &rarr; gate-level netlist. Still a logical
+            representation. Optimizes for area, speed, and power given a target library of standard cells.</p>
+          <p><strong>Physical synthesis:</strong> Converts gate netlist &rarr; layout (geometric description). Now a
+            graphical representation. Considers placement, routing, and physical constraints from the manufacturing
+            process.</p>
+          <div class="callout red" style="margin-top:10px">
+            <span class="callout-icon">&#9888;</span>
+            <p><strong>Synthesis &ne; perfect translation:</strong> The gate-level or layout model produced by synthesis
+              is not unique&mdash;many different implementations are possible. This is why <strong>equivalence
+                checking</strong> is critical: someone must own the &ldquo;golden model&rdquo; and verify that every
+              downstream representation remains functionally equivalent.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128204;</span>Physical Design Flow</div>
+          <ul class="steps">
+            <li>
+              <div class="step-num">1</div>
+              <p><strong>Partitioning</strong> &mdash; Divide complex system into subsystems that can be designed
+                independently. Key objective: minimize interconnections between subsystems to reduce routing resource
+                requirements.</p>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <p><strong>Floor-planning &amp; Placement</strong> &mdash; Assign blocks to areas of the chip. Hard
+                modules have fixed shape; soft modules have variable boundaries. Objectives: minimize total area,
+                maximize routability, reduce wire lengths. Includes rotation of blocks.</p>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <p><strong>Routing</strong> &mdash; Connect all pins with wires. First global routing (high-level channel
+                assignment), then detailed/local routing (exact wire geometry). Main constraints from lithography:
+                minimum feature sizes, no illegal crossings.</p>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <p><strong>Compaction</strong> &mdash; Condense the layout to reduce area while maintaining all design
+                rules.</p>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <p><strong>Extraction &amp; Verification</strong> &mdash; Extract parasitic resistance/capacitance from
+                layout. Check design rules (DRC). Verify timing, power, and noise with parasitics included. Complete
+                adherence at every step is impossible&mdash;rules are checked at this stage to ensure acceptable
+                coverage.</p>
+            </li>
+          </ul>
+          <div class="definition">
+            <div class="term">Design Closure</div>
+            <p>The end point of the iterative design process, where assumptions about timing, power, and area have
+              converged with reality. Design is iterative by nature: too-optimistic assumptions require re-work;
+              too-pessimistic assumptions lose market advantage.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>Pre-Silicon vs. Post-Silicon</div>
+          <div class="compare">
+            <div class="compare-col left">
+              <h4>Pre-Silicon</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Functional verification (simulation)</li>
+                <li>Design automation (EDA tools)</li>
+                <li>Simulation-based analysis</li>
+                <li>Working with <strong style="color:var(--text)">models</strong>, not real hardware</li>
+                <li>Goal: eliminate bugs before manufacturing</li>
+              </ul>
+            </div>
+            <div class="compare-col right">
+              <h4>Post-Silicon</h4>
+              <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2">
+                <li>Yield improvement (target: ~80%)</li>
+                <li>Manufacturing automation</li>
+                <li>Real test data from silicon</li>
+                <li>Working with <strong style="color:var(--text)">real hardware</strong></li>
+                <li>Diagnose bugs; determine mass-production test strategies; possible re-spin</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout gold" style="margin-top:4px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Design does not stop at tape-out.</strong> For complex designs, first-silicon yield may be as low
+              as 10%. Post-silicon work continues until yield is profitable (&sim;80%+). Three post-silicon concerns:
+              <strong>yield</strong> (get high enough), <strong>test quality</strong> (reduce customer escapes),
+              <strong>test cost</strong> (reduce without impacting quality).
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128031;</span>The &ldquo;Fish Tank&rdquo; Problem</div>
+          <p>Design flows are constructed to <em>hide reality</em> from engineers at each stage. Engineers are not
+            working with the real physical chip; they work in a simulation environment designed to <em>reflect</em>
+            reality&mdash;but it is not reality itself.</p>
+          <p>Consequences: (1) Some bugs can only be found in real silicon, never in simulation. (2) Optimizing from 95%
+            to 96% coverage in simulation may be irrelevant if the simulation model has a fundamental error. (3)
+            Debugging is hard because another team&rsquo;s model may be wrong, not yours. Enabling assumption and
+            information flow across all stages of the flow is a key unsolved challenge.</p>
+          <div class="tags">
+            <span class="tag gold">Models ≠ Reality</span>
+            <span class="tag red">Simulation is slow &amp; incomplete</span>
+            <span class="tag teal">Debugging is cross-team</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128295;</span>Design Platform Options</div>
+          <table>
+            <tr>
+              <th>Platform</th>
+              <th>Use Case</th>
+              <th>Trade-off</th>
+            </tr>
+            <tr>
+              <td><strong>FPGA</strong></td>
+              <td>Rapid prototyping, fastest time-to-market</td>
+              <td>Lower performance &amp; density than ASIC; reconfigurable</td>
+            </tr>
+            <tr>
+              <td><strong>Standard ASIC (EDA flow)</strong></td>
+              <td>Low-cost, moderate performance, automated flow</td>
+              <td>Less optimal than custom; faster design cycle</td>
+            </tr>
+            <tr>
+              <td><strong>Full Custom</strong></td>
+              <td>High-performance, high-volume (e.g., CPU cores, analog)</td>
+              <td>Most expensive to design; maximum performance and density</td>
+            </tr>
+          </table>
+          <div class="definition" style="margin-top:12px">
+            <div class="term">Fabless Company</div>
+            <p>A semiconductor company that designs chips (owns design + test) but outsources manufacturing to a foundry
+              (e.g., TSMC). The company maximizes yield constrained by quality requirements, while the foundry owns the
+              manufacturing process. Design and test optimistic/pessimistic assumptions must be carefully managed across
+              this boundary.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128203;</span>Verification Challenges</div>
+          <table>
+            <tr>
+              <th>Challenge</th>
+              <th>Problem</th>
+            </tr>
+            <tr>
+              <td><strong>Functional Verification</strong></td>
+              <td>Simulation is slow; cannot exhaustively cover all input combinations for complex designs</td>
+            </tr>
+            <tr>
+              <td><strong>Equivalence Checking</strong></td>
+              <td>Different teams may use different modeling perspectives; discrepancies are subtle and hard to find
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Testing</strong></td>
+              <td>Defects are unpredictable; fault models are approximations of reality</td>
+            </tr>
+            <tr>
+              <td><strong>Performance Constraints</strong></td>
+              <td>Timing/power/noise models are inaccurate before layout is done; budget assumptions required</td>
+            </tr>
+          </table>
+          <div class="callout teal" style="margin-top:10px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Timing before layout:</strong> Since layout-accurate wire delays aren&rsquo;t known during early
+              RTL design, engineers assign a <em>wire delay budget</em>&mdash;a tolerable worst-case estimate. Too
+              optimistic: you&rsquo;ll have to redo work. Too pessimistic: you design unnecessarily conservatively and
+              lose market advantage. The design converges through iteration.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════ TESTING ═══════════════════════════════ -->
+      <section class="section" id="section-testing">
+        <h2 class="section-title">Testing &amp; Fault Models</h2>
+        <p class="section-subtitle">Lecture 06 &bull; How chips are screened for manufacturing defects</p>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128202;</span>Yield and Test: The Fundamental Relationship</div>
+          <div class="definition">
+            <div class="term">Yield</div>
+            <p>The percentage of manufactured parts that are classified as good. &ldquo;Good&rdquo; is defined by the
+              test&mdash;which is why yield is controlled by the test methodology, not just the manufacturing process. A
+              stricter test gives lower yield; a looser test gives higher yield but more escapes to customers.</p>
+          </div>
+          <div class="definition">
+            <div class="term">Test (in semiconductor context)</div>
+            <p>A screening method that classifies manufactured parts into good and bad. Test defines what
+              &ldquo;good&rdquo; means operationally. Different test contents produce different yield numbers for the
+              same silicon. Test is owned by the design company; manufacturing is owned by the foundry.</p>
+          </div>
+          <p>The three post-production concerns in tension: <strong>yield</strong> (must be high enough to be
+            profitable), <strong>test quality</strong> (escapes reach customers &rarr; complaints), <strong>test
+              cost</strong> (time on automated test equipment is expensive).</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128279;</span>Scan Design Methodology</div>
+          <p>Testing sequential (flip-flop-based) circuits is hard because internal states are not directly accessible.
+            <strong>Scan design</strong> solves this by connecting every flip-flop into a <em>scan chain</em>: a long
+            shift register running through the entire chip.
+          </p>
+          <div class="flow">
+            <div class="flow-step">Scan In state</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Apply clock</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Scan Out result</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-step">Compare expected</div>
+          </div>
+          <p style="margin-top:12px"><strong>Key insight:</strong> By shifting in a known state, clocking once, and
+            shifting out the result, all flip-flops become controllable and observable. The sequential circuit is
+            reduced to a <em>combinational logic testing problem</em>.</p>
+          <div class="callout gold" style="margin-top:10px">
+            <span class="callout-icon">&#9888;</span>
+            <p><strong>Area cost &sim;15%.</strong> This is a significant overhead. There was historically a lot of
+              resistance to scan insertion, but the industry accepted it because it is essential for achieving high
+              fault coverage on complex chips. Scan tests the <em>structure</em> (can logic be controlled and
+              observed?), not the <em>function</em> (does the design do what it should?).</p>
+          </div>
+          <div class="definition">
+            <div class="term">ATPG (Automatic Test Pattern Generation)</div>
+            <p>Software tools that automatically generate test vectors (patterns of 0s and 1s to shift into scan chains)
+              targeting a given fault model. Operates on the gate-level netlist after scan insertion. Produces a compact
+              set of vectors that maximizes fault coverage.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#127919;</span>Fault Models: Approximating Reality</div>
+          <p>A <strong>fault model</strong> is a hypothesis about what can go wrong during manufacturing. Real defects
+            (shorts, opens, particles) are diverse and unpredictable; fault models provide a tractable abstraction for
+            generating and measuring tests.</p>
+          <div class="callout teal" style="margin-top:8px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Why fault models?</strong> They provide a <em>metric system</em>&mdash;fault coverage
+              (detected/total faults)&mdash;that gives an objective measure of test quality, even though the model is
+              not perfectly aligned with physical reality.</p>
+          </div>
+          <table style="margin-top:14px">
+            <tr>
+              <th>Fault Model</th>
+              <th>Description</th>
+              <th>Notes</th>
+            </tr>
+            <tr>
+              <td><strong>Single Stuck-At (SA)</strong></td>
+              <td>Every signal line is assumed to be permanently stuck at logic 0 or logic 1. A circuit with n lines has
+                2n possible stuck-at faults.</td>
+              <td>Industry standard; enables fault equivalence/dominance reduction; gate-level abstraction (not physical
+                reality)</td>
+            </tr>
+            <tr>
+              <td><strong>Bridging Fault</strong></td>
+              <td>Two signal lines are shorted together (AND-bridge or OR-bridge depending on technology).</td>
+              <td>Physically more realistic than stuck-at. Given n lines, O(n&sup2;) possible bridging faults. Often
+                extracted from layout to identify physically proximate lines.</td>
+            </tr>
+            <tr>
+              <td><strong>Transition Fault</strong></td>
+              <td>A line fails to make a 0&rarr;1 or 1&rarr;0 transition (rising or transition stuck-at). Related to
+                delay defects.</td>
+              <td>Must be tested at operational clock frequency. Treated as a separate quality metric from stuck-at
+                coverage.</td>
+            </tr>
+          </table>
+          <div class="callout green" style="margin-top:12px">
+            <span class="callout-icon">&#128267;</span>
+            <p><strong>Relationship between fault models:</strong> Empirically, high stuck-at fault coverage correlates
+              with high bridging fault coverage and high transition fault coverage. So stuck-at is used as the primary
+              metric, with transition fault coverage as a supplementary check requiring at-speed testing.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>Fault Equivalence &amp; Dominance: Reducing the
+            Problem</div>
+          <p>With 2n stuck-at faults for n lines, ATPG would be intractable on a large chip. Two relationships reduce
+            the fault set:</p>
+          <div class="compare">
+            <div class="compare-col left">
+              <h4>Fault Equivalence</h4>
+              <p style="color:var(--text-dim);font-size:14px">Two faults f1 and f2 are <strong
+                  style="color:var(--text)">equivalent</strong> if the exact same set of test vectors detects both.
+                Detecting one automatically detects the other. Only one needs to be explicitly targeted by ATPG.</p>
+              <p style="color:var(--text-dim);font-size:14px;margin-top:8px">Example: In an AND gate, input-stuck-at-0
+                and output-stuck-at-0 may be equivalent&mdash;both are detected by the same input combination.</p>
+            </div>
+            <div class="compare-col right">
+              <h4>Fault Dominance</h4>
+              <p style="color:var(--text-dim);font-size:14px">Fault f1 <strong
+                  style="color:var(--text)">dominates</strong> f2 if every test that detects f1 also detects f2 (test
+                set of f1 is a subset of f2&rsquo;s test set). Targeting f1 guarantees f2 is also covered.</p>
+              <p style="color:var(--text-dim);font-size:14px;margin-top:8px">Allows further pruning of the fault
+                list&mdash;only a representative subset of faults needs explicit ATPG targets.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#9878;</span>Re-convergent Fanout: Why Combinational Testing Gets
+            Hard</div>
+          <p>In a <strong>tree-structured circuit</strong> (no reconvergence), stuck-at faults can be analyzed by only
+            considering inputs. But most real circuits have <strong>re-convergent fanout</strong>: a signal fans out to
+            multiple paths that reconverge at a later gate. This means:</p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin:8px 0">
+            <li>A fault on one fanout branch (d) may be different from a fault on another branch (e), even if they
+              originate from the same gate</li>
+            <li>The effect of a fault can be <em>masked</em> at the reconvergence point (fault cancels itself out)</li>
+            <li>All stuck-at faults on every reconvergent branch must be considered independently</li>
+            <li>ATPG complexity increases significantly with reconvergence</li>
+          </ul>
+          <div class="definition">
+            <div class="term">Fault Coverage</div>
+            <p>The ratio of detected faults to total faults in the fault model: (detected faults) / (total faults).
+              Target is typically &ge;99.9% for stuck-at faults. Coverage exhibits diminishing returns&mdash;the last
+              fraction of a percent requires disproportionately many test patterns.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span>Process Variations: Beyond Defects</div>
+          <p>Even a chip with no manufacturing defects can fail or underperform due to <strong>process
+              variation</strong>&mdash;small but inevitable differences in the physical parameters of transistors and
+            wires caused by the photolithography manufacturing process.</p>
+          <p><strong>Sources of variation in photolithography:</strong> (1) Chemical coating non-uniformity (temperature
+            and density variation), (2) Light distortion on mask (diffraction), (3) Etching residue. Each step
+            introduces variability.</p>
+          <table style="margin-top:12px">
+            <tr>
+              <th>Variation Type</th>
+              <th>Description</th>
+            </tr>
+            <tr>
+              <td><strong>Inter-die</strong></td>
+              <td>Variation between different chips on the same wafer (or same location across wafers). All chips from
+                one lot may be slightly fast or slow.</td>
+            </tr>
+            <tr>
+              <td><strong>Intra-die</strong></td>
+              <td>Variation within a single chip. Transistors that are supposed to be identical have different
+                properties. Especially problematic for matched circuits (analog, SRAM).</td>
+            </tr>
+            <tr>
+              <td><strong>Inter-wafer</strong></td>
+              <td>Variation across different wafers in a batch. Often lumped with inter-die for analysis.</td>
+            </tr>
+          </table>
+          <div class="callout gold" style="margin-top:12px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Key parameters that vary:</strong> Effective gate length (L&sub;eff;), threshold voltage
+              (V&sub;t;), oxide thickness, inter-layer dielectric (ILD) thickness. Large variation &rarr; timing
+              failures, functional failures, or power issues. This is why statistical timing analysis and corner-based
+              design flows exist.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128203;</span>Quality Issues: When to Stop Testing</div>
+          <p>Finding and fixing a bug costs more the later in the design cycle it is discovered. The progression:
+            <strong>Initial design &rarr; chip-level &rarr; system-level &rarr; customer</strong>. Each stage multiplies
+            the cost of fixing a bug by orders of magnitude.
+          </p>
+          <p>Ideally, all bugs are caught before the chip stage. Two fundamental barriers to this ideal:</p>
+          <ul style="color:var(--text-dim);font-size:14px;padding-left:18px;line-height:2;margin:8px 0">
+            <li><strong style="color:var(--text)">Simulation is slow</strong> &rarr; limited to a tiny fraction of
+              possible input vectors; some bugs only appear in rare input combinations</li>
+            <li><strong style="color:var(--text)">Models are not reality</strong> &rarr; certain bugs (e.g., those
+              caused by physical parasitics, noise, or variation) can never be found in any simulation model</li>
+          </ul>
+          <div class="callout teal" style="margin-top:10px">
+            <span class="callout-icon">&#128161;</span>
+            <p><strong>Analogy to AI:</strong> The professor draws a parallel to the <em>curse of dimensionality</em> in
+              traditional ML&mdash;the test space (2&sup;n; possible input vectors) is astronomically large, making
+              exhaustive coverage impossible from a traditional viewpoint. AI-based approaches (ML for test selection,
+              AI agents for debugging) are the modern response, just as deep learning overcame the curse of
+              dimensionality in pattern recognition.</p>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">RTL (Register Transfer Level)</div>
+            <div class="gloss-def">A cycle-accurate hardware description that defines how data moves between registers
+              each clock cycle. The number of flip-flops and their transfer functions are fixed at RTL. Required for
+              high-performance synthesis because it gives explicit control over inter-stage timing.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Synthesis (Logical &amp; Physical)</div>
+            <div class="gloss-def">Automated translation + optimization of a design from one abstraction to the next.
+              Logical: RTL &rarr; gate netlist. Physical: gate netlist &rarr; layout geometry. Synthesis = translation +
+              optimization. Output is not unique; multiple valid implementations exist.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Yield</div>
+            <div class="gloss-def">The percentage of manufactured chips that pass the test and are classified as good.
+              Controlled by the test methodology as much as by manufacturing quality. Key post-silicon metric; first
+              silicon often 10%; target for mass production ~80%+.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Scan Chain</div>
+            <div class="gloss-def">A design-for-testability structure connecting all flip-flops into a long shift
+              register. Enables shifting in known states and shifting out results, reducing sequential circuit testing
+              to a combinational problem. Area overhead ~15%.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Stuck-At Fault Model</div>
+            <div class="gloss-def">The standard fault model for digital testing. Every signal line is hypothesized to be
+              permanently stuck at logic 0 or 1. A circuit with n lines has 2n possible faults. Fault equivalence and
+              dominance reduce the set to a manageable number for ATPG.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Fault Coverage</div>
+            <div class="gloss-def">The ratio of faults detected by a test set to the total faults in the fault model.
+              Industry target is typically &ge;99.9%. Exhibits diminishing returns: the last fraction of a percent is
+              disproportionately expensive to achieve.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Equivalence Checking</div>
+            <div class="gloss-def">Formal verification that two representations of a design (e.g., RTL vs. gate netlist)
+              are logically equivalent. Essential because synthesis is not unique and multiple teams may modify models.
+              Someone owns the &ldquo;golden model&rdquo; as the reference.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Process Variation</div>
+            <div class="gloss-def">Unavoidable differences in physical parameters (gate length, threshold voltage,
+              dielectric thickness) of transistors within and across chips due to manufacturing imprecision. Types:
+              inter-die (chip-to-chip), intra-die (within one chip), inter-wafer. Causes timing and functional failures
+              even without discrete defects.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">ATPG (Automatic Test Pattern Generation)</div>
+            <div class="gloss-def">Software that automatically generates test vectors targeting a fault model (usually
+              stuck-at) on a gate-level netlist after scan insertion. Produces a compact test set maximizing fault
+              coverage. Operates on the combinational logic exposed by scan.</div>
+          </div>
+          <div class="gloss-card">
+            <div class="gloss-term">Design Closure</div>
+            <div class="gloss-def">The convergence point where iterative design refinement is complete&mdash;timing,
+              power, and area all meet their targets simultaneously. Difficult to achieve because early design stages
+              rely on estimated (budgeted) wire delays rather than real layout values.</div>
+          </div>
+        </div>
+      </section>
       <div id="no-results">
         <div class="big">&#128269;</div>
         <div>No matching concepts found.<br>Try a different search term.</div>
